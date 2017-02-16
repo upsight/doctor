@@ -1,0 +1,11 @@
+---
+$schema: 'http://json-schema.org/draft-04/schema#'
+description: A more object.
+type: object
+definitions:
+  more_id:
+    description: Auto-increment ID.
+    type: integer
+properties:
+  more_id:
+    $ref: '#/definitions/more_id'

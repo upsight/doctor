@@ -1,0 +1,11 @@
+---
+$schema: 'http://json-schema.org/draft-04/schema#'
+description: A less object.
+type: object
+definitions:
+  less_id:
+    description: Auto-increment ID.
+    type: integer
+properties:
+  less_id:
+    $ref: '#/definitions/less_id'

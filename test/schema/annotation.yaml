@@ -1,0 +1,68 @@
+---
+$schema: 'http://json-schema.org/draft-04/schema#'
+definitions:
+  annotation_id:
+    description: Auto-increment ID.
+    type: integer
+  auth:
+    $ref: 'common.yaml#/definitions/auth'
+  more_id:
+    $ref: 'subdir/more.yaml#/definitions/more_id'
+  name:
+    description: Human readable name.
+    type: string
+  url:
+    description: The URL to the detail page for the annotation.
+    type: string
+    format: uri
+  urls:
+    description: An array of url's.
+    type: array
+    items:
+      '$ref': '#/definitions/url'
+  annotation:
+    $ref: '#'
+  annotations:
+    description: A list of annotation objects.
+    type: array
+    items:
+      $ref: '#'
+description: An annotation object.
+type: object
+properties:
+  auth:
+    $ref: 'common.yaml#/definitions/auth'
+  more_id:
+    $ref: 'subdir/more.yaml#/definitions/more_id'
+  annotation_id:
+    $ref: '#/definitions/annotation_id'
+  name:
+    $ref: '#/definitions/name'
+  url:
+    $ref: '#/definitions/url'
+test_ref:
+  $ref: '#/another_test_ref'
+another_test_ref:
+  $ref: '#/definitions/annotation_id'
+circular_ref_chain_1:
+  $ref: '#/circular_ref_chain_2'
+circular_ref_chain_2:
+  $ref: '#/circular_ref_chain_3'
+circular_ref_chain_3:
+  $ref: '#/circular_ref_chain_1'
+invalid_ref_chain_1:
+  $ref: '#/invalid_ref_chain_2'
+invalid_ref_chain_2:
+  $ref: '#/invalid_ref_chain_3'
+additionalProperties: no
+allOf:
+  - $ref: "common.yaml"
+  - $ref: "subdir/more.yaml"
+  - properties:
+      more_id:
+        $ref: subdir/more.yaml#/definitions/more_id
+      less_id:
+        $ref: subdir/less.yaml#/definitions/less_id
+required:
+  - annotation_id
+  - name

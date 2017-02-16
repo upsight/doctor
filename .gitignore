@@ -1,0 +1,7 @@
+*.egg-info
+*.pyc
+.noseids
+/.coverage
+/.noseids
+/.tox
+/_test

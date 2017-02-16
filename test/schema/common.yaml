@@ -1,0 +1,18 @@
+---
+"$schema": "http://json-schema.org/draft-04/schema#"
+title: Common
+description: Common stuff
+definitions:
+  auth:
+    description: auth token
+    type:
+      - string
+    example: eb25f25becca416092752b0f457f1271
+  someid:
+    description: random id
+    type:
+      - int
+    example: 1234
+properties:
+  auth:
+    $ref: '#/definitions/auth'

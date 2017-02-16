@@ -1,0 +1,11 @@
+---
+$schema: 'http://json-schema.org/draft-04/schema#'
+description: A gonzo object.
+type: object
+definitions:
+  gonzo_id:
+    description: Auto-increment ID.
+    type: integer
+properties:
+  gonzo_id:
+    $ref: '#/definitions/gonzo_id'

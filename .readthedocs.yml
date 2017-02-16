@@ -1,0 +1,6 @@
+python:
+  extra_requirements:
+    - docs
+    - tests
+  pip_install: true
+  version: 2

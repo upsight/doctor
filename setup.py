@@ -8,8 +8,21 @@ execfile(os.path.join(os.path.abspath(os.path.dirname(__file__)),
 setup(
     name='doctor',
     version=__version__,  # noqa -- flake8 should ignore this line
-    description='Helpers for using JSON schema in Python apps.',
+    description=('A module that assists in using JSON schemas to validate data '
+                 'in Flask APIs and generate API documentation.'),
     url='https://github.com/upsight/doctor',
+    license='MIT',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+    ],
+    keywords=['python', 'flask', 'json', 'jsonschema', 'validation',
+              'documentation', 'sphinx'],
+    author='Upsight',
+    author_email='dev@upsight.com',
     packages=[
         'doctor',
         'doctor.docs',

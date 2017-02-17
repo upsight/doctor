@@ -42,7 +42,7 @@ You can pass arguments to nosetests directly:
     :scale: 100%
     :target: https://travis-ci.org/upsight/doctor
     
-.. |pypi| image:: https://api.travis-ci.org/upsight/doctor.svg?branch=master
+.. |pypi| image:: https://img.shields.io/pypi/v/doctor.svg
     :alt: Pypi
     :scale: 100%
-    :target: https://travis-ci.org/upsight/doctor
+    :target: https://pypi.python.org/pypi/doctor/

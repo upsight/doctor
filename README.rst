@@ -1,7 +1,6 @@
 doctor
 ======
-
-|docs|
+|docs| |build|
 
 This module assists in using JSON schemas to validate data in our Python APIs. 
 It provides helpers for parsing and validating requests and responses in 
@@ -37,3 +36,8 @@ You can pass arguments to nosetests directly:
     :alt: Documentation Status
     :scale: 100%
     :target: http://doctor.readthedocs.io/en/latest/index.html
+    
+.. |build| image:: https://api.travis-ci.org/upsight/doctor.svg?branch=master
+    :alt: Build Status
+    :scale: 100%
+    :target: https://travis-ci.org/upsight/doctor

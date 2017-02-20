@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.1.0 (2017-02-20)
+-------------------
+
+- Added ability to override the schema used for an individual endpoint.
+
 v1.0.1 (2017-02-17)
 -------------------
 

@@ -2,12 +2,24 @@ doctor
 ======
 |docs| |build| |pypi|
 
-This module assists in using JSON schemas to validate data in our Python APIs. 
-It provides helpers for parsing and validating requests and responses in 
-Flask apps, and also supports generic schema validation for plain dictionaries.
+This module allows you to use JSON schemas to validate data in Flask Python APIs 
+and auto generate documentation.  An example of yjr generated API documentation can 
+be `found in the docs <http://doctor.readthedocs.io/en/latest/flask.html#example-api-documentation>`_.
+It also provides helpers for parsing and validating requests and responses in 
+Flask apps, and supports generic schema validation for plain dictionaries.
 
-Documentation is available at readthedocs_
+Install
+-------
 
+doctor can easily be installed using pip:
+
+    $ pip install doctor
+   
+Documentation
+-------------
+
+Documentation is available at readthedocs_.
+   
 Running Tests
 -------------
 

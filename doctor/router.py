@@ -157,7 +157,13 @@ class Router(object):
                     params.extend(additional_args.get('required', []))
                     required.extend(additional_args.get('required', []))
 
-                http_func = getattr(schema, 'http_' + method)
+                # Check if the schema was overridden for the method.
+                if opts.get('schema'):
+                    method_schema = self.get_schema(opts['schema'])
+                else:
+                    method_schema = schema
+
+                http_func = getattr(method_schema, 'http_' + method)
                 func = http_func(
                     opts['logic'], params=params, required=required,
                     response=opts.get('response'), title=opts.get('title'),

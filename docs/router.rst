@@ -42,6 +42,7 @@ is an example using all configuration options.
                 'decorators': [admin_required],
                 'logic': create_note,
                 'response': 'note',
+                'schema': 'special_note.yaml',
                 'title': 'Create Note',
             }
         }
@@ -182,6 +183,10 @@ additional configuration:
 - `response` should be a key from the definitions section of the schema that
   identifies which definition should be used to validate the response returned
   by the logic function.
+- `schema` is an alternative schema file that should be used for the endpoint.
+  This is useful for grouping related endpoints together that use different
+  schemas.  This argument should be the name of the schema within the schema
+  directory.  e.g. `'user.yaml'`.
 - `title` is a custom title to use as the header for the route/method.  If a
   title is not provided, one will be generated based on the http method. The
   automatic title will be one of `Retrieve`, `Delete`, `Create`, or `Update`.
@@ -200,6 +205,7 @@ additional configuration:
                 'decorators': [admin_required],
                 'logic': create_note,
                 'response': 'note',
+                'schema': 'special_note.yaml',
                 'title': 'Create Note',
             }
         }

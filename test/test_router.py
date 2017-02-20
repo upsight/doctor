@@ -150,6 +150,12 @@ class RouterTestCase(TestCase):
 
                 'get': {
                     'logic': logic_get,
+                    # Specifying a different schema file that contains `someid`
+                    # for the response.  An example of overriding the schema
+                    # at the http method level.  This would fail without the
+                    # schema key since someid is not defined in annotation.yaml
+                    'schema': 'common.yaml',
+                    'response': 'someid',
                 },
                 'post': {
                     'additional_args': {

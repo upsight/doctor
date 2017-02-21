@@ -15,10 +15,65 @@ doctor can easily be installed using pip:
 
     $ pip install doctor
    
+Quick Start
+-----------
+
+Create a json schema with a few definitions to describe our request parameters.
+
+.. code-block:: yaml
+
+    ---
+    $schema: 'http://json-schema.org/draft-04/schema#'
+    definitions:
+      foo_id:
+        description: The ID of the foo.
+        type: integer
+        example: 1
+      fetch_bars:
+        description: Fetches bars associated with a Foo.
+        type: boolean
+        example: true
+        
+Define the logic function that our endpoint will route to:
+
+.. code-block:: python
+
+    def get_foo(foo_id, fetch_bars=False):
+        """Fetches the Foo object and optionally related bars."""
+        return Foo.get_by_id(foo_id, fetch_bars=fetch_bars)
+        
+Now tie the endpoint to the logic function with a router.
+
+.. code-block:: python
+
+    from flask import Flask
+    from flask_restful import Api
+    from doctor.flask import FlaskRouter
+    
+    all_routes = []
+    router = FlaskRouter('/path/to/schema/dir')
+    all_routes.extend(router.create_routes('Foo (v1)', 'foo.yaml', {
+        '/foo/<int:foo_id>/': {
+            'get': {
+                'logic': get_foo,
+            },
+        },
+    }))
+    
+    app = Flask(__name__)
+    api = Api(app)
+    for resource, route in all_routes:
+        api.add_resource(resource, endpoint)
+    
+That's it, you know have a functioning api endpoint you can curl and the request is automatically validated for you based on your
+schema.  Positional arguments in your logic function are considered required request parameters and keyword arguments are considered
+optional.  As a bonus, using the `autoflask <http://doctor.readthedocs.io/en/latest/docs.html>`_ sphinx directive, you will also get
+automatically generated API documentation.
+   
 Documentation
 -------------
 
-Documentation is available at readthedocs_.
+Documentation and a full example is available at readthedocs_.
    
 Running Tests
 -------------

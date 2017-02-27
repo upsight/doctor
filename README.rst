@@ -65,7 +65,7 @@ Now tie the endpoint to the logic function with a router.
     for resource, route in all_routes:
         api.add_resource(resource, endpoint)
     
-That's it, you know have a functioning api endpoint you can curl and the request is automatically validated for you based on your
+That's it, you now have a functioning API endpoint you can curl and the request is automatically validated for you based on your
 schema.  Positional arguments in your logic function are considered required request parameters and keyword arguments are considered
 optional.  As a bonus, using the `autoflask <http://doctor.readthedocs.io/en/latest/docs.html>`_ sphinx directive, you will also get
 automatically generated API documentation.

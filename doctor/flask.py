@@ -3,8 +3,8 @@ from __future__ import absolute_import
 import logging
 
 try:
-    from flask import request
-    from flask.ext import restful
+    import flask_restful
+    from flask import current_app, request
     from werkzeug.exceptions import (BadRequest, Conflict, Forbidden,
                                      HTTPException, NotFound, Unauthorized,
                                      InternalServerError)
@@ -80,7 +80,7 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
 
     :param doctor.resource.ResourceSchema schema: Instance of a
         :class:`~doctor.resource.ResourceSchema` class.
-    :param handler: flask.ext.restful.Resource: An instance of a Flask Restful
+    :param handler: flask_restful.Resource: An instance of a Flask Restful
         resource class.
     :param tuple args: Any positional arguments passed to the wrapper method.
     :param dict kwargs: Any keyword arguments passed to the wrapper method.
@@ -142,11 +142,14 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
     except ImmutableError as e:
         raise HTTP409Exception(unicode(e))
     except Exception as e:
+        # Always re-raise exceptions when DEBUG is enabled for development.
+        if current_app.config.get('DEBUG', False):
+            raise
         if allowed_exceptions and any(isinstance(e, cls)
                                       for cls in allowed_exceptions):
             raise
         logging.exception(unicode(e))
-        raise HTTP500Exception('Uncaught doctor error')
+        raise HTTP500Exception('Uncaught error in logic function')
 
 
 class FlaskResourceSchema(ResourceSchema):
@@ -174,7 +177,7 @@ class FlaskRouter(Router):
         if resource_schema_class is None:
             resource_schema_class = FlaskResourceSchema
         if default_base_handler is None:
-            default_base_handler = restful.Resource
+            default_base_handler = flask_restful.Resource
         super(FlaskRouter, self).__init__(
             schema_dir, resource_schema_class, default_base_handler,
             raise_response_validation_errors)

@@ -224,13 +224,23 @@ class TestFlask(TestCase):
         with self.assertRaisesRegexp(HTTP404Exception, r'404'):
             self.call_handle_http()
 
-    def test_handle_unexpected_error(self):
+    @mock.patch('doctor.flask.current_app')
+    def test_handle_unexpected_error(self, mock_current_app):
+        mock_current_app.config = {'DEBUG': False}
         self.mock_logic_exception(TypeError('bad type'))
         with self.assertRaisesRegexp(
-                HTTP500Exception, r'Uncaught doctor error'):
+                HTTP500Exception, r'Uncaught error in logic function'):
             self.call_handle_http()
 
-    def test_handle_unexpected_error_allowed_exceptions(self):
+        # When DEBUG is True, it should reraise the original exception
+        mock_current_app.config = {'DEBUG': True}
+        with self.assertRaisesRegexp(TypeError, 'bad type'):
+            self.call_handle_http()
+
+    @mock.patch('doctor.flask.current_app')
+    def test_handle_unexpected_error_allowed_exceptions(self, mock_current_app):
+        mock_current_app.config = {'DEBUG': False}
+
         class ExceptionalException(Exception):
             pass
         self.allowed_exceptions = [ExceptionalException]
@@ -244,5 +254,5 @@ class TestFlask(TestCase):
         # but other exceptions should still be caught
         self.mock_logic_exception(TypeError('bad type'))
         with self.assertRaisesRegexp(
-                HTTP500Exception, r'Uncaught doctor error'):
+                HTTP500Exception, r'Uncaught error in logic function'):
             self.call_handle_http()

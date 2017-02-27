@@ -46,7 +46,7 @@ setup(
             'coverage >= 3.5.2, < 4.0.0',
             'flake8 >= 2.4.0, < 3.0.0',
             'flask >= 0.10.1, < 1.0.0',
-            'flask-restful==0.2.12',
+            'flask-restful==0.3.5',
             'mock >= 1.0.1, < 2.0.0',
             'nose >= 1.3.4, < 2.0.0',
             'nose-exclude >= 0.1.9, < 1.0.0',

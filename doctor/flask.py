@@ -149,7 +149,7 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
                                       for cls in allowed_exceptions):
             raise
         logging.exception(unicode(e))
-        raise HTTP500Exception('Uncaught doctor errors')
+        raise HTTP500Exception('Uncaught error in logic function')
 
 
 class FlaskResourceSchema(ResourceSchema):

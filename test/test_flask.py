@@ -229,7 +229,7 @@ class TestFlask(TestCase):
         mock_current_app.config = {'DEBUG': False}
         self.mock_logic_exception(TypeError('bad type'))
         with self.assertRaisesRegexp(
-                HTTP500Exception, r'Uncaught doctor error'):
+                HTTP500Exception, r'Uncaught error in logic function'):
             self.call_handle_http()
 
         # When DEBUG is True, it should reraise the original exception
@@ -254,5 +254,5 @@ class TestFlask(TestCase):
         # but other exceptions should still be caught
         self.mock_logic_exception(TypeError('bad type'))
         with self.assertRaisesRegexp(
-                HTTP500Exception, r'Uncaught doctor error'):
+                HTTP500Exception, r'Uncaught error in logic function'):
             self.call_handle_http()

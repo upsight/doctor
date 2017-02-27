@@ -4,6 +4,14 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.1.1 (2017-02-27)
+-------------------
+
+- Made logic function exceptions always raise when applicaiton is in
+  debug mode.
+- Updated error message to be clearer when a logic function raises an
+  exception.
+
 v1.1.0 (2017-02-20)
 -------------------
 

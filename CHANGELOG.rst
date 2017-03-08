@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.1.2 (2017-02-27)
+-------------------
+
+- Fixes a bug where the logic function wouldn't be undecorated properly.
+
 v1.1.1 (2017-02-27)
 -------------------
 

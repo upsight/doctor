@@ -72,8 +72,9 @@ class Router(object):
             if func.__closure__:
                 for cell in func.__closure__:
                     if inspect.isfunction(cell.cell_contents):
-                        func = cell.cell_contents
-                        break
+                        if func.__name__ == cell.cell_contents.__name__:
+                            func = cell.cell_contents
+                            break
             else:
                 break
         return func

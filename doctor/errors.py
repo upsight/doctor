@@ -66,3 +66,11 @@ class UnauthorizedError(SchematicError):
     Corresponds to a HTTP 401 Unauthorized error.
     """
     pass
+
+
+class InternalError(SchematicError):
+    """Raised when there is an internal server error.
+
+    Corresponds to a HTTP 500 Internal Server Error.
+    """
+    pass

@@ -42,7 +42,7 @@ class ObjectTypedField(TypedField):
        :param SomeClass foo: description of parameter foo
     """
 
-    def make_field(self, types, domain, items):
+    def make_field(self, types, domain, items, env=None, **kwargs):
         def handle_item(fieldarg, content):
             """Handles translating an item into a node.
 

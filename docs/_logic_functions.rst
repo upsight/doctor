@@ -1,3 +1,5 @@
+.. _logic-functions:
+
 Logic Functions
 ---------------
 
@@ -15,5 +17,5 @@ required request parameter and `done` would be an optional request parameter.
 
 To abstract out the HTTP layer in logic functions, doctor provides
 custom exceptions which will be converted to the correct HTTP Exception by
-the library.  See the module :mod:`doctor.errors` documentation for
+the library.  See the :ref:`error-classes` documentation for
 more information on which exception your code should raise.

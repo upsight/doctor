@@ -4,6 +4,8 @@ Release History
 Next release (in development)
 -----------------------------
 
+- Added new InternalError class to represent non-doctor internal errors.
+
 v1.1.2 (2017-02-27)
 -------------------
 

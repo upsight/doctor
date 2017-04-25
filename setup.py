@@ -38,7 +38,7 @@ setup(
     extras_require={
         'docs': [
             'mock >= 1.0.1, < 2.0.0',
-            'sphinx >= 1.1.3, < 2.0.0',
+            'sphinx >= 1.5.4, < 2.0.0',
             'sphinx-rtd-theme==0.1.9',
             'sphinxcontrib-httpdomain >= 1.4.0, < 2.0.0',
         ],

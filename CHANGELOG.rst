@@ -5,6 +5,8 @@ Next release (in development)
 -----------------------------
 
 - Added new InternalError class to represent non-doctor internal errors.
+- Updated sphinx pin version to be minimum 1.5.4 and added new `env` kwarg
+  to make_field amd make_xref.
 
 v1.1.2 (2017-02-27)
 -------------------

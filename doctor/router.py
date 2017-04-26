@@ -1,7 +1,7 @@
 import inspect
 import os
 
-from doctor.utils import undecorate_func
+from .utils import undecorate_func
 
 
 class RouterException(Exception):

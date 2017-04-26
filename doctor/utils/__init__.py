@@ -37,7 +37,7 @@ def exec_params(call, *args, **kwargs):
     :raises TypeError:
     """
     arg_spec = getattr(call, '_argspec', None)
-    if arg_spec and not arg_spec.keywords:
+    if arg_spec:
         kwargs = {key: value for key, value in kwargs.iteritems()
                   if key in arg_spec.args}
     return call(*args, **kwargs)

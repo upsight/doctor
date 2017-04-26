@@ -1,5 +1,6 @@
 import inspect
 import os
+from functools import wraps
 
 import mock
 
@@ -7,6 +8,13 @@ from .base import TestCase
 
 from doctor.utils import (
     exec_params, get_description_lines, get_module_attr, nested_set)
+
+
+def does_nothing(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
 
 
 class TestUtils(TestCase):
@@ -57,6 +65,24 @@ class TestUtils(TestCase):
         self.assertEqual(a, args[0]+1)
         self.assertEqual(b, args[1]+1)
         self.assertEqual(c, 3)
+
+    def test_exec_params_decorated_callable(self):
+        """
+        This test replicates a bug where if a logic function were decorated
+        and we sendt a json body request that contained parameters not in
+        the logic function's signature it would cause a TypeError similar to
+        the following for the logic function defined in this test:
+
+        TypeError: logic() got an unexpected keyword argument 'e'
+        """
+        @does_nothing
+        def logic(a, b=2, c=3):
+            return (a, b, c)
+        logic._argspec = inspect.getargspec(logic)
+        kwargs = {'c': 3, 'e': 2}
+        args = (1, 2)
+        actual = exec_params(logic, *args, **kwargs)
+        self.assertEqual((1, 2, 3), actual)
 
     @mock.patch('doctor.utils.execfile', create=True)
     @mock.patch('doctor.utils.os', autospec=True)

@@ -7,14 +7,41 @@ import mock
 from .base import TestCase
 
 from doctor.utils import (
-    exec_params, get_description_lines, get_module_attr, nested_set)
+    exec_params, get_description_lines, get_module_attr, nested_set,
+    undecorate_func)
 
 
 def does_nothing(func):
+    """An example decorator that does nothing."""
     @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
     return wrapper
+
+
+def dec_with_args(foo='foo', bar='bar'):
+    """An example decorator that takes args and passes value to func."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func('arg', *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def dec_with_args_one_of_which_allows_a_func(foo, bar=None):
+    """An example decorator that takes args where one is a function.
+
+    In this case, bar accepts a func which transforms foo.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if bar is not None:
+                bar(foo)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 class TestUtils(TestCase):
@@ -66,7 +93,7 @@ class TestUtils(TestCase):
         self.assertEqual(b, args[1]+1)
         self.assertEqual(c, 3)
 
-    def test_exec_params_decorated_callable(self):
+    def test_exec_params_with_magic_kwargs(self):
         """
         This test replicates a bug where if a logic function were decorated
         and we sendt a json body request that contained parameters not in
@@ -74,15 +101,19 @@ class TestUtils(TestCase):
         the following for the logic function defined in this test:
 
         TypeError: logic() got an unexpected keyword argument 'e'
+
+        This test verifies if a logic function uses the **kwargs functionality
+        that we pass along those to the logic function in addition to any
+        other positional or keyword arguments.
         """
-        @does_nothing
-        def logic(a, b=2, c=3):
-            return (a, b, c)
+        def logic(a, b=2, c=3, **kwargs):
+            return (a, b, c, kwargs)
+
         logic._argspec = inspect.getargspec(logic)
         kwargs = {'c': 3, 'e': 2}
         args = (1, 2)
         actual = exec_params(logic, *args, **kwargs)
-        self.assertEqual((1, 2, 3), actual)
+        self.assertEqual((1, 2, 3, {'e': 2}), actual)
 
     @mock.patch('doctor.utils.execfile', create=True)
     @mock.patch('doctor.utils.os', autospec=True)
@@ -153,3 +184,34 @@ class TestUtils(TestCase):
 
         nested_set(data_dict, ["a", "new"], 'new')
         self.assertEqual(data_dict['a']['new'], 'new')
+
+    def test_undecorate_func(self):
+        def foobar(a, b=False):
+            pass
+
+        # No decorator just returns the function
+        actual = undecorate_func(foobar)
+        self.assertEqual(foobar, actual)
+
+        # Normal decorator with no args
+        decorated = does_nothing(foobar)
+        actual = undecorate_func(decorated)
+        self.assertEqual(foobar, actual)
+
+        # Ensure it can handle multiple decorators
+        double_decorated = does_nothing(does_nothing(foobar))
+        actual = undecorate_func(double_decorated)
+        self.assertEqual(foobar, actual)
+
+        # Ensure it works with decorators that take arguments
+        decorated_with_args = dec_with_args('foo1')(foobar)
+        actual = undecorate_func(decorated_with_args)
+        self.assertEqual(foobar, actual)
+
+        def bar(foo):
+            return 'foo ' + foo
+
+        decorated_with_arg_takes_func = (
+            dec_with_args_one_of_which_allows_a_func('foo', bar)(foobar))
+        actual = undecorate_func(decorated_with_arg_takes_func)
+        self.assertEqual(foobar, actual)

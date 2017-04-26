@@ -1,3 +1,4 @@
+import inspect
 import os
 import re
 import sys
@@ -37,10 +38,32 @@ def exec_params(call, *args, **kwargs):
     :raises TypeError:
     """
     arg_spec = getattr(call, '_argspec', None)
-    if arg_spec:
+    if arg_spec and not arg_spec.keywords:
         kwargs = {key: value for key, value in kwargs.iteritems()
                   if key in arg_spec.args}
     return call(*args, **kwargs)
+
+
+def undecorate_func(func):
+    """Returns the original function from the decorated one.
+
+    The purpose of this function is to return the original `func` in the
+    event that it has decorators attached to it, instead of the decorated
+    function.
+
+    :param function func: The function to unwrap.
+    :returns: The unwrapped function.
+    """
+    while True:
+        if func.__closure__:
+            for cell in func.__closure__:
+                if inspect.isfunction(cell.cell_contents):
+                    if func.__name__ == cell.cell_contents.__name__:
+                        func = cell.cell_contents
+                        break
+        else:
+            break
+    return func
 
 
 def get_module_attr(module_filename, module_attr, namespace=None):

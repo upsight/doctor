@@ -1,6 +1,8 @@
 import inspect
 import os
 
+from doctor.utils import undecorate_func
+
 
 class RouterException(Exception):
     """
@@ -58,27 +60,6 @@ class Router(object):
             self.raise_response_validation_errors)
         return self.schemas[schema_file]
 
-    def _undecorate_func(self, func):
-        """Returns the original function from the decorated one.
-
-        The purpose of this function is to return the original `func` in the
-        event that it has decorators attached to it, instead of the decorated
-        function.
-
-        :param function func: The function to unwrap.
-        :returns: The unwrapped function.
-        """
-        while True:
-            if func.__closure__:
-                for cell in func.__closure__:
-                    if inspect.isfunction(cell.cell_contents):
-                        if func.__name__ == cell.cell_contents.__name__:
-                            func = cell.cell_contents
-                            break
-            else:
-                break
-        return func
-
     def _get_params_from_func(self, func, omit_args=None):
         """Gets all parameters and required parameters from the func signature.
 
@@ -91,7 +72,7 @@ class Router(object):
         :returns: A tuple containing all parameters of the function signature
             and all required args.
         """
-        argspec = inspect.getargspec(self._undecorate_func(func))
+        argspec = inspect.getargspec(undecorate_func(func))
         if argspec.defaults:
             required = argspec.args[:-len(argspec.defaults)]
         else:

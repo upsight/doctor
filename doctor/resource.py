@@ -5,6 +5,7 @@ import jsonschema
 
 from .parsers import parse_value
 from .schema import Schema
+from .utils import undecorate_func
 
 
 class ResourceSchemaAnnotation(object):
@@ -180,7 +181,7 @@ class ResourceSchema(Schema):
         after = after if after else (lambda *args, **kwargs: None)
 
         try:
-            logic._argspec = inspect.getargspec(logic)
+            logic._argspec = inspect.getargspec(undecorate_func(logic))
         except TypeError:
             logic._argspec = inspect.getargspec(logic.__call__)
 

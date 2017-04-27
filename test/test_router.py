@@ -26,21 +26,6 @@ def dec_with_args(foo='foo', bar='bar'):
     return decorator
 
 
-def dec_with_args_one_of_which_allows_a_func(foo, bar=None):
-    """An example decorator that takes args where one is a function.
-
-    In this case, bar accepts a func which transforms foo.
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if bar is not None:
-                bar(foo)
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
 class RouterTestCase(TestCase):
 
     def setUp(self):
@@ -76,37 +61,6 @@ class RouterTestCase(TestCase):
         actual = router.get_schema('foobar.yaml')
         expected = 'foobar'
         self.assertEqual(expected, actual)
-
-    def test_undecorate_func(self):
-        def foobar(a, b=False):
-            pass
-
-        # No decorator just returns the function
-        actual = self.router._undecorate_func(foobar)
-        self.assertEqual(foobar, actual)
-
-        # Normal decorator with no args
-        decorated = does_nothing(foobar)
-        actual = self.router._undecorate_func(decorated)
-        self.assertEqual(foobar, actual)
-
-        # Ensure it can handle multiple decorators
-        double_decorated = does_nothing(does_nothing(foobar))
-        actual = self.router._undecorate_func(double_decorated)
-        self.assertEqual(foobar, actual)
-
-        # Ensure it works with decorators that take arguments
-        decorated_with_args = dec_with_args('foo1')(foobar)
-        actual = self.router._undecorate_func(decorated_with_args)
-        self.assertEqual(foobar, actual)
-
-        def bar(foo):
-            return 'foo ' + foo
-
-        decorated_with_arg_takes_func = (
-            dec_with_args_one_of_which_allows_a_func('foo', bar)(foobar))
-        actual = self.router._undecorate_func(decorated_with_arg_takes_func)
-        self.assertEqual(foobar, actual)
 
     def test_get_params_from_func_with_optional(self):
         def foobar(req1, req2, opt1=None, opt2=False):

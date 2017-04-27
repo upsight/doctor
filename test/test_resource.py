@@ -1,8 +1,35 @@
+from functools import wraps
 import mock
 
 from doctor.resource import ResourceSchema, ResourceSchemaAnnotation
 from doctor.flask import handle_http
 from .base import TestCase
+
+
+def does_nothing(func):
+    """An example decorator that does nothing."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def plain_logic(a, b=1):
+    return (a, b)
+
+
+def plain_logic_with_kwargs(a, b=1, **kwargs):
+    return (a, b, kwargs)
+
+
+@does_nothing
+def decorated_logic(a, b=1):
+    return (a, b)
+
+
+@does_nothing
+def decorated_logic_with_kwargs(a, b=1, **kwargs):
+    return (a, b, kwargs)
 
 
 class TestResourceSchema(TestCase):
@@ -58,10 +85,11 @@ class TestResourceSchema(TestCase):
                          expected)
 
     def test_create_http_method(self):
+        def logic(a, b, c=1):
+            """Foo."""
+            return a
+
         s = mock.sentinel
-        mock_logic = mock.Mock()
-        mock_logic.__name__ = 'mock_name'
-        mock_logic.__doc__ = s.__doc__
         schema = ResourceSchema({
             'definitions': {
                 'a': {'type': 'string'},
@@ -84,12 +112,12 @@ class TestResourceSchema(TestCase):
             },
         }, self.mock_handle_http)
         handler = schema._create_http_method(
-            mock_logic, 'POST', params=('a', 'b', 'c'), required=('a', 'b'),
+            logic, 'POST', params=('a', 'b', 'c'), required=('a', 'b'),
             response='response', allowed_exceptions=s.allowed_exceptions)
         annotation = handler._schema_annotation
         self.assertTrue(callable(handler))
-        self.assertEqual(handler.__name__, 'mock_name')
-        self.assertEqual(handler.__doc__, s.__doc__)
+        self.assertEqual(handler.__name__, 'logic')
+        self.assertEqual(handler.__doc__, 'Foo.')
         self.assertEqual(annotation.request_schema, {
             'additionalProperties': True,
             'definitions': schema.resolve('#/definitions'),
@@ -106,14 +134,14 @@ class TestResourceSchema(TestCase):
         result = handler(s.handler, 1, x=2, y=3)
         self.assertEqual(result, s.result)
         self.assertEqual(self.mock_handle_http.call_args_list, [
-            mock.call(schema, s.handler, (1,), {'x': 2, 'y': 3}, mock_logic,
+            mock.call(schema, s.handler, (1,), {'x': 2, 'y': 3}, logic,
                       annotation.request_schema, mock.ANY, mock.ANY,
                       s.allowed_exceptions)
         ])
 
         # Test a handler with an explicit request schema
         self.mock_handle_http.reset_mock()
-        handler = schema._create_http_method(mock_logic, 'POST',
+        handler = schema._create_http_method(logic, 'POST',
                                              request='request',
                                              response='response')
         annotation = handler._schema_annotation
@@ -124,7 +152,7 @@ class TestResourceSchema(TestCase):
 
         # Test a handler without any params
         self.mock_handle_http.reset_mock()
-        handler = schema._create_http_method(mock_logic, 'POST',
+        handler = schema._create_http_method(logic, 'POST',
                                              response='response')
         annotation = handler._schema_annotation
         self.assertIsNone(annotation.request_schema)
@@ -133,27 +161,102 @@ class TestResourceSchema(TestCase):
         result = handler(s.handler, 1, x=2, y=3)
         self.assertEqual(result, s.result)
         self.assertEqual(self.mock_handle_http.call_args_list, [
-            mock.call(schema, s.handler, (1,), {'x': 2, 'y': 3}, mock_logic,
+            mock.call(schema, s.handler, (1,), {'x': 2, 'y': 3}, logic,
                       None, None, mock.ANY, None)
         ])
 
         # Test a handler without a response schema
         self.mock_handle_http.reset_mock()
         handler = schema._create_http_method(
-            mock_logic, 'POST', params=('a', 'b', 'c'), required=('a', 'b'))
+            logic, 'POST', params=('a', 'b', 'c'), required=('a', 'b'))
         annotation = handler._schema_annotation
         self.assertIsNone(annotation.response_schema)
         handler(s.handler, 1, x=2, y=3)
         self.assertEqual(result, s.result)
         self.assertEqual(self.mock_handle_http.call_args_list, [
-            mock.call(schema, s.handler, (1,), {'x': 2, 'y': 3}, mock_logic,
+            mock.call(schema, s.handler, (1,), {'x': 2, 'y': 3}, logic,
                       annotation.request_schema, mock.ANY, None, None)
         ])
+
+    def test_create_http_method_logic_argspec(self):
+        """
+        This tests that the the return value's _argspec attribute is set
+        correctly when using a normal function and decorated ones.
+
+        This test also replicates a bug where if a logic function were decorated
+        and we sent a json body request that contained parameters not in
+        the logic function's signature it would cause a TypeError similar to
+        the following for the logic function defined in this test:
+
+        TypeError: logic() got an unexpected keyword argument 'e'
+
+        """
+        s = mock.sentinel
+        schema = ResourceSchema({
+            'definitions': {
+                'a': {'type': 'string'},
+                'b': {'type': 'integer'},
+                'c': {'type': 'integer'},
+                'request': {
+                    'type': 'object',
+                    'properties': {
+                        'bar': {'type': 'integer'},
+                    },
+                    'additionalProperties': False,
+                },
+                'response': {
+                    'type': 'object',
+                    'properties': {
+                        'foo': {'type': 'integer'},
+                    },
+                    'additionalProperties': False,
+                },
+            },
+        }, self.mock_handle_http)
+
+        handler = schema._create_http_method(
+            plain_logic, 'POST', params=('a', 'b'), required=('a',),
+            response='response', allowed_exceptions=s.allowed_exceptions)
+        spec = handler._argspec
+        self.assertEqual(['a', 'b'], spec.args)
+        self.assertIsNone(spec.varargs)
+        self.assertIsNone(spec.keywords)
+        self.assertEqual((1,), spec.defaults)
+
+        handler = schema._create_http_method(
+            plain_logic_with_kwargs, 'POST', params=('a', 'b'), required=('a',),
+            response='response', allowed_exceptions=s.allowed_exceptions)
+        spec = handler._argspec
+        self.assertEqual(['a', 'b'], spec.args)
+        self.assertIsNone(spec.varargs)
+        self.assertEqual('kwargs', spec.keywords)
+        self.assertEqual((1,), spec.defaults)
+
+        # This caused issue #12 on github.
+        handler = schema._create_http_method(
+            decorated_logic, 'POST', params=('a', 'b'), required=('a',),
+            response='response', allowed_exceptions=s.allowed_exceptions)
+        spec = handler._argspec
+        self.assertEqual(['a', 'b'], spec.args)
+        self.assertIsNone(spec.varargs)
+        self.assertIsNone(spec.keywords)
+        self.assertEqual((1,), spec.defaults)
+
+        handler = schema._create_http_method(
+            decorated_logic_with_kwargs, 'POST', params=('a', 'b'),
+            required=('a',), response='response',
+            allowed_exceptions=s.allowed_exceptions)
+        spec = handler._argspec
+        self.assertEqual(['a', 'b'], spec.args)
+        self.assertIsNone(spec.varargs)
+        self.assertEqual('kwargs', spec.keywords)
+        self.assertEqual((1,), spec.defaults)
 
     def test_before_after_callables(self):
         mock_logic = mock.Mock()
         mock_logic.__name__ = 'mock_name'
         mock_logic.__doc__ = mock.sentinel.__doc__
+        mock_logic.__closure__ = None
 
         schema = ResourceSchema({
             'definitions': {

@@ -153,7 +153,10 @@ class Router(object):
                 # Apply all decoraters to the `func`
                 decorators = opts.get('decorators', [])
                 decorators.extend(handler_decorators)
-                for decorator in decorators:
+                # Make decoratrs a set to remove any duplicates where a
+                # decorator may have been added at the handler level and
+                # the logic level.
+                for decorator in set(decorators):
                     func = decorator(func)
                 handler_methods_and_properites = {
                     '__name__': handler_name,

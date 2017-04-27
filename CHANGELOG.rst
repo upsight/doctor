@@ -7,6 +7,8 @@ Next release (in development)
 - Added new InternalError class to represent non-doctor internal errors.
 - Updated sphinx pin version to be minimum 1.5.4 and added new `env` kwarg
   to make_field amd make_xref.
+- Fixed bug where extra parameters passed on json requests would cause a `TypeError`
+  if the logic function used a decorator.
 
 v1.1.2 (2017-02-27)
 -------------------

@@ -9,6 +9,10 @@ Next release (in development)
   to make_field amd make_xref.
 - Fixed bug where extra parameters passed on json requests would cause a `TypeError`
   if the logic function used a decorator.
+- Made sure to make decorators a set when applying them to a logic function
+  when creating routes.  This is to prevent a decorator from wrapping a 
+  function twice if it's defined at the logic level and handler level when
+  creating routes.
 
 v1.1.2 (2017-02-27)
 -------------------

@@ -61,6 +61,7 @@ class TestFlask(TestCase):
                            self.allowed_exceptions)
 
     def mock_logic_exception(self, exception):
+        self.mock_request.method = 'POST'
         self.mock_request.content_type = 'application/json; charset=UTF8'
         self.mock_request.mimetype = 'application/json'
         self.mock_request.json = {'a': 'foo', 'b': 1}
@@ -90,6 +91,16 @@ class TestFlask(TestCase):
         self.assertEqual(result, ({'foo': 1}, 201))
         self.assertEqual(self.mock_logic.call_args_list,
                          [mock.call(10, x=20, y=30, a='foo', b=2)])
+
+    def test_handle_http_unsupported_http_method_with_body(self):
+        self.mock_request.method = 'GET'
+        self.mock_request.content_type = 'application/json; charset=UTF8'
+        self.mock_request.mimetype = 'application/json'
+        self.mock_request.json = None
+        self.mock_request.values = {'a': 'foo', 'b': '1'}
+        result = self.call_handle_http((10,))
+        expected = ({'foo': 1}, 200)
+        self.assertEqual(expected, result)
 
     def test_handle_http_with_params(self):
         self.mock_request.method = 'DELETE'

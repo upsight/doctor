@@ -12,7 +12,7 @@ except ImportError:  # pragma: no cover
     raise ImportError('You must install flask to use the '
                       'doctor.flask module.')
 
-from .constants import MAX_RESPONSE_LENGTH
+from .constants import HTTP_METHODS_WITH_JSON_BODY, MAX_RESPONSE_LENGTH
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      ParseError, NotFoundError, SchemaValidationError,
                      UnauthorizedError)
@@ -102,7 +102,8 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
             # mimetype is just the content-type, where as content_type can
             # contain encoding, charset, and language information.  e.g.
             # `Content-Type: application/json; charset=UTF8`
-            if request.mimetype == 'application/json':
+            if (request.mimetype == 'application/json' and
+                    request.method in HTTP_METHODS_WITH_JSON_BODY):
                 # This is a proper typed JSON request. The parameters will be
                 # encoded into the request body as a JSON blob.
                 params = request.json

@@ -320,7 +320,8 @@ class TestResourceSchema(TestCase):
                 [mock.call(schema, s.logic, method.upper(), request=s.request,
                            response=s.response, params=s.params,
                            required=s.required, title=s.title, before=None,
-                           after=None, allowed_exceptions=None)])
+                           after=None, allowed_exceptions=None,
+                           omit_args=None)])
 
 
 class TestResourceSchemaAnnotation(TestCase):

@@ -135,7 +135,7 @@ class ResourceSchema(Schema):
     def _create_http_method(self, logic, http_method, request=None,
                             response=None, params=None, required=None,
                             before=None, after=None, allowed_exceptions=None,
-                            title=None):
+                            title=None, omit_args=None):
         """Create a handler method to be used in a handler class.
 
         :param callable logic: The underlying function to execute with the
@@ -155,7 +155,10 @@ class ResourceSchema(Schema):
             classes will be re-raised instead of turning them into 500 errors.
         :param str title: A short title for the route.  e.g. 'Create Foo' might
             be used for a POST method on a FooListHandler.
-        :returns: a handler function
+        :param list(str) omit_args: If specified this is a list of strings that
+            correspond to logic function arguments that should be omitted when
+            considering which values to require for the request parameters.
+        :returns: A handler function
         """
         if request:
             request_schema = self.resolve('#/definitions/{}'.format(request))
@@ -181,9 +184,14 @@ class ResourceSchema(Schema):
         after = after if after else (lambda *args, **kwargs: None)
 
         try:
-            logic._argspec = inspect.getargspec(undecorate_func(logic))
+            argspec = inspect.getargspec(undecorate_func(logic))
         except TypeError:
-            logic._argspec = inspect.getargspec(logic.__call__)
+            argspec = inspect.getargspec(logic.__call__)
+        if omit_args:
+            args = [arg for arg in argspec.args if arg not in omit_args]
+            argspec = inspect.ArgSpec(args, argspec.varargs, argspec.keywords,
+                                      argspec.defaults)
+        logic._argspec = argspec
 
         @functools.wraps(logic)
         def fn(handler, *args, **kwargs):
@@ -203,7 +211,7 @@ class ResourceSchema(Schema):
 
     def http_delete(self, logic, request=None, response=None, params=None,
                     required=None, before=None, after=None,
-                    allowed_exceptions=None, title=None):
+                    allowed_exceptions=None, title=None, omit_args=None):
         """Create a handler method for a delete request.
 
         :see: :meth:`_create_http_method`
@@ -211,11 +219,12 @@ class ResourceSchema(Schema):
         return self._create_http_method(
             logic, 'DELETE', request=request, response=response, params=params,
             required=required, before=before, after=after,
-            allowed_exceptions=allowed_exceptions, title=title)
+            allowed_exceptions=allowed_exceptions, title=title,
+            omit_args=omit_args)
 
     def http_get(self, logic, request=None, response=None, params=None,
                  required=None, before=None, after=None,
-                 allowed_exceptions=None, title=None):
+                 allowed_exceptions=None, title=None, omit_args=None):
         """Create a handler method for a get request.
 
         :see: :meth:`_create_http_method`
@@ -223,11 +232,12 @@ class ResourceSchema(Schema):
         return self._create_http_method(
             logic, 'GET', request=request, response=response, params=params,
             required=required, before=before, after=after,
-            allowed_exceptions=allowed_exceptions, title=title)
+            allowed_exceptions=allowed_exceptions, title=title,
+            omit_args=omit_args)
 
     def http_post(self, logic, request=None, response=None, params=None,
                   required=None, before=None, after=None,
-                  allowed_exceptions=None, title=None):
+                  allowed_exceptions=None, title=None, omit_args=None):
         """Create a handler method for a post request.
 
         :see: :meth:`_create_http_method`
@@ -235,11 +245,12 @@ class ResourceSchema(Schema):
         return self._create_http_method(
             logic, 'POST', request=request, response=response, params=params,
             required=required, before=before, after=after,
-            allowed_exceptions=allowed_exceptions, title=title)
+            allowed_exceptions=allowed_exceptions, title=title,
+            omit_args=omit_args)
 
     def http_put(self, logic, request=None, response=None, params=None,
                  required=None, before=None, after=None,
-                 allowed_exceptions=None, title=None):
+                 allowed_exceptions=None, title=None, omit_args=None):
         """Create a handler method for a put request.
 
         :see: :meth:`_create_http_method`
@@ -247,4 +258,5 @@ class ResourceSchema(Schema):
         return self._create_http_method(
             logic, 'PUT', request=request, response=response, params=params,
             required=required, before=before, after=after,
-            allowed_exceptions=allowed_exceptions, title=title)
+            allowed_exceptions=allowed_exceptions, title=title,
+            omit_args=omit_args)

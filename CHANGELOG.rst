@@ -6,6 +6,11 @@ Next release (in development)
 
 - Updates doctor to not parse json bodies on GET/DELETE requests, and instead
   try to parse them from the query string or form parameters.
+- Fixes a bug introducded in v1.1.3. This bug would only occur if a
+  logic function was decorated and that decorator passed a positional
+  argument to the logic function. Doctor would think the positional
+  argument passed by the decorator was a required request parameter even
+  if it was specified to be omitted in the router using omit_args.
 
 v1.1.3 (2017-04-28)
 -------------------

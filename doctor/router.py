@@ -149,7 +149,8 @@ class Router(object):
                 func = http_func(
                     opts['logic'], params=params, required=required,
                     response=opts.get('response'), title=opts.get('title'),
-                    allowed_exceptions=opts.get('allowed_exceptions'))
+                    allowed_exceptions=opts.get('allowed_exceptions'),
+                    omit_args=omit_args)
                 # Apply all decoraters to the `func`
                 decorators = opts.get('decorators', [])
                 decorators.extend(handler_decorators)

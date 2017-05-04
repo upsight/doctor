@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.1.4 (2017-05-04)
+-------------------
+
 - Updates doctor to not parse json bodies on GET/DELETE requests, and instead
   try to parse them from the query string or form parameters.
 - Fixes a bug introducded in v1.1.3. This bug would only occur if a

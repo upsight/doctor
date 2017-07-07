@@ -99,7 +99,7 @@ def get_example_value(property_schema, schema, key):
     :returns: mixed
     """
     # If the schema is a oneOf, anyOf, etc. definition, resolve it first.
-    if OF_TYPES.intersection(list(property_schema.keys())):
+    if OF_TYPES.intersection(property_schema.keys()):
         of_type = list(property_schema.keys())[0]
         fragment = '#{0}/0'.format(of_type)
         try:
@@ -412,7 +412,7 @@ def resolve_of_type(annotation, schema):
 
 def resolve(fragment, schema, annotation, fragment_stack=None):
     # If the schema is a oneOf, anyOf, etc. definition, resolve it first.
-    if OF_TYPES.intersection(list(schema.keys())):
+    if OF_TYPES.intersection(schema.keys()):
         schema = resolve_of_type(annotation, schema)
     try:
         return annotation.schema.resolve(fragment, schema)
@@ -873,7 +873,7 @@ class BaseHarness(object):
                 raise SchemaError('Error resolving #{} from {}. {}'.format(
                     prop, properties, e))
             # If the property is a oneOf or anyOf definition, resolve it first.
-            if OF_TYPES.intersection(list(resolved_property.keys())):
+            if OF_TYPES.intersection(resolved_property.keys()):
                 resolved_property = resolve_of_type(
                     annotation, resolved_property)
 
@@ -901,7 +901,7 @@ class BaseHarness(object):
                 resolved_properties[prop]['items'] = resolved_items
         values = {
             key: get_example_value(resolved, schema, key)
-            for key, resolved in list(resolved_properties.items())
+            for key, resolved in resolved_properties.items()
         }
         if defined_values:
             values.update(defined_values['values'])

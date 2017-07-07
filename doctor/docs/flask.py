@@ -8,8 +8,10 @@ validation don't need to include Sphinx in their runtime dependencies.
 from __future__ import absolute_import
 
 import json
-import urlparse
 from collections import defaultdict
+
+import six
+from six.moves.urllib import parse
 
 from ..resource import ResourceSchemaAnnotation
 from ..utils import get_module_attr
@@ -68,7 +70,8 @@ class AutoFlaskHarness(BaseHarness):
                 if annotation is not None:
                     annotations.append(annotation)
             if annotations:
-                heading = self._get_annotation_heading(view_class, str(rule))
+                heading = self._get_annotation_heading(view_class,
+                                                       six.text_type(rule))
                 section_map[heading].append((rule, view_class, annotations))
 
         # Loop through each heading and it's items and yield the values.
@@ -107,12 +110,12 @@ class AutoFlaskHarness(BaseHarness):
         # otherwise the query string parameter won't get parsed correctly
         # by doctor.
         if annotation.http_method in ('DELETE', 'GET'):
-            for key, value in example_values.iteritems():
+            for key, value in list(example_values.items()):
                 if isinstance(value, (dict, list)):
                     example_values[key] = json.dumps(value)
         _, path = rule.build(example_values, append_unknown=True)
         if annotation.http_method not in ('DELETE', 'GET'):
-            parsed_path = urlparse.urlparse(path)
+            parsed_path = parse.urlparse(path)
             path = parsed_path.path
             params = example_values
         else:

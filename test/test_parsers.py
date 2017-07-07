@@ -61,7 +61,7 @@ class TestParsers(TestCase):
                  'float': ['bad'],
                  'integer': ['bad', '0.1'],
                  'object': ['[]', '{']}
-        for allowed_type, bad_values in tests.iteritems():
+        for allowed_type, bad_values in list(tests.items()):
             for bad_value in bad_values:
                 with self.assertRaises(ParseError):
                     parse_value(bad_value, [allowed_type])

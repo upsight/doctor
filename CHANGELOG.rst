@@ -6,6 +6,7 @@ Next release (in development)
 
 - Fixed sphinx build error encountered on Sphinx v1.6.1+ when checking if the
   http domain has already been added.
+- Added support for Python 3.
 
 v1.1.4 (2017-05-04)
 -------------------

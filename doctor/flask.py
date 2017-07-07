@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import logging
 
+import six
 try:
     import flask_restful
     from flask import current_app, request
@@ -120,7 +121,7 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
             try:
                 schema.validate(response, response_validator)
             except SchemaValidationError as e:
-                response_str = str(response)
+                response_str = six.text_type(response)
                 # We need a limit on the response length because logexec
                 # which wraps this log has an 8k (8192 chars) limit.
                 if len(response_str) > MAX_RESPONSE_LENGTH:
@@ -133,15 +134,15 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, ParseError, SchemaValidationError) as e:
         errors = getattr(e, 'errors', None)
-        raise HTTP400Exception(unicode(e), errobj=errors)
+        raise HTTP400Exception(e, errobj=errors)
     except UnauthorizedError as e:
-        raise HTTP401Exception(unicode(e))
+        raise HTTP401Exception(e)
     except ForbiddenError as e:
-        raise HTTP403Exception(unicode(e))
+        raise HTTP403Exception(e)
     except NotFoundError as e:
-        raise HTTP404Exception(unicode(e))
+        raise HTTP404Exception(e)
     except ImmutableError as e:
-        raise HTTP409Exception(unicode(e))
+        raise HTTP409Exception(e)
     except Exception as e:
         # Always re-raise exceptions when DEBUG is enabled for development.
         if current_app.config.get('DEBUG', False):
@@ -149,7 +150,7 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
         if allowed_exceptions and any(isinstance(e, cls)
                                       for cls in allowed_exceptions):
             raise
-        logging.exception(unicode(e))
+        logging.exception(e)
         raise HTTP500Exception('Uncaught error in logic function')
 
 

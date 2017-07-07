@@ -8,6 +8,7 @@ import pipes
 import re
 from collections import defaultdict
 
+import six
 try:
     from docutils import nodes
     from docutils.statemachine import ViewList
@@ -98,8 +99,8 @@ def get_example_value(property_schema, schema, key):
     :returns: mixed
     """
     # If the schema is a oneOf, anyOf, etc. definition, resolve it first.
-    if OF_TYPES.intersection(property_schema.keys()):
-        of_type = property_schema.keys()[0]
+    if OF_TYPES.intersection(list(property_schema.keys())):
+        of_type = list(property_schema.keys())[0]
         fragment = '#{0}/0'.format(of_type)
         try:
             property_schema = schema.resolve(fragment, property_schema)
@@ -107,7 +108,7 @@ def get_example_value(property_schema, schema, key):
             raise SchemaError(
                 'Error resolving example value for {}. Could not resolve {} '
                 'from {}. {}'.format(
-                    key, fragment, property_schema, unicode(e)))
+                    key, fragment, property_schema, e))
 
     # Resolve the type from the property.  Grab the first type if the property
     # is an array of multiple types.
@@ -115,8 +116,8 @@ def get_example_value(property_schema, schema, key):
         schema_type = schema.resolve('#type', property_schema)
     except SchemaError as e:
         raise SchemaError('Error resolving #type from {} for {}. {}'.format(
-            property_schema, key, unicode(e)))
-    if not isinstance(schema_type, basestring):
+            property_schema, key, e))
+    if not isinstance(schema_type, six.string_types):
         schema_type = schema_type[0]
 
     # Handles the special cases where we have an object without an example
@@ -144,11 +145,11 @@ def get_example_value(property_schema, schema, key):
         # Catch the error so we can re-raise with the offending key.
         raise SchemaError(
             'Error resolving #example from {} for property `{}`. {}'.format(
-                property_schema, key, unicode(e)))
+                property_schema, key, e))
     if isinstance(value, dict):
         # If the example value is a dict, it might be a oneOf. If so, we'll
         # use the first value as an example. FIXME: provide examples for each?
-        keys = value.keys()
+        keys = list(value.keys())
         if len(keys) == 1 and keys[0] == 'oneOf':
             value = value['oneOf'][0]
     return value
@@ -176,7 +177,7 @@ def get_example_for_object(object_schema, schema):
         properties = schema.resolve('#properties', object_schema)
     except SchemaError as e:
         raise SchemaError('Error resolving #properties for {}. {}'.format(
-            object_schema, unicode(e)))
+            object_schema, e))
     return {
         key: get_example_value(
             schema.resolve('#' + key, properties), schema, key)
@@ -243,9 +244,9 @@ def get_json_object_lines(annotation, schema, field, url_params, request=False,
             prop_schema = annotation.schema.resolve('#' + prop, properties)
         except SchemaError as e:
             raise SchemaError('Error resolving #{} from {}. {}'.format(
-                prop, properties, unicode(e)))
+                prop, properties, e))
         types = resolve('#type', prop_schema, annotation, [prop])
-        if isinstance(types, basestring):
+        if isinstance(types, six.string_types):
             types = [types]
         types = [TYPE_MAP.get(t, t) for t in types]
         description = resolve('#description', prop_schema, annotation, [prop])
@@ -331,7 +332,7 @@ def get_json_schema_lines(annotation, schema, field, route, request=False):
     """
     url_params = URL_PARAMS_RE.findall(route)
     schema_type = resolve('#type', schema, annotation)
-    if not isinstance(schema_type, basestring):
+    if not isinstance(schema_type, six.string_types):
         schema_type = schema_type[0]
     if schema_type == 'object':
         return get_json_object_lines(annotation, schema, field, url_params,
@@ -369,9 +370,9 @@ def normalize_route(route):
     """Strip some of the ugly regexp characters from the given pattern.
 
     >>> normalize_route('^/user/<user_id:int>/?$')
-    '/user/(user_id:int)/'
+    u'/user/(user_id:int)/'
     """
-    normalized_route = str(route).lstrip('^').rstrip('$').rstrip('?')
+    normalized_route = six.text_type(route).lstrip('^').rstrip('$').rstrip('?')
     normalized_route = normalized_route.replace('<', '(').replace('>', ')')
     return normalized_route
 
@@ -389,7 +390,7 @@ def prefix_lines(lines, prefix):
     :param str prefix: Prefix to add to the lines. Usually an indent.
     :returns: list
     """
-    if isinstance(lines, basestring):
+    if isinstance(lines, six.string_types):
         lines = lines.splitlines()
     return [prefix + line for line in lines]
 
@@ -404,14 +405,14 @@ def resolve_of_type(annotation, schema):
     :param dict schema: A dict of the item's schema.
     :returns: The resolved reference of the first item in the list.
     """
-    of_type = schema.keys()[0]
+    of_type = list(schema.keys())[0]
     fragment = '#{0}/0'.format(of_type)
     return annotation.schema.resolve(fragment, schema)
 
 
 def resolve(fragment, schema, annotation, fragment_stack=None):
     # If the schema is a oneOf, anyOf, etc. definition, resolve it first.
-    if OF_TYPES.intersection(schema.keys()):
+    if OF_TYPES.intersection(list(schema.keys())):
         schema = resolve_of_type(annotation, schema)
     try:
         return annotation.schema.resolve(fragment, schema)
@@ -419,7 +420,7 @@ def resolve(fragment, schema, annotation, fragment_stack=None):
         message = 'Error resolving {}{} definition for {} {} schema: {}'.format(
             fragment, (' from ' + '=>'.join(fragment_stack)
                        if fragment_stack else ''),
-            get_name(annotation.logic), annotation.http_method, unicode(e))
+            get_name(annotation.logic), annotation.http_method, e)
         raise SphinxError(message)
 
 
@@ -453,14 +454,15 @@ class BaseDirective(Directive):
     def _make_example(
             self, route, handler, annotation):  # pragma: no cover
         self.harness.setup_request(self, route, handler, annotation)
-        headers = self.harness._get_headers(str(route), annotation)
+        headers = self.harness._get_headers(six.text_type(route), annotation)
         try:
             response_data = self.harness.request(route, handler, annotation)
             return get_example_lines(headers, **response_data)
         except Exception as e:
             raise SphinxError(
                 'Error rendering {method} {route} example: {exc}'.format(
-                    method=annotation.http_method, route=route, exc=unicode(e))
+                    method=annotation.http_method, route=route,
+                    exc=e)
             )
         finally:
             self.harness.teardown_request(self, route, handler, annotation)
@@ -496,7 +498,7 @@ class BaseDirective(Directive):
                 annotation.handler = handler
                 heading_to_annotations_map[heading].append(annotation)
 
-        headings = heading_to_annotations_map.keys()
+        headings = list(heading_to_annotations_map.keys())
         headings.sort()
         previous_heading = None
         for heading in headings:
@@ -528,8 +530,8 @@ class BaseDirective(Directive):
                         route=normalized_route, request=True))
 
                 # Document any request headers.
-                defined_headers = self.harness._get_headers(
-                    str(route), annotation).keys()
+                defined_headers = list(self.harness._get_headers(
+                    six.text_type(route), annotation).keys())
                 defined_headers.sort()
                 for header in defined_headers:
                     definition = self.harness.header_definitions.get(
@@ -787,7 +789,7 @@ class BaseHarness(object):
             return handler.schematic_title
 
         heading = ''
-        handler_path = str(handler)
+        handler_path = six.text_type(handler)
         try:
             handler_file_name = handler_path.split('.')[-2]
         except IndexError:
@@ -830,7 +832,7 @@ class BaseHarness(object):
         """
         headers = self.headers.copy()
         defined_header_values = self.defined_header_values.get(
-            (annotation.http_method.lower(), str(route)))
+            (annotation.http_method.lower(), six.text_type(route)))
         if defined_header_values is not None:
             if defined_header_values['update']:
                 headers.update(defined_header_values['values'])
@@ -849,7 +851,7 @@ class BaseHarness(object):
             as values.
         """
         defined_values = self.defined_example_values.get(
-            (annotation.http_method.lower(), str(route)))
+            (annotation.http_method.lower(), six.text_type(route)))
         if defined_values and not defined_values['update']:
             return defined_values['values']
         schema = annotation.schema
@@ -859,7 +861,7 @@ class BaseHarness(object):
                 if annotation.request_schema else {})
         except SchemaError as e:
             raise SchemaError('Error resolving #properties from {}. {}'.format(
-                annotation.request_schema, unicode(e)))
+                annotation.request_schema, e))
         resolved_properties = {}
         for prop in properties:
             try:
@@ -869,9 +871,9 @@ class BaseHarness(object):
                     '#' + prop, properties)
             except Exception as e:
                 raise SchemaError('Error resolving #{} from {}. {}'.format(
-                    prop, properties, unicode(e)))
+                    prop, properties, e))
             # If the property is a oneOf or anyOf definition, resolve it first.
-            if OF_TYPES.intersection(resolved_property.keys()):
+            if OF_TYPES.intersection(list(resolved_property.keys())):
                 resolved_property = resolve_of_type(
                     annotation, resolved_property)
 
@@ -881,7 +883,7 @@ class BaseHarness(object):
             except SchemaError as e:
                 raise SchemaError(
                     'Error resolving #type from {} for property {}. {}'.format(
-                        resolved_property, prop, unicode(e)))
+                        resolved_property, prop, e))
             # Attempt to resolve any $refs in an array type's items key.
             # We are prefixing the ref with the url so that we can resolve
             # references in other yaml files.
@@ -895,11 +897,11 @@ class BaseHarness(object):
                 except SchemaError as e:
                     raise SchemaError(
                         'Error resolving array items $ref: {} for property {}. '
-                        '{}'.format(ref, prop, unicode(e)))
+                        '{}'.format(ref, prop, e))
                 resolved_properties[prop]['items'] = resolved_items
         values = {
             key: get_example_value(resolved, schema, key)
-            for key, resolved in resolved_properties.iteritems()
+            for key, resolved in list(resolved_properties.items())
         }
         if defined_values:
             values.update(defined_values['values'])

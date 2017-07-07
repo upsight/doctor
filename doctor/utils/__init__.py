@@ -3,6 +3,7 @@ import os
 import re
 import sys
 
+import six
 try:
     from sphinx.util.docstrings import prepare_docstring
 except ImportError:
@@ -39,7 +40,7 @@ def exec_params(call, *args, **kwargs):
     """
     arg_spec = getattr(call, '_argspec', None)
     if arg_spec and not arg_spec.keywords:
-        kwargs = {key: value for key, value in kwargs.iteritems()
+        kwargs = {key: value for key, value in kwargs.items()
                   if key in arg_spec.args}
     return call(*args, **kwargs)
 
@@ -69,7 +70,7 @@ def undecorate_func(func):
 def get_module_attr(module_filename, module_attr, namespace=None):
     """Get an attribute from a module.
 
-    This uses execfile to load the module with a private namespace, and then
+    This uses exec to load the module with a private namespace, and then
     plucks and returns the given attribute from that module's namespace.
 
     Note that, while this method doesn't have any explicit unit tests, it is
@@ -97,7 +98,8 @@ def get_module_attr(module_filename, module_attr, namespace=None):
     try:
         os.chdir(module_dir)
         sys.path.append(module_dir)
-        execfile(module_filename, namespace)
+        with open(module_filename, 'r') as mf:
+            exec(compile(mf.read(), module_filename, 'exec'), namespace)
         return namespace[module_attr]
     finally:
         os.chdir(old_cwd)
@@ -117,7 +119,7 @@ def get_description_lines(docstring):
     if prepare_docstring is None:
         raise ImportError('sphinx must be installed to use this function.')
 
-    if not isinstance(docstring, basestring):
+    if not isinstance(docstring, six.string_types):
         return []
     lines = []
     for line in prepare_docstring(docstring):

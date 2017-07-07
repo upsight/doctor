@@ -4,6 +4,8 @@ Release History
 Next release (in development)
 -----------------------------
 
+- Added support for Python 3.
+
 v1.1.4 (2017-05-04)
 -------------------
 

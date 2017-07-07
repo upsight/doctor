@@ -164,7 +164,7 @@ class TestDocsBase(TestCase):
     def test_get_example_value(self):
         definitions = self.schema.resolve('#/definitions')
         results = [base.get_example_value(prop_schema, self.schema, key)
-                   for key, prop_schema in sorted(definitions.iteritems())]
+                   for key, prop_schema in sorted(definitions.items())]
         expected = [
             'example string',
             123,

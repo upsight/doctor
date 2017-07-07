@@ -104,7 +104,7 @@ class SchemaRefResolver(jsonschema.RefResolver):
                 return result
             except yaml.parser.ParserError as e:
                 logging.debug('Error parsing {!r} as YAML: {}'.format(
-                    uri, str(e)))
+                    uri, e))
         return super(SchemaRefResolver, self).resolve_remote(uri)
 
 
@@ -177,8 +177,7 @@ class Schema(object):
         try:
             validator.validate(value)
         except Exception as e:
-            message = unicode(e)
-            logging.debug(message, exc_info=e)
+            logging.debug(e, exc_info=e)
             if isinstance(e, SchematicError):
                 raise
             else:

@@ -105,7 +105,7 @@ class Router(object):
         """
         schema = self.get_schema(schema_file)
         created_routes = []
-        for route, methods in routes.iteritems():
+        for route, methods in routes.items():
             handler = None
             base_handler_class = methods.pop('base_handler_class',
                                              self.default_base_handler)

@@ -115,22 +115,29 @@ class TestUtils(TestCase):
         actual = exec_params(logic, *args, **kwargs)
         self.assertEqual((1, 2, 3, {'e': 2}), actual)
 
-    @mock.patch('doctor.utils.execfile', create=True)
+    @mock.patch('doctor.utils.open',
+                new_callable=mock.mock_open,
+                read_data='mock_attr = "something"')
+    @mock.patch('doctor.utils.compile', create=True)
     @mock.patch('doctor.utils.os', autospec=True)
     @mock.patch('doctor.utils.sys', autospec=True)
-    def test_get_module_attr(self, mock_sys, mock_os, mock_execfile):
-        def side_effect(module_filename, namespace):
+    def test_get_module_attr(self, mock_sys, mock_os, mock_compile, m):
+        def side_effect(source, filename, mode, flags=0, dont_inherit=False):
             self.assertEqual(mock_sys.path, ['foo', 'bar', '/foo/bar'])
-            self.assertEqual(module_filename, '/foo/bar/baz')
-            self.assertEqual(namespace, {'__file__': module_filename})
-            namespace['mock_attr'] = mock.sentinel.mock_attr
-        mock_execfile.side_effect = side_effect
+            return compile(source, filename, mode, flags=flags,
+                           dont_inherit=dont_inherit)
+        mock_compile.side_effect = side_effect
         mock_os.getcwd.return_value = mock.sentinel.old_cwd
         mock_os.path = os.path
         mock_sys.path = ['foo', 'bar']
-        result = get_module_attr('/foo/bar/baz', 'mock_attr')
-        self.assertEqual(result, mock.sentinel.mock_attr)
-        self.assertEqual(len(mock_execfile.call_args_list), 1)
+        namespace = {}
+        result = get_module_attr('/foo/bar/baz', 'mock_attr',
+                                 namespace=namespace)
+        m.assert_called_once_with('/foo/bar/baz', 'r')
+        mock_compile.assert_called_once_with('mock_attr = "something"',
+                                             '/foo/bar/baz', 'exec')
+        self.assertEqual(result, 'something')
+        self.assertEqual(namespace['__file__'], '/foo/bar/baz')
         self.assertEqual(mock_os.chdir.call_args_list,
                          [mock.call('/foo/bar'),
                           mock.call(mock.sentinel.old_cwd)])

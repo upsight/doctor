@@ -54,8 +54,8 @@ def delete_note(note_id):
 def status():
     return 'Notes API v1.0.0'
 
-# -- mark-app
 
+# -- mark-app
 router = FlaskRouter(os.path.abspath('..'))
 routes = router.create_routes('API Status', 'schema.yaml', {
     '/': {

@@ -1,9 +1,11 @@
 import os
 from setuptools import setup
 
-
-execfile(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                      'doctor', '_version.py'))
+# Use exec so pip can get the version before installing the module
+version_filename = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), 'doctor', '_version.py'))
+with open(version_filename, 'r') as vf:
+    exec(compile(vf.read(), version_filename, 'exec'), globals(), locals())
 
 setup(
     name='doctor',
@@ -18,6 +20,7 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
     ],
     keywords=['python', 'flask', 'json', 'jsonschema', 'validation',
               'documentation', 'sphinx'],
@@ -33,6 +36,7 @@ setup(
         'pyyaml >= 3.11, < 4.0',
         'rfc3987 >= 1.3.4, < 2.0.0',
         'simplejson >= 3.6.3, < 4.0.0',
+        'six >= 1.10.0, < 2.0.0',
         'strict-rfc3339 >= 0.5, < 1.0',
     ],
     extras_require={

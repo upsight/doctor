@@ -632,7 +632,7 @@ class BaseDirective(Directive):
         if cls.directive_name is None:
             raise NotImplementedError('directive_name must be set by '
                                       'subclasses of BaseDirective')
-        if 'http' not in app.domains:
+        if not app.registry.has_domain('http'):
             setup_httpdomain(app)
         app.add_config_value('{}_harness'.format(cls.directive_name),
                              None, 'env')

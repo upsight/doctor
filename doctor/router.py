@@ -89,10 +89,12 @@ class Router(object):
         Routes will be returned as a list of tuples containing the route and
         handler class to map to.  e.g.
 
-        [
-            ('^/app/<app_id:int>/?$', AppHandler),
-            ('^/app/?$', AppListHandler),
-        ]
+        .. code-block:: python
+
+            [
+                ('^/app/<app_id:int>/?$', AppHandler),
+                ('^/app/?$', AppListHandler),
+            ]
 
         :param str docs_group_title: The documentation title to group the
             routes underneath.

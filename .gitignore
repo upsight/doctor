@@ -5,3 +5,5 @@
 /.noseids
 /.tox
 /_test
+/build
+/dist

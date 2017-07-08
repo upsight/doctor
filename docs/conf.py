@@ -12,6 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from __future__ import absolute_import
 import sys
 import os
 
@@ -150,10 +151,6 @@ html_static_path = ['_static']
 # using the given strftime format.
 #html_last_updated_fmt = '%b %d, %Y'
 
-# If true, SmartyPants will be used to convert quotes and dashes to
-# typographically correct entities.
-html_use_smartypants = True
-
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
 
@@ -270,7 +267,7 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 
-from .flask_harness import CustomFlaskHarness
+from docs.flask_harness import CustomFlaskHarness
 
 
 autoflask_harness = CustomFlaskHarness('examples/flask/app.py',

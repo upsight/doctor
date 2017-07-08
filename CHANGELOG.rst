@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.2.1 (2017-07-07)
+-------------------
+
 - Fixed sphinx build error encountered on Sphinx v1.6.1+ when checking if the
   http domain has already been added.
 

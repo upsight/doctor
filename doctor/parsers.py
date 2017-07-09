@@ -11,8 +11,8 @@ import six
 from doctor.errors import ParseError
 
 
-_bracket_strings = ('[', b'[')
-_brace_strings = ('{', b'{')
+_bracket_strings = ('[', ord('['))
+_brace_strings = ('{', ord('{'))
 _false_strings = ('false', b'false')
 _true_strings = ('true', b'true')
 

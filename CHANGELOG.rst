@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.2.2 (2017-07-10)
+-------------------
+
+- More fixes for Python 3.
+
 v1.2.1 (2017-07-07)
 -------------------
 

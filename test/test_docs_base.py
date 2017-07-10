@@ -289,13 +289,14 @@ class TestDocsBase(TestCase):
             'type': 'integer',
             'description': 'An integer and we are missing the example'
         }
-        with self.assertRaises(SchemaError) as cm:
+        expected_message = (
+            r"Error resolving #example from \{'type': 'integer', "
+            r"'description': 'An integer and we are missing the "
+            r"example'\} for property `foobar`\. Unresolvable JSON "
+            r"pointer: u?'example' \(from \)"
+        )
+        with self.assertRaisesRegexp(SchemaError, expected_message):
             base.get_example_value(property_schema, self.schema, 'foobar')
-        expected = ("Error resolving #example from {'type': 'integer', "
-                    "'description': 'An integer and we are missing the "
-                    "example'} for property `foobar`. Unresolvable JSON "
-                    "pointer: u'example' (from )")
-        self.assertEqual(expected, cm.exception.message)
 
     def test_get_example_lines_json(self):
         """Tests an example when the response is valid JSON."""

@@ -132,12 +132,12 @@ class TestSchemaRefResolver(TestCase):
 
     def test_resolve_error(self):
         with self.assertRaisesRegexp(
-                SchemaError, r"Unresolvable JSON pointer: u'invalid_ref'"):
+                SchemaError, r"Unresolvable JSON pointer: u?'invalid_ref'"):
             self.resolver.resolve('#/invalid_ref')
 
     def test_resolve_error_chain(self):
         expected_message = (
-            r"Unresolvable JSON pointer: u'invalid_ref_chain_3' \(from "
+            r"Unresolvable JSON pointer: u?'invalid_ref_chain_3' \(from "
             r"/ => /#/invalid_ref_chain_1 => /#/invalid_ref_chain_2\)")
         with self.assertRaisesRegexp(SchemaError, expected_message):
             self.resolver.resolve('#/invalid_ref_chain_1')

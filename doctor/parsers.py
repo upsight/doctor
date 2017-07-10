@@ -11,6 +11,12 @@ import six
 from doctor.errors import ParseError
 
 
+_bracket_strings = ('[', ord('['))
+_brace_strings = ('{', ord('{'))
+_false_strings = ('false', b'false')
+_true_strings = ('true', b'true')
+
+
 def _parse_array(value):
     """Coerce value into an list.
 
@@ -20,7 +26,7 @@ def _parse_array(value):
         be parsed as JSON.
     """
     value = value.lstrip()
-    if not value or value[0] != '[':
+    if not value or value[0] not in _bracket_strings:
         return None
     return json.loads(value)
 
@@ -32,9 +38,9 @@ def _parse_boolean(value):
     :returns: bool or None if the value is not a boolean string.
     """
     value = value.lower()
-    if value == 'true':
+    if value in _true_strings:
         return True
-    elif value == 'false':
+    elif value in _false_strings:
         return False
     else:
         return None
@@ -49,7 +55,7 @@ def _parse_object(value):
         be parsed as JSON.
     """
     value = value.lstrip()
-    if not value or value[0] != '{':
+    if not value or value[0] not in _brace_strings:
         return None
     return json.loads(value)
 
@@ -63,10 +69,10 @@ def _parse_string(value):
     :param str value: Value to parse.
     :returns: str
     """
-    if isinstance(value, six.text_type):
-        return value.encode('utf-8')
-    else:
-        return value
+    if (not isinstance(value, six.string_types) and
+            isinstance(value, six.binary_type)):
+        return value.decode('utf-8')
+    return value
 
 
 _parser_funcs = (('boolean', _parse_boolean),

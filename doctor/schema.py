@@ -62,7 +62,7 @@ class SchemaRefResolver(jsonschema.RefResolver):
         except jsonschema.RefResolutionError as e:
             # Failed to find a ref. Make the error a bit prettier so we can
             # figure out where it came from.
-            message = e.message
+            message = e.args[0]
             if self._scopes_stack:
                 message = '{} (from {})'.format(
                     message, self._format_stack(self._scopes_stack))
@@ -190,8 +190,8 @@ class Schema(object):
                         key = error.path[0]
                     except IndexError:
                         key = '_other'
-                    errors[key] = error.message
-                raise SchemaValidationError(e.message, errors=errors)
+                    errors[key] = error.args[0]
+                raise SchemaValidationError(e.args[0], errors=errors)
         return value
 
     def validate_json(self, json_value, validator):

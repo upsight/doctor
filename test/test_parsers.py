@@ -35,7 +35,7 @@ class TestParsers(TestCase):
             ('{"a": 1}', ['object'], {'a': 1}),
             ('foo', ['string'], 'foo'),
             ('"foo"', ['string'], '"foo"'),
-            (u'foø', ['string'], u'foø'.encode('utf-8')),
+            (u'foø', ['string'], u'foø'),
 
             # ambiguous test cases
             ('', ['string', 'null'], None),

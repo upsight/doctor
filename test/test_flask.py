@@ -7,7 +7,7 @@ from doctor.errors import (
     ForbiddenError, ImmutableError, InvalidValueError, ParseError,
     NotFoundError, SchemaValidationError, UnauthorizedError)
 from doctor.flask import (
-    FlaskResourceSchema, SchematicHTTPException, handle_http,
+    FlaskResponse, FlaskResourceSchema, SchematicHTTPException, handle_http,
     HTTP400Exception, HTTP401Exception, HTTP403Exception, HTTP404Exception,
     HTTP409Exception, HTTP500Exception)
 from .base import TestCase
@@ -20,6 +20,10 @@ class TestFlask(TestCase):
 
         self.mock_logic = mock.Mock(spec=['_autospec'])
         self.mock_logic.return_value = {'foo': 1}
+        self.mock_flask_response_logic = mock.Mock(spec=['_autospec'])
+        self.mock_flask_response_logic.return_value = FlaskResponse(
+            '1,2\n3,4', content_type='text/csv',
+            content_disposition='attachement; filename=file.csv')
 
         self.mock_request_patch = mock.patch('doctor.flask.request')
         self.mock_request = self.mock_request_patch.start()
@@ -192,6 +196,16 @@ class TestFlask(TestCase):
         self.assertEqual(self.mock_logic.call_args_list,
                          [mock.call(1, 2, a=3, b=4)])
 
+    def test_handle_http_flask_response(self):
+        result = handle_http(self.schema, self.mock_handler, (1, 2),
+                             {'a': 3, 'b': 4}, self.mock_flask_response_logic,
+                             None, None, None, None)
+        expected = ('1,2\n3,4', 200, {
+            'CONTENT-TYPE': 'text/csv',
+            'CONTENT-DISPOSITION': 'attachement; filename=file.csv'
+        })
+        self.assertEqual(expected, result)
+
     def test_http_error(self):
         """Schematic errors should be re-raised as a SchematicHTTPException."""
         self.mock_request.content_type = 'application/x-www-form-urlencoded'
@@ -267,3 +281,20 @@ class TestFlask(TestCase):
         with self.assertRaisesRegexp(
                 HTTP500Exception, r'Uncaught error in logic function'):
             self.call_handle_http()
+
+
+class FlaskResponseTestCase(TestCase):
+
+    def test_content(self):
+        f = FlaskResponse({'foo': 'bar'})
+        self.assertEqual({'foo': 'bar'}, f.content)
+
+    def test_get_headers(self):
+        f = FlaskResponse('1,dog,cat', content_type='text/csv',
+                          cache_control='max-age=3600')
+        actual = f.get_headers()
+        expected = {
+            'CACHE-CONTROL': 'max-age=3600',
+            'CONTENT-TYPE': 'text/csv',
+        }
+        self.assertEqual(expected, actual)

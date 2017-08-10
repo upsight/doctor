@@ -33,6 +33,25 @@ files reside.
     :start-after: mark-app
     :end-before: # --
 
+Adding Response Headers
+-----------------------
+
+If you need more control over the response, your logic function can return a
+:class:`~doctor.flask.FlaskResponse` instance.  For example if you would like
+to have your logic function force download a csv file you could do the following:
+
+.. code-block:: python
+
+    from doctor.flask import FlaskResponse
+
+    def download_csv():
+        data = '1,2,3\n4,5,6\n'
+        return FlaskResponse(
+            data, content_type='text/csv', 
+            content_disposition='attachment; filename=data.csv')
+
+See :class:`~doctor.response.Response` for all possible response headers that
+:class:`~doctor.flask.FlaskResponse` can be instantiated with.
 
 Example API Documentation
 -------------------------
@@ -47,4 +66,7 @@ Flask Module Documentation
 --------------------------
 
 .. automodule:: doctor.flask
+    :members:
+
+.. automodule:: doctor.response
     :members:

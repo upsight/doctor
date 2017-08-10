@@ -17,6 +17,7 @@ from .constants import HTTP_METHODS_WITH_JSON_BODY, MAX_RESPONSE_LENGTH
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      ParseError, NotFoundError, SchemaValidationError,
                      UnauthorizedError)
+from .response import Response
 from .resource import ResourceSchema
 from .router import Router
 from .utils import exec_params
@@ -131,6 +132,10 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
                                 response_str, exc_info=e)
                 if schema.raise_response_validation_errors:
                     raise
+
+        if isinstance(response, FlaskResponse):
+            return (response.content, STATUS_CODE_MAP.get(request.method, 200),
+                    response.get_headers())
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, ParseError, SchemaValidationError) as e:
         errors = getattr(e, 'errors', None)
@@ -183,3 +188,28 @@ class FlaskRouter(Router):
         super(FlaskRouter, self).__init__(
             schema_dir, resource_schema_class, default_base_handler,
             raise_response_validation_errors)
+
+
+class FlaskResponse(Response):
+
+    """A Flask implementation of the response class.
+
+    See :class:`~doctor.response.Response` for all possible parameters.
+    """
+
+    def get_headers(self):
+        """Gets all the headers for the response.
+
+        Will only return attributes that have been set.  None values will
+        be skipped.
+
+        :returns: A dict of response headers.
+        """
+        headers = {}
+        for attr, value in vars(self).items():
+            if attr == 'content':
+                continue
+            if value is not None:
+                header_key = attr.upper().replace('_', '-')
+                headers[header_key] = six.text_type(value)
+        return headers

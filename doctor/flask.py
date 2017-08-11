@@ -133,9 +133,9 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
                 if schema.raise_response_validation_errors:
                     raise
 
-        if isinstance(response, FlaskResponse):
+        if isinstance(response, Response):
             return (response.content, STATUS_CODE_MAP.get(request.method, 200),
-                    response.get_headers())
+                    response.headers)
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, ParseError, SchemaValidationError) as e:
         errors = getattr(e, 'errors', None)
@@ -188,28 +188,3 @@ class FlaskRouter(Router):
         super(FlaskRouter, self).__init__(
             schema_dir, resource_schema_class, default_base_handler,
             raise_response_validation_errors)
-
-
-class FlaskResponse(Response):
-
-    """A Flask implementation of the response class.
-
-    See :class:`~doctor.response.Response` for all possible parameters.
-    """
-
-    def get_headers(self):
-        """Gets all the headers for the response.
-
-        Will only return attributes that have been set.  None values will
-        be skipped.
-
-        :returns: A dict of response headers.
-        """
-        headers = {}
-        for attr, value in vars(self).items():
-            if attr == 'content':
-                continue
-            if value is not None:
-                header_key = attr.upper().replace('_', '-')
-                headers[header_key] = six.text_type(value)
-        return headers

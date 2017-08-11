@@ -4,6 +4,12 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.3.0 (2017-08-11)
+-------------------
+
+- Added a Response class that can be returned from logic functions in order
+  to add/modify response headers.
+
 v1.2.2 (2017-07-10)
 -------------------
 

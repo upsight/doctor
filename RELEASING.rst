@@ -17,6 +17,6 @@ When a release is ready, use the following steps to release the new version:
     Server response (200): OK
     $ python setup.py bdist_wheel upload -r pypi
     ...
-    Submitting /Users/aaron/projects/doctor/dist/doctor-1.3.0-py2-none-any.whl to https://upload.pypi.org/legacy/
+    Submitting dist/doctor-1.3.0-py2-none-any.whl to https://upload.pypi.org/legacy/
     Server response (200): OK
 

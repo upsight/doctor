@@ -10,6 +10,7 @@ from doctor.flask import (
     FlaskResourceSchema, SchematicHTTPException, handle_http,
     HTTP400Exception, HTTP401Exception, HTTP403Exception, HTTP404Exception,
     HTTP409Exception, HTTP500Exception)
+from doctor.response import Response
 from .base import TestCase
 
 
@@ -20,6 +21,14 @@ class TestFlask(TestCase):
 
         self.mock_logic = mock.Mock(spec=['_autospec'])
         self.mock_logic.return_value = {'foo': 1}
+        self.response_headers = {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': 'attachement; filename=data.csv',
+            'X-Custom-Response-Header': '12345',
+        }
+        self.mock_flask_response_logic = mock.Mock(spec=['_autospec'])
+        self.mock_flask_response_logic.return_value = Response(
+            '1,2\n3,4', self.response_headers)
 
         self.mock_request_patch = mock.patch('doctor.flask.request')
         self.mock_request = self.mock_request_patch.start()
@@ -191,6 +200,17 @@ class TestFlask(TestCase):
         self.assertEqual(result, ({'foo': 1}, 200))
         self.assertEqual(self.mock_logic.call_args_list,
                          [mock.call(1, 2, a=3, b=4)])
+
+    def test_handle_http_response(self):
+        """
+        Verifies we return the correct tuple from handle_http if the result
+        of the logic function is a `Response` instance.
+        """
+        result = handle_http(self.schema, self.mock_handler, (1, 2),
+                             {'a': 3, 'b': 4}, self.mock_flask_response_logic,
+                             None, None, None, None)
+        expected = ('1,2\n3,4', 200, self.response_headers)
+        self.assertEqual(expected, result)
 
     def test_http_error(self):
         """Schematic errors should be re-raised as a SchematicHTTPException."""

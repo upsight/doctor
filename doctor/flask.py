@@ -17,6 +17,7 @@ from .constants import HTTP_METHODS_WITH_JSON_BODY, MAX_RESPONSE_LENGTH
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      ParseError, NotFoundError, SchemaValidationError,
                      UnauthorizedError)
+from .response import Response
 from .resource import ResourceSchema
 from .router import Router
 from .utils import exec_params
@@ -131,6 +132,10 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
                                 response_str, exc_info=e)
                 if schema.raise_response_validation_errors:
                     raise
+
+        if isinstance(response, Response):
+            return (response.content, STATUS_CODE_MAP.get(request.method, 200),
+                    response.headers)
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, ParseError, SchemaValidationError) as e:
         errors = getattr(e, 'errors', None)

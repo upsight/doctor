@@ -17,6 +17,7 @@ Usage
    docs
    schemas
    resource_schemas
+   response
    router
    parsing
    errors

@@ -33,6 +33,28 @@ files reside.
     :start-after: mark-app
     :end-before: # --
 
+Adding Response Headers
+-----------------------
+
+If you need more control over the response, your logic function can return a
+:class:`~doctor.response.Response` instance.  For example if you would like
+to have your logic function force download a csv file you could do the following:
+
+.. code-block:: python
+
+    from doctor.response import Response
+
+    def download_csv():
+        data = '1,2,3\n4,5,6\n'
+        return Response(data, {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': 'attachment; filename=data.csv',
+        })
+
+The :class:`~doctor.response.Response` class takes the response data as the
+first parameter and a dict of HTTP response headers as the second parameter.
+The response headers can contain standard and any custom values.
+
 
 Example API Documentation
 -------------------------

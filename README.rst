@@ -62,7 +62,7 @@ Now tie the endpoint to the logic function with a router.
     
     app = Flask(__name__)
     api = Api(app)
-    for resource, route in all_routes:
+    for route, resource in routes:
         api.add_resource(resource, route)
     
 That's it, you now have a functioning API endpoint you can curl and the request is automatically validated for you based on your

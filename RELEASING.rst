@@ -11,11 +11,11 @@ When a release is ready, use the following steps to release the new version:
 
 .. code-block:: bash
 
-    $ python setup.py sdist upload -r pypi
+    $ python3 setup.py sdist upload -r pypi
     ...
     Submitting dist/doctor-1.3.0.tar.gz to https://upload.pypi.org/legacy/
     Server response (200): OK
-    $ python setup.py bdist_wheel upload -r pypi
+    $ python3 setup.py bdist_wheel upload -r pypi
     ...
     Submitting dist/doctor-1.3.0-py2-none-any.whl to https://upload.pypi.org/legacy/
     Server response (200): OK

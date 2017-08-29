@@ -2,6 +2,7 @@ import json
 
 import mock
 from sphinx.errors import SphinxError
+from werkzeug.routing import Rule
 
 from doctor.docs import base
 from doctor.errors import SchemaError
@@ -668,3 +669,59 @@ class TestDocsBaseHarness(TestCase):
 
         expected = 'Foo Bar (Internal)'
         self.assertEqual(expected, actual)
+
+    def test_get_example_values_get_http_method_with_list_and_dict_vals(self):
+        """
+        This test verifies if the route we are generating example values for
+        is a GET endpoint and the example values are lists or dicts, that we
+        json.dumps them when they are returned.  If the HTTP method is any
+        other method, they will be returned as normal lists or dicts.
+        """
+        def mock_logic():
+            pass
+
+        route = Rule('/foo/bar/')
+        schema = ResourceSchema({
+            'definitions': {
+                'e': {
+                    'type': ['array'],
+                    'description': 'example description for e',
+                    'example': ['example', 'array'],
+                },
+                'f': {
+                    'type': 'object',
+                    'description': 'example description for f',
+                    'properties': {
+                        'str': {
+                            'type': 'string',
+                            'description': 'A string',
+                            'example': 'A String',
+                        },
+                    },
+                    'example': {'str': 'example string'},
+                },
+            }
+        })
+        request_schema = schema._create_request_schema(
+            params=('e', 'f'), required=('e', 'f'))
+
+        annotation = ResourceSchemaAnnotation(
+            logic=mock_logic, http_method='GET', schema=schema,
+            request_schema=request_schema, response_schema=None)
+        harness = base.BaseHarness('http://foo/bar/')
+        example_values = harness._get_example_values(route, annotation)
+        expected = {
+            'e': json.dumps(['example', 'array']),
+            'f': json.dumps({'str': 'example string'}),
+        }
+        self.assertEqual(expected, example_values)
+
+        # Change the http method to something other than GET, they should
+        # not be json dumped.
+        annotation.http_method = 'POST'
+        example_values = harness._get_example_values(route, annotation)
+        expected = {
+            'e': ['example', 'array'],
+            'f': {'str': 'example string'},
+        }
+        self.assertEqual(expected, example_values)

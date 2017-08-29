@@ -905,6 +905,13 @@ class BaseHarness(object):
         }
         if defined_values:
             values.update(defined_values['values'])
+
+        # If this is a GET route, we need to json dumps any parameters that
+        # are lists or dicts.  Otherwise we'll get a 400 error for those params
+        if annotation.http_method == 'GET':
+            for k, v in values.items():
+                if isinstance(v, (list, dict)):
+                    values[k] = json.dumps(v)
         return values
 
 

@@ -4,6 +4,15 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.3.1 (2017-08-29)
+-------------------
+
+- Fixed bug when auto generating documentation for GET endpoints that contained
+  a parameter that was an array or object.  It wasn't getting json dumped, so
+  when the request was made to generate the example response it would get a
+  400 error.
+- Fixed a few typos and bugs in the README quick start example.
+
 v1.3.0 (2017-08-11)
 -------------------
 

@@ -193,6 +193,41 @@ class TestFlask(TestCase):
         }
         self.assertEqual(expected, errors)
 
+    def test_handle_http_raise_response_validaiton_errors_response_class(self):
+        """
+        This test verifies that if the schema attribute
+        `raise_response_validation_errors` is True we raise the
+        exception.  This specifically tests when the response is an instance
+        of ~doctor.response.Response
+        """
+        self.schema = FlaskResourceSchema({
+            'definitions': {
+                'a': {'type': 'string'},
+                'b': {'type': 'integer'},
+                'c': {'type': 'integer'},
+                'response': {
+                    'type': 'object',
+                    'properties': {
+                        'foo': {'type': 'integer'},
+                    },
+                    'additionalProperties': False
+                }
+            }
+        }, raise_response_validation_errors=True)
+        self.mock_logic = mock.Mock(spec=['_autospec'])
+        self.mock_logic.return_value = Response({'dinosaurs': 'are extinct'})
+        self.mock_request.method = 'GET'
+        self.mock_request.content_type = 'application/x-www-form-urlencoded'
+        self.mock_request.values = {'a': 'foo', 'b': '1'}
+        with self.assertRaises(HTTP400Exception) as context:
+            self.call_handle_http((10,), {'b': 2, 'x': 20, 'y': 30})
+        errors = context.exception.errobj
+        expected = {
+            '_other': ("Additional properties are not allowed ('dinosaurs' was "
+                       "unexpected)"),
+        }
+        self.assertEqual(expected, errors)
+
     def test_handle_http_no_schemas(self):
         result = handle_http(self.schema, self.mock_handler, (1, 2),
                              {'a': 3, 'b': 4}, self.mock_logic, None, None,

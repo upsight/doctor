@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+- Fixed response validation when the response was an instance of
+  doctor.response.Response
+
 v1.3.1 (2017-08-29)
 -------------------
 

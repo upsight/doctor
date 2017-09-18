@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import copy
 import logging
 
 import six
@@ -119,8 +120,11 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
         else:
             response = exec_params(logic, *args, **kwargs)
         if response_validator:
+            _response = copy.deepcopy(response)
+            if isinstance(response, Response):
+                _response = response.content
             try:
-                schema.validate(response, response_validator)
+                schema.validate(_response, response_validator)
             except SchemaValidationError as e:
                 response_str = six.text_type(response)
                 # We need a limit on the response length because logexec

@@ -116,6 +116,9 @@ class RouterTestCase(TestCase):
         def logic_post(req1, opt1=None):
             pass
 
+        def logic_put(req1, opt1=None):
+            pass
+
         actual = self.router.create_routes('Annotation', 'annotation.yaml', {
             '^/annotation/?$': {
                 'additional_args': {
@@ -148,6 +151,13 @@ class RouterTestCase(TestCase):
                     'response': 'annotation',
                     'title': 'Custom Title',
                 },
+                'put': {
+                    'logic': logic_put,
+                    # Should be able to override the request schema entirely,
+                    # to use a custom schema instead of one generated from
+                    # the logic function's arguments.
+                    'request': 'name',
+                }
             },
         })
         self.assertEqual('^/annotation/?$', actual[0][0])
@@ -161,5 +171,10 @@ class RouterTestCase(TestCase):
         self.assertEqual('Annotation', handler.schematic_title)
         self.assertEqual(['req1', 'auth'], handler.get.required_args)
         # Since we omitted `req` for the post method, it will only have `auth`
-        # defined in addtional_args as required.
+        # defined in additional_args as required.
         self.assertEqual(['auth'], handler.post.required_args)
+        # Verify that we got the right request schema for the put method.put
+        self.assertEqual(handler.put._schema_annotation.request_schema, {
+            'type': 'string',
+            'description': 'Human readable name.',
+        })

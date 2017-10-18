@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.3.3 (2017-10-18)
+-------------------
+
 - Add request option to router HTTP method dictionary, which allows you to
   override the schema used to validate the request body.
 

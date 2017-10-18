@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+- Add request option to router HTTP method dictionary, which allows you to
+  override the schema used to validate the request body.
+
 v1.3.2 (2017-09-18)
 -------------------
 
@@ -61,7 +64,7 @@ v1.1.3 (2017-04-28)
 - Fixed bug where extra parameters passed on json requests would cause a `TypeError`
   if the logic function used a decorator.
 - Made sure to make decorators a set when applying them to a logic function
-  when creating routes.  This is to prevent a decorator from wrapping a 
+  when creating routes.  This is to prevent a decorator from wrapping a
   function twice if it's defined at the logic level and handler level when
   creating routes.
 

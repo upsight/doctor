@@ -4,7 +4,7 @@ Router
 ======
 
 The :class:`~doctor.router.Router` class dynamically generates
-compatible handlers for doctor.  The 
+compatible handlers for doctor.  The
 :meth:`~doctor.router.Router.create_routes` method provides many
 configuration options for the generated handler and associated methods.  Below
 is an example using all configuration options.
@@ -71,7 +71,7 @@ and the values are a dict of allowed http methods.  e.g.
 Next let's take a look at the dictionary that is the value for each route key.
 You must define a key for each allowable http method.  `delete`, `get`, `post`,
 and `put` are supported.  Each key should have a dictionary as it's value and
-should define at the very least a `logic` key whose value is the function to 
+should define at the very least a `logic` key whose value is the function to
 execute when that HTTP method is called for the route. See :ref:`HTTP Method Options <http-method-options>`
 for all avalable options.  Expanding on the above example:
 
@@ -118,7 +118,7 @@ Generated Handler Options
   in the logic function.  These additional arguments will be applied to all
   defined http methods for the route.
 - `base_handler_class` is the class that should be used as the base class of
-  the dynmaically generated handler  class.  This is only required if you 
+  the dynamically generated handler class.  This is only required if you
   wanted to use a different base class than the default for a particular route.
 - `decorators` is a list of decorators that should be applied to the generated
   handler method.  These are used for special cases where the decorator may
@@ -176,10 +176,14 @@ additional configuration:
 - `logic` is required and should be a function to execute when the HTTP method
   is called for the route.
 - `omit_args` is a list of strings that correspond to logic function arguments
-  that should be omitted when considering which values to require for the 
+  that should be omitted when considering which values to require for the
   request parameters.  This would typically only be required if the logic
   function was decorated by another function that passed an additional
   argument to it that isn't an actual request paramter.
+- `request` should be a key from the definitions section of the schema that
+  identifies which definition should be used to validate the request body.
+  This overrides the schema that would normally be auto-generated from the
+  logic function's arguments.
 - `response` should be a key from the definitions section of the schema that
   identifies which definition should be used to validate the response returned
   by the logic function.

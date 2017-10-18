@@ -130,7 +130,7 @@ class Router(object):
                 omit_args = opts.get('omit_args')
                 params, required = self._get_params_from_func(
                     opts['logic'], omit_args)
-                # If additiona_args was passed update params and required.
+                # If additional_args was passed update params and required.
                 # These are additional arguments that should be documented for
                 # the request, but are not part of the logic function's
                 # signature.
@@ -149,19 +149,20 @@ class Router(object):
 
                 http_func = getattr(method_schema, 'http_' + method)
                 func = http_func(
-                    opts['logic'], params=params, required=required,
-                    response=opts.get('response'), title=opts.get('title'),
+                    opts['logic'], request=opts.get('request'),
+                    response=opts.get('response'), params=params,
+                    required=required, title=opts.get('title'),
                     allowed_exceptions=opts.get('allowed_exceptions'),
                     omit_args=omit_args)
                 # Apply all decoraters to the `func`
                 decorators = opts.get('decorators', [])
                 decorators.extend(handler_decorators)
-                # Make decoratrs a set to remove any duplicates where a
+                # Make decorators a set to remove any duplicates where a
                 # decorator may have been added at the handler level and
                 # the logic level.
                 for decorator in set(decorators):
                     func = decorator(func)
-                handler_methods_and_properites = {
+                handler_methods_and_properties = {
                     '__name__': handler_name,
                     method: func,
                     'schematic_title': docs_group_title,
@@ -170,8 +171,8 @@ class Router(object):
                 # new method to the existing handler.
                 if handler is not None:
                     setattr(handler, method,
-                            handler_methods_and_properites[method])
-                    # This is specific to Flask.  It's MethodView class
+                            handler_methods_and_properties[method])
+                    # This is specific to Flask.  Its MethodView class
                     # initializes the methods attribute in __new__ so we
                     # need to add all the other http methods we are defining
                     # on the handler after it gets created by type.
@@ -182,7 +183,7 @@ class Router(object):
                     # method attached.
                     handler = type(
                         handler_name, (base_handler_class,),
-                        handler_methods_and_properites)
+                        handler_methods_and_properties)
                     # Increment `_num` so that the next handler name created
                     # is different from the previous.
                     self._num += 1

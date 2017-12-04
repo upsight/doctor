@@ -129,10 +129,6 @@ class RouterTestCase(TestCase):
                 'handler_name': 'AnnotationHandlerV1',
 
                 'get': {
-                    # Adding a duplicate here and ensuring we don't end up
-                    # wrapping this method twice.  Instead it should perform
-                    # a set operation and only wrap the method once.
-                    'decorators': [does_nothing],
                     'logic': logic_get,
                     # Specifying a different schema file that contains `someid`
                     # for the response.  An example of overriding the schema

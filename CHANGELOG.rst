@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.3.4 (2017-12-04)
+-------------------
+
 - Removed set operation on decorators when applying them to the logic function.
   Since set types don't have an explicit order it caused unpredicatable
   behavior as the decorators weren't always applied to the logic function

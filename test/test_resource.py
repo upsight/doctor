@@ -1,5 +1,7 @@
 from functools import wraps
+
 import mock
+import six
 
 from doctor.resource import ResourceSchema, ResourceSchemaAnnotation
 from doctor.flask import handle_http
@@ -220,7 +222,7 @@ class TestResourceSchema(TestCase):
         spec = handler._argspec
         self.assertEqual(['a', 'b'], spec.args)
         self.assertIsNone(spec.varargs)
-        self.assertIsNone(spec.keywords)
+        self.assertIsNone(spec.keywords if six.PY2 else spec.varkw)
         self.assertEqual((1,), spec.defaults)
 
         handler = schema._create_http_method(
@@ -229,7 +231,7 @@ class TestResourceSchema(TestCase):
         spec = handler._argspec
         self.assertEqual(['a', 'b'], spec.args)
         self.assertIsNone(spec.varargs)
-        self.assertEqual('kwargs', spec.keywords)
+        self.assertEqual('kwargs', spec.keywords if six.PY2 else spec.varkw)
         self.assertEqual((1,), spec.defaults)
 
         # This caused issue #12 on github.
@@ -239,7 +241,7 @@ class TestResourceSchema(TestCase):
         spec = handler._argspec
         self.assertEqual(['a', 'b'], spec.args)
         self.assertIsNone(spec.varargs)
-        self.assertIsNone(spec.keywords)
+        self.assertIsNone(spec.keywords if six.PY2 else spec.varkw)
         self.assertEqual((1,), spec.defaults)
 
         handler = schema._create_http_method(
@@ -249,7 +251,7 @@ class TestResourceSchema(TestCase):
         spec = handler._argspec
         self.assertEqual(['a', 'b'], spec.args)
         self.assertIsNone(spec.varargs)
-        self.assertEqual('kwargs', spec.keywords)
+        self.assertEqual('kwargs', spec.keywords if six.PY2 else spec.varkw)
         self.assertEqual((1,), spec.defaults)
 
     def test_before_after_callables(self):

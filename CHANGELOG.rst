@@ -4,6 +4,14 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.3.5 (2018-01-23)
+-------------------
+
+- Fixed a few deprecation warnings about inspect.getargspec when running
+  doctor using python 3.  It will now use inspect.getfullargspec.  This 
+  also fixes the issue of not being able to use type hints on logic functions
+  in python 3.
+
 v1.3.4 (2017-12-04)
 -------------------
 

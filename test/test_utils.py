@@ -3,12 +3,19 @@ import os
 from functools import wraps
 
 import mock
+import six
 
 from .base import TestCase
 
 from doctor.utils import (
     exec_params, get_description_lines, get_module_attr, nested_set,
     undecorate_func)
+
+
+if six.PY2:
+    getargspec_func = inspect.getargspec
+else:
+    getargspec_func = inspect.getfullargspec
 
 
 def does_nothing(func):
@@ -49,7 +56,7 @@ class TestUtils(TestCase):
     def test_exec_params_function(self):
         def logic(a, b, c=None):
             return a+1, b+1, c
-        logic._argspec = inspect.getargspec(logic)
+        logic._argspec = getargspec_func(logic)
         kwargs = {'c': 1, 'd': 'a'}
         args = (1, 2)
         a, b, c = exec_params(logic, *args, **kwargs)
@@ -65,7 +72,7 @@ class TestUtils(TestCase):
             def __call__(self, a, b, c=None):
                 return a+1, b+1, c
         logic = Foo()
-        logic._argspec = inspect.getargspec(logic.__call__)
+        logic._argspec = getargspec_func(logic.__call__)
         a, b, c = exec_params(logic, *args, **kwargs)
         self.assertEqual(a, args[0]+1)
         self.assertEqual(b, args[1]+1)
@@ -74,7 +81,7 @@ class TestUtils(TestCase):
     def test_exec_params_args_only(self):
         def logic(a, b, c):
             return a+1, b+1, c
-        logic._argspec = inspect.getargspec(logic)
+        logic._argspec = getargspec_func(logic)
         kwargs = {'d': 1, 'e': 2}
         args = (1, 2, 3)
         a, b, c = exec_params(logic, *args, **kwargs)
@@ -85,7 +92,7 @@ class TestUtils(TestCase):
     def test_exec_params_kwargs_only(self):
         def logic(a=1, b=2, c=3):
             return a+1, b+1, c
-        logic._argspec = inspect.getargspec(logic)
+        logic._argspec = getargspec_func(logic)
         kwargs = {'d': 1, 'e': 2}
         args = (1, 2, 3)
         a, b, c = exec_params(logic, *args, **kwargs)
@@ -109,7 +116,7 @@ class TestUtils(TestCase):
         def logic(a, b=2, c=3, **kwargs):
             return (a, b, c, kwargs)
 
-        logic._argspec = inspect.getargspec(logic)
+        logic._argspec = getargspec_func(logic)
         kwargs = {'c': 3, 'e': 2}
         args = (1, 2)
         actual = exec_params(logic, *args, **kwargs)

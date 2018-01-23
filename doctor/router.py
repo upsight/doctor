@@ -1,6 +1,8 @@
 import inspect
 import os
 
+import six
+
 from .utils import undecorate_func
 
 
@@ -72,7 +74,9 @@ class Router(object):
         :returns: A tuple containing all parameters of the function signature
             and all required args.
         """
-        argspec = inspect.getargspec(undecorate_func(func))
+        getargspec_func = (
+            inspect.getargspec if six.PY2 else inspect.getfullargspec)
+        argspec = getargspec_func(undecorate_func(func))
         if argspec.defaults:
             required = argspec.args[:-len(argspec.defaults)]
         else:

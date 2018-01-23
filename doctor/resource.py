@@ -2,6 +2,7 @@ import functools
 import inspect
 
 import jsonschema
+import six
 
 from .parsers import parse_value
 from .schema import Schema
@@ -183,14 +184,22 @@ class ResourceSchema(Schema):
         before = before if before else (lambda *args, **kwargs: None)
         after = after if after else (lambda *args, **kwargs: None)
 
+        getargspec_func = (
+            inspect.getargspec if six.PY2 else inspect.getfullargspec)
         try:
-            argspec = inspect.getargspec(undecorate_func(logic))
+            argspec = getargspec_func(undecorate_func(logic))
         except TypeError:
-            argspec = inspect.getargspec(logic.__call__)
+            argspec = getargspec_func(logic.__call__)
         if omit_args:
             args = [arg for arg in argspec.args if arg not in omit_args]
-            argspec = inspect.ArgSpec(args, argspec.varargs, argspec.keywords,
-                                      argspec.defaults)
+            if six.PY2:
+                argspec = inspect.ArgSpec(
+                    args, argspec.varargs, argspec.keywords, argspec.defaults)
+            else:
+                argspec = inspect.FullArgSpec(
+                    args, argspec.varargs, argspec.varkw, argspec.defaults,
+                    argspec.kwonlyargs, argspec.kwonlydefaults,
+                    argspec.annotations)
         logic._argspec = argspec
 
         @functools.wraps(logic)

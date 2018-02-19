@@ -51,11 +51,6 @@ class SuperType(object):
         if self.description is None:
             raise ValueError('Each type must define a description attribute')
 
-    def __new__(cls, *args, **kwargs):
-        if cls.description is None:
-            raise ValueError('Each type must define a description attribute')
-        return super().__new__(cls)
-
 
 class String(SuperType, str):
     native_type = str

@@ -33,7 +33,7 @@ import math
 import re
 import typing
 
-from doctor.errors import SchemaValidationError, TypeSystemError
+from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
 from doctor.flask import FlaskResourceSchema
 
 
@@ -193,9 +193,11 @@ class Object(SuperType, dict):
         'type': 'Must be an object.',
         'invalid_key': 'Object keys must be strings.',
         'required': 'This field is required.',
+        'additional_properties': 'Additional propertues are not allowed.',
     }
     properties = {}  # type: typing.Dict[str, typing.Any]
     required = []  # type: typing.List[str]
+    additional_properties = True  # type: bool
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1 and not kwargs and isinstance(args[0], dict):
@@ -203,7 +205,7 @@ class Object(SuperType, dict):
         else:
             try:
                 value = dict(*args, **kwargs)
-            except TypeError:
+            except (ValueError, TypeError):
                 if (len(args) == 1 and not kwargs and
                         hasattr(args[0], '__dict__')):
                     value = dict(args[0].__dict__)
@@ -236,6 +238,24 @@ class Object(SuperType, dict):
                         self[key] = child_schema(item)
                     except TypeSystemError as exc:
                         errors[key] = exc.detail
+
+        # If additional properties are allowed set any other key/value(s) not
+        # in the defined properties.
+        if self.additional_properties:
+            for key, value in value.items():
+                if key not in self:
+                    self[key] = value
+
+        # Raise an exception if additional properties are defined and
+        # not allowed.
+        if not self.additional_properties:
+            properties = list(self.properties.keys())
+            for key in value.keys():
+                if key not in properties:
+                    detail = f'{key} not in {properties}'
+                    exc = TypeSystemError(detail, cls=self.__class__,
+                                          code='additional_properties')
+                    errors[key] = exc.detail
 
         if errors:
             raise TypeSystemError(errors)
@@ -313,25 +333,49 @@ class JsonSchema(SuperType):
 
     def __init__(self, data: typing.Any):
         self.schema = FlaskResourceSchema.from_file(self.schema_file)
+        request_schema = None
+
         # Look up the description in the schema.
         if self.definition_key is not None:
             params = [self.definition_key]
             request_schema = self.schema._create_request_schema(params, params)
-            definition = request_schema['definitions'][self.definition_key]
+            try:
+                definition = request_schema['definitions'][self.definition_key]
+            except KeyError:
+                raise TypeSystemError(
+                    f'Definition `{self.definition_key}` is not defined in the '
+                    'schema.', cls=self.__class__)
             if '$ref' in request_schema['definitions'][self.definition_key]:
-                self.description = self.schema.resolve(
-                    definition['$ref'])['description']
+                try:
+                    self.description = self.schema.resolve(
+                        definition['$ref'])['description']
+                except KeyError:
+                    raise TypeSystemError(
+                        f'Definition `{self.definition_key}` is missing a '
+                        f'description.', cls=self.__class__)
+                except SchemaError as e:
+                    raise TypeSystemError(str(e), cls=self.__class__)
             else:
-                self.description = definition['description']
+                try:
+                    self.description = definition['description']
+                except KeyError:
+                    raise TypeSystemError(
+                        f'Definition `{self.definition_key}` is missing a '
+                        f'description.', cls=self.__class__)
+            data = {self.definition_key: data}
         else:
-            self.description = self.schema.schema['description']
+            try:
+                self.description = self.schema.schema['description']
+            except KeyError:
+                raise TypeSystemError(
+                    'Schema is missing a description.', cls=self.__class__)
 
         super(JsonSchema, self).__init__()
         # Validate the data against the schema and raise an error if it
         # does not validate.
+        validator = self.schema.get_validator(request_schema)
         try:
-            self.schema.validate({self.definition_key: data},
-                                 self.schema.get_validator())
+            self.schema.validate(data, validator)
         except SchemaValidationError as e:
             raise TypeSystemError(e.args[0], cls=self.__class__)
 

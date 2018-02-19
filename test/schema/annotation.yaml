@@ -6,6 +6,10 @@ definitions:
     type: integer
   auth:
     $ref: 'common.yaml#/definitions/auth'
+  bad_ref:
+    $ref: 'common.yaml#/definitions/doesnotexist'
+  dog:
+    $ref: 'no_description.yaml#/definitions/dog'
   more_id:
     $ref: 'subdir/more.yaml#/definitions/more_id'
   name:

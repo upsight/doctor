@@ -249,6 +249,129 @@ Example
 JsonSchema
 ----------
 
+A :class:`~doctor.types.JsonSchema` type is primarily meant to ease the transition
+from doctor `2.x.x` to `3.0.0`.  It allows you to specify an already defined
+schema file to represent a type.  You can use a definition within the schema
+as your type or the root type of the schema.
+
+This type is unique in that you don't need to explictly define a :attr:`~doctor.types.JsonSchema.description`
+attribute on your class as it will use the one defined in the schema.
+
+Attributes
+##########
+
+* :attr:`~doctor.types.SuperType.description` - A human readable description
+  of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.JsonSchema.schema_file` - The full path to the schema file.
+  This attribute is required to be defined on your class.
+* :attr:`~doctor.types.JsonSchema.definition_key` - The key of the definition
+  within your schema that should be used for the type.
+
+Example
+#######
+
+**annotation.yaml**
+
+.. code-block:: yaml
+
+    ---
+    $schema: 'http://json-schema.org/draft-04/schema#'
+    description: An annotation.
+    definitions:
+      annotation_id:
+        description: Auto-increment ID.
+        type: integer
+      name:
+        description: The name of the annotation.
+        type: string
+    type: object
+    properties:
+      annotation_id:
+        $ref: '#/definitions/annotation_id'
+      name:
+        $ref: '#/definitions/name'
+    additionalProperties: false
+   
+**Using `definition_key`**
+
+.. code-block:: python
+
+    from doctor.types import JsonSchema
+
+    class AnnotationId(JsonSchema):
+        definition_key = 'annotation_id'
+        schema_file = '/full/path/to/annotation.yaml'
+
+**Without `definition_key`**
+
+.. code-block:: python
+
+    from doctor.types import JsonSchema
+
+    class Annotation(JsonSchema):
+        schema_file = '/full/path/to/annotation.yaml'
+
+Quick Type Creation
+-------------------
+
+Each type also has a function that can be used to quickly create a new type
+without having to define large classes.  Each of these functions takes the
+description of the type as the first positional argument and any attributes
+the type accepts can be passed as keyword arguments.  The following functions
+are provided:
+
+* :func:`~doctor.types.array` - Create a new :class:`~doctor.types.Array` type.
+* :func:`~doctor.types.boolean` - Create a new :class:`~doctor.types.Boolean` type.
+* :func:`~doctor.types.enum` - Create a new :class:`~doctor.types.Enum` type.
+* :func:`~doctor.types.integer` - Create a new :class:`~doctor.types.Integer` type.
+* :func:`~doctor.types.jsonschematype` - Create a new :class:`~doctor.types.JsonSchema` type.
+* :func:`~doctor.types.newtype` - Create a new user defined type.
+* :func:`~doctor.types.number` - Create a new :class:`~doctor.types.Number` type.
+* :func:`~doctor.types.string` - Create a new :class:`~doctor.types.String` type.
+
+Examples
+########
+
+.. code-block:: python
+
+    from doctor.errors import TypeSystemError
+    from doctor.types import (
+        array, boolean, enum, integer, jsonschematype, newtype, number, string,
+        String)
+
+    # Create a new array type of countries
+    Countries = array('List of countries', items=string('Country'), min_items=1)
+
+    # Create a new boolean type
+    Agreed = boolean('Indicates if user agreed or not')
+
+    # Create a new enum type
+    Color = enum('A color', enum=['blue', 'green', 'red'])
+
+    # Create a new integer type
+    AnnotationId = integer('Annotation PK', minimum=1)
+
+    # Create a new jsonschema type
+    Annotation = jsonschematype(schema_file='/path/to/annotation.yaml')
+
+    # Create a new type based on a String
+    class FooString(String):
+        must_start_with_foo = True
+
+        def __new__(cls, *args, **kwargs):
+            value = super().__new__(cls, *args, **kwargs)
+            if cls.must_start_with_foo:
+                if not value.lower().startswith('foo'):
+                    raise TypeSystemError('Must start with foo', cls=cls)
+
+    MyFooString = newtype(FooString, 'My foo string')
+
+    # Create a new number type
+    ProductRating = number('Product rating', maximum=10, minimum=1)
+
+    # Create a new string type
+    FirstName = string('First name', min_length=2, max_length=255)
+
 .. _types-module-documentation:
 
 Module Documentation

@@ -53,6 +53,7 @@ class SuperType(object):
 
 
 class String(SuperType, str):
+    """Represents a `str` type."""
     native_type = str
     errors = {
         'blank': 'Must not be blank.',
@@ -157,14 +158,17 @@ class _NumericType(SuperType):
 
 
 class Number(_NumericType, float):
+    """Represents a `float` type."""
     native_type = float
 
 
 class Integer(_NumericType, int):
+    """Represents an `int` type."""
     native_type = int
 
 
 class Boolean(SuperType):
+    """Represents a `bool` type."""
     native_type = bool
     errors = {
         'type': 'Must be a valid boolean.'
@@ -188,6 +192,9 @@ class Boolean(SuperType):
 
 
 class Enum(SuperType, str):
+    """
+    Represents a `str` type that must be one of any defined allowed values.
+    """
     errors = {
         'invalid': 'Must be a valid choice.',
     }
@@ -201,6 +208,7 @@ class Enum(SuperType, str):
 
 
 class Object(SuperType, dict):
+    """Represents a `dict` type."""
     errors = {
         'type': 'Must be an object.',
         'invalid_key': 'Object keys must be strings.',
@@ -277,6 +285,7 @@ class Object(SuperType, dict):
 
 
 class Array(SuperType, list):
+    """Represents a `list` type."""
     errors = {
         'type': 'Must be a list.',
         'min_items': 'Not enough items.',
@@ -348,10 +357,13 @@ class Array(SuperType, list):
 class JsonSchema(SuperType):
     """Represents a type loaded from a json schema."""
 
+    #: The description of what the type represents.  This is a placeholder
+    #: value, the actual value will come from your schema.
     description = 'json type'
     #: The full path to the schema file.
     schema_file = None  # type: str
-    #: The key from the definitions in the file that the type should come from.
+    #: The key from the definitions in the schema file that the type should
+    #: come from.
     definition_key = None  # type: str
 
     def __init__(self, data: typing.Any):
@@ -404,39 +416,86 @@ class JsonSchema(SuperType):
 
 
 def jsonschematype(**kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.JsonSchema` type.
+
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.JsonSchema`
+    """
     return type('JsonSchema', (JsonSchema,), kwargs)
 
 
-def string(description, **kwargs) -> typing.Type:
+def string(description: str, **kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.String` type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.String`
+    """
     kwargs['description'] = description
     return type('String', (String,), kwargs)
 
 
 def integer(description, **kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.Integer` type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.Integer`
+    """
     kwargs['description'] = description
     return type('Integer', (Integer,), kwargs)
 
 
 def number(description, **kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.Number` type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.Number`
+    """
     kwargs['description'] = description
     return type('Number', (Number,), kwargs)
 
 
 def boolean(description, **kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.Boolean` type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.Boolean`
+    """
     kwargs['description'] = description
     return type('Boolean', (Boolean,), kwargs)
 
 
 def enum(description, **kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.Enum` type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.Enum`
+    """
     kwargs['description'] = description
     return type('Enum', (Enum,), kwargs)
 
 
 def array(description, **kwargs) -> typing.Type:
+    """Create a :class:`~doctor.types.Array` type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        :class:`~doctor.types.Array`
+    """
     kwargs['description'] = description
     return type('Array', (Array,), kwargs)
 
 
 def newtype(cls, description, **kwargs) -> typing.Type:
+    """Create a user defined type.
+
+    :param description: A description of the type.
+    :param kwargs: Can include any attribute defined in
+        the provided user defined type.
+    """
     kwargs['description'] = description
     return type(cls.__name__, (cls,), kwargs)

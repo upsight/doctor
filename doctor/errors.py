@@ -2,7 +2,7 @@ from typing import Union
 
 
 class TypeSystemError(Exception):
-    """An error that represents and invalid value for a type.
+    """An error that represents an invalid value for a type.
 
     This is borrowed from apistar:
     https://github.com/encode/apistar/blob/master/apistar/exceptions.py#L1-L15

@@ -39,7 +39,7 @@ Example
 
 .. code-block:: python
 
-    from dotor.types import String
+    from doctor.types import String
 
     class FirstName(String):
         description = "A user's first name."
@@ -74,7 +74,7 @@ Example
 
 .. code-block:: python
 
-    from dotor.types import Number
+    from doctor.types import Number
 
     class AverageRating(Number):
         description = 'The average rating.'
@@ -94,10 +94,10 @@ Attributes
 
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
-* :attr:`~doctor.types._NumericType.exclusive_maximum`- If `True` and
+* :attr:`~doctor.types._NumericType.exclusive_maximum`- If `True` and the
   :attr:`~doctor.types._NumericType.maximum` is set, the maximum value should
   be treated as exclusive (value can not be equal to maximum).
-* :attr:`~doctor.types._NumericType.exclusive_minimum`- If `True` and
+* :attr:`~doctor.types._NumericType.exclusive_minimum`- If `True` and the
   :attr:`~doctor.types._NumericType.minimum` is set, the minimum value should
   be treated as exclusive (value can not be equal to minimum).
 * :attr:`~doctor.types._NumericType.maximum` - The maximum value allowed.
@@ -110,7 +110,7 @@ Example
 
 .. code-block:: python
 
-    from dotor.types import Integer
+    from doctor.types import Integer
 
     class Age(Integer):
         description = 'The age of the user.'
@@ -144,10 +144,10 @@ Example
 
 .. code-block:: python
 
-    from dotor.types import Boolean
+    from doctor.types import Boolean
 
     class Accept(Boolean):
-        description = 'Inciates if the user accepted the agreement or not.'
+        description = 'Indicates if the user accepted the agreement or not.'
 
 Enum
 ----
@@ -167,7 +167,7 @@ Example
 
 .. code-block:: python
 
-    from dotor.types import Enum
+    from doctor.types import Enum
 
     class Color(Enum):
         description = 'A color.'
@@ -197,7 +197,7 @@ Example
 
 .. code-block:: python
 
-    from dotor.types import Object, boolean, string
+    from doctor.types import Object, boolean, string
 
     class Contact(Object):
         description = 'An address book contact.'

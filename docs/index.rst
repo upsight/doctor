@@ -21,6 +21,7 @@ Usage
    router
    parsing
    errors
+   types
 
 .. include:: ../CHANGELOG.rst
 

@@ -60,9 +60,15 @@ class String(SuperType, str):
         'min_length': 'Must have at least {min_length} characters.',
         'pattern': 'Must match the pattern /{pattern}/.',
     }
+    #: @TODO: implement
+    format = None
+    #: The maximum length of the string.
     max_length = None  # type: int
+    #: The minimum length of the string.
     min_length = None  # type: int
+    #: A regex pattern that the string should match.
     pattern = None  # type: str
+    #: Whether to trim whitespace on a string.  Defaults to `True`.
     trim_whitespace = True
 
     def __new__(cls, *args, **kwargs):
@@ -103,10 +109,15 @@ class _NumericType(SuperType):
         'exclusive_maximum': 'Must be less than {maximum}.',
         'multiple_of': 'Must be a multiple of {multiple_of}.',
     }
+    #: The minimum value allowed.
     minimum = None  # type: typing.Union[float, int]
+    #: The maximum value allowed.
     maximum = None  # type: typing.Union[float, int]
+    #: The minimum value should be treated as exclusive or not.
     exclusive_minimum = False
+    #: The maximum value should be treated as exclusive or not.
     exclusive_maximum = False
+    #: The value is required to be a multiple of this value.
     multiple_of = None  # type: typing.Union[float, int]
 
     def __new__(cls, *args, **kwargs):
@@ -180,6 +191,7 @@ class Enum(SuperType, str):
     errors = {
         'invalid': 'Must be a valid choice.',
     }
+    #: A list of valid values.
     enum = []  # type: typing.List[str]
 
     def __new__(cls, value: str):
@@ -195,8 +207,11 @@ class Object(SuperType, dict):
         'required': 'This field is required.',
         'additional_properties': 'Additional propertues are not allowed.',
     }
+    #: A mapping of property name to expected type.
     properties = {}  # type: typing.Dict[str, typing.Any]
+    #: A list of required properties.
     required = []  # type: typing.List[str]
+    #: If True additional properties will be allowed, otherwise they will not.
     additional_properties = True  # type: bool
 
     def __init__(self, *args, **kwargs):
@@ -268,10 +283,18 @@ class Array(SuperType, list):
         'max_items': 'Too many items.',
         'unique_items': 'This item is not unique.',
     }
+    #: The type each item should be, or a list of types where the position
+    #: of the type in the list represents the type at that position in the
+    #: array the item should be.
     items = None  # type: typing.Union[type, typing.List[type]]
+    #: If `items` is a list and this is `True` then additional items whose
+    #: types aren't defined are allowed in the list.
     additional_items = False  # type: bool
+    #: The minimum number of items allowed in the list.
     min_items = 0  # type: typing.Optional[int]
+    #: The maxiimum number of items allowed in the list.
     max_items = None  # type: typing.Optional[int]
+    #: If `True` items in the array should be unique from one another.
     unique_items = False  # type: bool
 
     def __init__(self, *args, **kwargs):

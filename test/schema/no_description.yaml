@@ -1,0 +1,16 @@
+---
+$schema: 'http://json-schema.org/draft-04/schema#'
+definitions:
+  annotation_id:
+    type: integer
+  auth:
+    $ref: 'common.yaml#/definitions/auth'
+  dog:
+    type: string
+type: object
+properties:
+  annotation_id:
+    $ref: '#/definitions/annotation_id'
+  auth:
+    $ref: 'common.yaml#/definitions/auth'
+additionalProperties: false

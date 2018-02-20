@@ -4,6 +4,7 @@
 /.cache
 /.coverage
 /.noseids
+/.pytest_cache
 /.tox
 /_test
 /build

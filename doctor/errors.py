@@ -1,3 +1,29 @@
+from typing import Union
+
+
+class TypeSystemError(Exception):
+    """An error that represents an invalid value for a type.
+
+    This is borrowed from apistar:
+    https://github.com/encode/apistar/blob/master/apistar/exceptions.py#L1-L15
+
+    :param detail: Detail about the error.
+    :param cls: The class type that was being instantiated.
+    :param code: The error code.
+    """
+    def __init__(self,
+                 detail: Union[str, dict]=None,
+                 cls: type=None,
+                 code: str=None) -> None:
+
+        if cls is not None and code is not None:
+            errors = getattr(cls, 'errors')
+            detail = errors[code].format(**cls.__dict__)
+
+        self.detail = detail
+        super().__init__(detail)
+
+
 class SchematicError(ValueError):
     """Base error class for doctor."""
     pass

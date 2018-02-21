@@ -5,7 +5,7 @@ import pytest
 
 from doctor.errors import TypeSystemError
 from doctor.types import (
-    array, boolean, enum, integer, jsonschematype, number, string, Object,
+    array, boolean, enum, integer, json_schema_type, number, string, Object,
     SuperType)
 
 
@@ -330,7 +330,7 @@ class TestJsonSchema(object):
     def test_no_definition_key(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = jsonschematype(schema_file=schema_file)
+        J = json_schema_type(schema_file=schema_file)
         # no exception
         data = {
             'annotation_id': 1,
@@ -360,7 +360,7 @@ class TestJsonSchema(object):
     def test_no_definition_key_missing_description(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'no_description.yaml')
-        J = jsonschematype(schema_file=schema_file)
+        J = json_schema_type(schema_file=schema_file)
         data = {
             'annotation_id': 1,
             'name': 'test',
@@ -372,7 +372,7 @@ class TestJsonSchema(object):
     def test_definition_key(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = jsonschematype(
+        J = json_schema_type(
             schema_file=schema_file, definition_key='annotation_id')
         # no exception
         J(1)
@@ -384,7 +384,7 @@ class TestJsonSchema(object):
     def test_definition_key_missing(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = jsonschematype(
+        J = json_schema_type(
             schema_file=schema_file, definition_key='does_not_exist')
         expected = "Definition `does_not_exist` is not defined in the schema."
         with pytest.raises(TypeSystemError, match=expected):
@@ -393,7 +393,7 @@ class TestJsonSchema(object):
     def test_definition_key_missing_description(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'no_description.yaml')
-        J = jsonschematype(
+        J = json_schema_type(
             schema_file=schema_file, definition_key='annotation_id')
         data = 1
         expected = 'Definition `annotation_id` is missing a description.'
@@ -407,7 +407,7 @@ class TestJsonSchema(object):
         """
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = jsonschematype(
+        J = json_schema_type(
             schema_file=schema_file, definition_key='dog')
         expected = "Definition `dog` is missing a description."
         with pytest.raises(TypeSystemError, match=expected):
@@ -419,7 +419,7 @@ class TestJsonSchema(object):
         """
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = jsonschematype(
+        J = json_schema_type(
             schema_file=schema_file, definition_key='bad_ref')
         expected = "Unresolvable JSON pointer: 'definitions/doesnotexist'"
         with pytest.raises(TypeSystemError, match=expected):

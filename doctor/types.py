@@ -445,7 +445,7 @@ class JsonSchema(SuperType):
             raise TypeSystemError(e.args[0], cls=self.__class__)
 
 
-def jsonschematype(**kwargs) -> typing.Type:
+def json_schema_type(**kwargs) -> typing.Type:
     """Create a :class:`~doctor.types.JsonSchema` type.
 
     :param kwargs: Can include any attribute defined in
@@ -520,7 +520,7 @@ def array(description, **kwargs) -> typing.Type:
     return type('Array', (Array,), kwargs)
 
 
-def newtype(cls, description, **kwargs) -> typing.Type:
+def new_type(cls, description, **kwargs) -> typing.Type:
     """Create a user defined type.
 
     :param description: A description of the type.

@@ -328,8 +328,8 @@ are provided:
 * :func:`~doctor.types.boolean` - Create a new :class:`~doctor.types.Boolean` type.
 * :func:`~doctor.types.enum` - Create a new :class:`~doctor.types.Enum` type.
 * :func:`~doctor.types.integer` - Create a new :class:`~doctor.types.Integer` type.
-* :func:`~doctor.types.jsonschematype` - Create a new :class:`~doctor.types.JsonSchema` type.
-* :func:`~doctor.types.newtype` - Create a new user defined type.
+* :func:`~doctor.types.json_schema_type` - Create a new :class:`~doctor.types.JsonSchema` type.
+* :func:`~doctor.types.new_type` - Create a new user defined type.
 * :func:`~doctor.types.number` - Create a new :class:`~doctor.types.Number` type.
 * :func:`~doctor.types.string` - Create a new :class:`~doctor.types.String` type.
 
@@ -340,8 +340,8 @@ Examples
 
     from doctor.errors import TypeSystemError
     from doctor.types import (
-        array, boolean, enum, integer, jsonschematype, newtype, number, string,
-        String)
+        array, boolean, enum, integer, json_schema_type, new_type, number, 
+        string, String)
 
     # Create a new array type of countries
     Countries = array('List of countries', items=string('Country'), min_items=1)
@@ -356,7 +356,7 @@ Examples
     AnnotationId = integer('Annotation PK', minimum=1)
 
     # Create a new jsonschema type
-    Annotation = jsonschematype(schema_file='/path/to/annotation.yaml')
+    Annotation = json_schema_type(schema_file='/path/to/annotation.yaml')
 
     # Create a new type based on a String
     class FooString(String):
@@ -368,7 +368,7 @@ Examples
                 if not value.lower().startswith('foo'):
                     raise TypeSystemError('Must start with foo', cls=cls)
 
-    MyFooString = newtype(FooString, 'My foo string')
+    MyFooString = new_type(FooString, 'My foo string')
 
     # Create a new number type
     ProductRating = number('Product rating', maximum=10, minimum=1)

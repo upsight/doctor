@@ -32,6 +32,7 @@ setup(
         'doctor.utils',
     ],
     install_requires=[
+        'isodate >= 0.6.0, < 1.0.0',
         'jsonschema >= 2.5.1, < 3.0.0',
         'pyyaml >= 3.11, < 4.0',
         'rfc3987 >= 1.3.4, < 2.0.0',

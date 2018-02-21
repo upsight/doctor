@@ -32,6 +32,10 @@ https://github.com/encode/apistar/blob/973c6485d8297c1bcef35a42221ac5107dce25d5/
 import math
 import re
 import typing
+from datetime import datetime
+
+import isodate
+import rfc3987
 
 from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
 from doctor.flask import FlaskResourceSchema
@@ -92,6 +96,31 @@ class String(SuperType, str):
         if cls.pattern is not None:
             if not re.search(cls.pattern, value):
                 raise TypeSystemError(cls=cls, code='pattern')
+
+        # Validate format, if specified
+        if cls.format == 'date':
+            try:
+                value = datetime.strptime(value, "%Y-%m-%d")
+            except ValueError as e:
+                raise TypeSystemError(str(e), cls=cls)
+        elif cls.format == 'date-time':
+            try:
+                value = isodate.parse_datetime(value)
+            except (ValueError, isodate.ISO8601Error) as e:
+                raise TypeSystemError(str(e), cls=cls)
+        elif cls.format == 'email':
+            if '@' not in value:
+                raise TypeSystemError('Not a valid email address.', cls=cls)
+        elif cls.format == 'time':
+            try:
+                value = datetime.strptime(value, "%H:%M:%S")
+            except ValueError as e:
+                raise TypeSystemError(str(e), cls=cls)
+        elif cls.format == 'uri':
+            try:
+                rfc3987.parse(value, rule='URI')
+            except ValueError as e:
+                raise TypeSystemError(str(e), cls=cls)
 
         return value
 

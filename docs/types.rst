@@ -21,11 +21,15 @@ Attributes
   datatype with a string representation. For example `date`, to represent an 
   ISO 8601 formatted date string.  The following formats are supported:
 
-    * date
-    * date-time
-    * email
-    * time
-    * uri
+    * `date` - Will format the string as a `datetime.datetime` instance.  Expects
+      the format `'%Y-%m-%d'`
+    * `date-time` - Will format the string as a `datetime.datetime` instance.
+      Expects a valid ISO8601 string.  e.g. `'2018-02-21T16:09:02Z'`
+    * `email` - Does basic validation that the string is an emai by checking
+      for an `'@'` character in the string.
+    * `time` - Will format the string as a `datetime.datetime` instance.  Expects
+      the format `'%H:%M:%S'`
+    * `uri` - Will validate the string is a valid URI.
 
 * :attr:`~doctor.types.String.max_length` - The maximum length of the string.
 * :attr:`~doctor.types.String.min_length` - The minimum length of the string.

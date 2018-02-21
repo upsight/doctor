@@ -65,7 +65,8 @@ class String(SuperType, str):
         'min_length': 'Must have at least {min_length} characters.',
         'pattern': 'Must match the pattern /{pattern}/.',
     }
-    #: @TODO: implement
+    #: Will check format of the string for `date`, `date-time`, `email`,
+    #: `time` and `uri`.
     format = None
     #: The maximum length of the string.
     max_length = None  # type: int

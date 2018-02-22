@@ -243,7 +243,7 @@ class Object(SuperType, dict):
         'type': 'Must be an object.',
         'invalid_key': 'Object keys must be strings.',
         'required': 'This field is required.',
-        'additional_properties': 'Additional propertues are not allowed.',
+        'additional_properties': 'Additional properties are not allowed.',
     }
     #: A mapping of property name to expected type.
     properties = {}  # type: typing.Dict[str, typing.Any]

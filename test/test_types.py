@@ -249,7 +249,7 @@ class TestObject(object):
         actual = FooObject(expected)
         assert expected == actual
 
-        expected_msg = "{'cat': 'Additional propertues are not allowed.'}"
+        expected_msg = "{'cat': 'Additional properties are not allowed.'}"
         with pytest.raises(TypeSystemError, match=expected_msg):
             NoAddtPropsObject(expected)
 

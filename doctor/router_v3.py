@@ -1,7 +1,7 @@
 import functools
 import inspect
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Callable, List, Tuple
 
 from flask_restful import Resource
 
@@ -12,52 +12,51 @@ from doctor.flask import handle_http_v3
 Params = namedtuple('Params', ['all', 'optional', 'required'])
 
 
-def delete(func: Callable) -> Dict[str, Any]:
+class HTTPMethod(object):
+    """Represents and HTTP method and it's configuration.
+
+    :param method: The HTTP method.  One of: (delete, get, post, put).
+    :param logic: The logic function to be called for the http method.
+    """
+    def __init__(self, method: str, logic: Callable):
+        self.logic = logic
+        self.method = method
+
+
+def delete(func: Callable) -> HTTPMethod:
     """Returns a dict with required args to create a DELETE route.
 
     :param func: The logic function that should be called.
-    :returns: dict
+    :returns: HTTPMethod
     """
-    return {
-        'logic': func,
-        'http_method': 'delete',
-    }
+    return HTTPMethod('delete', func)
 
 
-def get(func: Callable) -> Dict[str, Any]:
+def get(func: Callable) -> HTTPMethod:
     """Returns a dict with required args to create a GET route.
 
     :param func: The logic function that should be called.
-    :returns: dict
+    :returns: HTTPMethod
     """
-    return {
-        'logic': func,
-        'http_method': 'get',
-    }
+    return HTTPMethod('get', func)
 
 
-def post(func: Callable) -> Dict[str, Any]:
+def post(func: Callable) -> HTTPMethod:
     """Returns a dict with required args to create a POST route.
 
     :param func: The logic function that should be called.
-    :returns: dict
+    :returns: HTTPMethod
     """
-    return {
-        'logic': func,
-        'http_method': 'post',
-    }
+    return HTTPMethod('post', func)
 
 
-def put(func: Callable) -> Dict[str, Any]:
+def put(func: Callable) -> HTTPMethod:
     """Returns a dict with required args to create a PUT route.
 
     :param func: The logic function that should be called.
-    :returns: dict
+    :returns: HTTPMethod
     """
-    return {
-        'logic': func,
-        'http_method': 'put',
-    }
+    return HTTPMethod('put', func)
 
 
 def get_params_from_func(func: Callable) -> Params:
@@ -88,7 +87,24 @@ def create_http_method(logic: Callable, http_method: str) -> Callable:
     return fn
 
 
-def create_routes(routes: Tuple[str, Tuple]) -> List[Tuple[str, Resource]]:
+class Route(object):
+
+    """Represents a route.
+
+    :param route: The route path, e.g. `r'^/foo/<int:foo_id>/?$'`
+    :param methods: A tuple of defined HTTPMethods for the route.
+    :param base_handler_class: The base handler class to use.
+    :param handler_name: The name that should be given to the handler class.
+    """
+    def __init__(self, route: str, methods: Tuple[HTTPMethod],
+                 base_handler_class=Resource, handler_name: str=None):
+        self.route = route
+        self.methods = methods
+        self.base_handler_class = base_handler_class
+        self.handler_name = handler_name
+
+
+def create_routes(routes: Tuple[HTTPMethod]) -> List[Tuple[str, Resource]]:
     """Creates handler routes from the provided routes.
 
     :param routes: A tuple containing the route and another tuple with
@@ -96,25 +112,23 @@ def create_routes(routes: Tuple[str, Tuple]) -> List[Tuple[str, Resource]]:
     :returns: A list of tuples containing the route and generated handler.
     """
     created_routes = []
-    for route, methods in routes:
+    for r in routes:
         handler = None
-        for method in methods:
-            logic = method['logic']
-            http_method = method['http_method']
+        for method in r.methods:
+            logic = method.logic
+            http_method = method.method
             logic._doctor_signature = inspect.signature(logic)
             params = get_params_from_func(logic)
             logic._doctor_params = params
             http_func = create_http_method(logic, http_method)
-            # @TODO: Allow a user to specify the handler name
-            handler_name = logic.__name__
+            handler_name = r.handler_name or logic.__name__
             handler_methods_and_properties = {
                 '__name__': handler_name,
                 http_method: http_func,
             }
             if handler is None:
-                # @TODO: allow dev to specify base handler class
                 handler = type(
-                    handler_name, (Resource,),
+                    handler_name, (r.base_handler_class,),
                     handler_methods_and_properties)
             else:
                 setattr(handler, http_method, http_func)
@@ -124,5 +138,5 @@ def create_routes(routes: Tuple[str, Tuple]) -> List[Tuple[str, Resource]]:
                 # on the handler after it gets created by type.
                 if hasattr(handler, 'methods'):
                     handler.methods.append(http_method.upper())
-        created_routes.append((route, handler))
+        created_routes.append((r.route, handler))
     return created_routes

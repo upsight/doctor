@@ -82,7 +82,7 @@ routes = (
         get(status),)),
     Route('/note/', methods=(
         get(get_notes),
-        post(create_note)), handler_name='FooHandler'
+        post(create_note)), handler_name='NoteListHandler'
     ),
     Route('/note/<int:note_id>/', methods=(
         delete(delete_note),

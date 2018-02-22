@@ -32,9 +32,8 @@ class HTTPMethod(object):
         self.method = method
         # Add doctor attributes to logic
         logic._doctor_signature = inspect.signature(logic)
-        params = get_params_from_func(logic)
-        logic._doctor_params = params
         logic._doctor_allowed_exceptions = allowed_exceptions
+        logic._doctor_params = get_params_from_func(logic)
         self.logic = logic
 
 

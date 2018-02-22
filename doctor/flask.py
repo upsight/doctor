@@ -89,7 +89,7 @@ def should_raise_response_validation_errors() -> bool:
 
 
 def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
-                   logic: Callable, allowed_exceptions: ListOrNone=None):
+                   logic: Callable):
     """Handle a Flask HTTP request
 
     @TODO:
@@ -102,9 +102,6 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
     :param dict kwargs: Any keyword arguments passed to the wrapper method.
     :param callable logic: The callable to invoke to actually perform the
         business logic for this request.
-    :param allowed_exceptions: If specified, these exception classes will be
-        re-raised instead of turning them into 500 errors.
-    :type allowed_exceptions: list(class) or None
     """
     try:
         # We are checking mimetype here instead of content_type because
@@ -173,6 +170,7 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
         # Always re-raise exceptions when DEBUG is enabled for development.
         if current_app.config.get('DEBUG', False):
             raise
+        allowed_exceptions = logic._doctor_allowed_exceptions
         if allowed_exceptions and any(isinstance(e, cls)
                                       for cls in allowed_exceptions):
             raise

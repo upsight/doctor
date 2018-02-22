@@ -15,45 +15,68 @@ Params = namedtuple('Params', ['all', 'optional', 'required'])
 class HTTPMethod(object):
     """Represents and HTTP method and it's configuration.
 
+    When instantiated the logic attribute will have 3 attributes added to it:
+        - `_doctor_allowed_exceptions` - A list of excpetions that are allowed
+          to be re-reaised if encountered during a request.
+        - `_doctor_params` - A `Params` namedtuple containg all params,
+          required params, and optional params.
+        - `_doctor_signature` - The parsed function Signature.
+
     :param method: The HTTP method.  One of: (delete, get, post, put).
     :param logic: The logic function to be called for the http method.
+    :param allowed_exceptions: If specified, these exception classes will be
+        re-raised instead of turning them into 500 errors.
     """
-    def __init__(self, method: str, logic: Callable):
-        self.logic = logic
+    def __init__(self, method: str, logic: Callable,
+                 allowed_exceptions: List=None):
         self.method = method
+        # Add doctor attributes to logic
+        logic._doctor_signature = inspect.signature(logic)
+        params = get_params_from_func(logic)
+        logic._doctor_params = params
+        logic._doctor_allowed_exceptions = allowed_exceptions
+        self.logic = logic
 
 
-def delete(func: Callable) -> HTTPMethod:
+def delete(func: Callable, allowed_excpetions: List=None) -> HTTPMethod:
     """Returns a dict with required args to create a DELETE route.
 
     :param func: The logic function that should be called.
+    :param allowed_exceptions: If specified, these exception classes will be
+        re-raised instead of turning them into 500 errors.
     :returns: HTTPMethod
     """
     return HTTPMethod('delete', func)
 
 
-def get(func: Callable) -> HTTPMethod:
+def get(func: Callable, allowed_excpetions: List=None) -> HTTPMethod:
     """Returns a dict with required args to create a GET route.
 
     :param func: The logic function that should be called.
+    :param allowed_exceptions: If specified, these exception classes will be
+        re-raised instead of turning them into 500 errors.
     :returns: HTTPMethod
     """
     return HTTPMethod('get', func)
 
 
-def post(func: Callable) -> HTTPMethod:
+def post(func: Callable, allowed_excpetions: List=None) -> HTTPMethod:
     """Returns a dict with required args to create a POST route.
 
     :param func: The logic function that should be called.
+    :param allowed_exceptions: If specified, these exception classes will be
+        re-raised instead of turning them into 500 errors.
     :returns: HTTPMethod
     """
     return HTTPMethod('post', func)
 
 
-def put(func: Callable) -> HTTPMethod:
+def put(func: Callable, allowed_excpetions: List=None) -> HTTPMethod:
     """Returns a dict with required args to create a PUT route.
 
     :param func: The logic function that should be called.
+    :param allowed_exceptions: If specified, these exception classes will be
+        re-raised instead of turning them into 500 errors.
     :returns: HTTPMethod
     """
     return HTTPMethod('put', func)
@@ -117,9 +140,6 @@ def create_routes(routes: Tuple[HTTPMethod]) -> List[Tuple[str, Resource]]:
         for method in r.methods:
             logic = method.logic
             http_method = method.method
-            logic._doctor_signature = inspect.signature(logic)
-            params = get_params_from_func(logic)
-            logic._doctor_params = params
             http_func = create_http_method(logic, http_method)
             handler_name = r.handler_name or logic.__name__
             handler_methods_and_properties = {

@@ -42,6 +42,18 @@ def no_params() -> Foo:
 
 class TestRouterV3(object):
 
+    def test_httpmethod(self):
+        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError])
+        assert 'get' == m.method
+        assert get_foo == m.logic
+        assert inspect.signature(get_foo) == m.logic._doctor_signature
+        expected = Params(
+            all=['name', 'age', 'is_alive'],
+            optional=['is_alive'],
+            required=['name', 'age'])
+        assert expected == m.logic._doctor_params
+        assert [ValueError] == m.logic._doctor_allowed_exceptions
+
     def test_delete(self):
         expected = HTTPMethod('delete', get_foo)
         a = delete(get_foo)

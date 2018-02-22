@@ -99,6 +99,20 @@ def test_handle_http_invalid_param(mock_request, mock_get_logic):
         handle_http_v3(mock_handler, (), {}, mock_get_logic)
 
 
+@mock.patch('doctor.flask.current_app')
+def test_handle_http_allowed_exception(mock_app, mock_request, mock_get_logic):
+    mock_app.config = {'DEBUG': False}
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': 1}
+    mock_handler = mock.Mock()
+    mock_get_logic.side_effect = ValueError('Allowed')
+    mock_get_logic._doctor_allowed_exceptions = [ValueError]
+
+    with pytest.raises(ValueError, match='Allowed'):
+        handle_http_v3(mock_handler, (), {}, mock_get_logic)
+
+
 def test_handle_http_response_instance_return_value(
         mock_request, mock_get_logic):
     mock_request.method = 'GET'

@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import copy
 import logging
+from typing import Callable, Dict, List, Tuple, Union
+
 
 import six
 try:
@@ -28,6 +30,8 @@ STATUS_CODE_MAP = {
     'POST': 201,
     'DELETE': 204,
 }
+
+ListOrNone = Union[List, None]
 
 
 class SchematicHTTPException(HTTPException):
@@ -71,7 +75,8 @@ class HTTP500Exception(SchematicHTTPException, InternalServerError):
     pass
 
 
-def handle_http_v3(handler, args, kwargs, logic, allowed_exceptions=None):
+def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
+                   logic: Callable, allowed_exceptions: ListOrNone=None):
     """Handle a Flask HTTP request
 
     @TODO:

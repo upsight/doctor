@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import copy
 import logging
+from typing import Callable, Dict, List, Tuple, Union
+
 
 import six
 try:
@@ -17,7 +19,7 @@ except ImportError:  # pragma: no cover
 from .constants import HTTP_METHODS_WITH_JSON_BODY, MAX_RESPONSE_LENGTH
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      ParseError, NotFoundError, SchemaValidationError,
-                     UnauthorizedError)
+                     TypeSystemError, UnauthorizedError)
 from .response import Response
 from .resource import ResourceSchema
 from .router import Router
@@ -28,6 +30,8 @@ STATUS_CODE_MAP = {
     'POST': 201,
     'DELETE': 204,
 }
+
+ListOrNone = Union[List, None]
 
 
 class SchematicHTTPException(HTTPException):
@@ -69,6 +73,79 @@ class HTTP409Exception(SchematicHTTPException, Conflict):
 
 class HTTP500Exception(SchematicHTTPException, InternalServerError):
     pass
+
+
+def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
+                   logic: Callable, allowed_exceptions: ListOrNone=None):
+    """Handle a Flask HTTP request
+
+    @TODO:
+        - allowed_exceptions
+        - response validation
+
+    :param handler: flask_restful.Resource: An instance of a Flask Restful
+        resource class.
+    :param tuple args: Any positional arguments passed to the wrapper method.
+    :param dict kwargs: Any keyword arguments passed to the wrapper method.
+    :param callable logic: The callable to invoke to actually perform the
+        business logic for this request.
+    :param allowed_exceptions: If specified, these exception classes will be
+        re-raised instead of turning them into 500 errors.
+    :type allowed_exceptions: list(class) or None
+    """
+    try:
+        # We are checking mimetype here instead of content_type because
+        # mimetype is just the content-type, where as content_type can
+        # contain encoding, charset, and language information.  e.g.
+        # `Content-Type: application/json; charset=UTF8`
+        if (request.mimetype == 'application/json' and
+                request.method in HTTP_METHODS_WITH_JSON_BODY):
+            # This is a proper typed JSON request. The parameters will be
+            # encoded into the request body as a JSON blob.
+            request_params = request.json
+        else:
+            # Try to parse things from normal HTTP parameters
+            request_params = request.values
+        # Filter out any params not part of the logic signature.
+        all_params = logic._doctor_params.all
+        params = {k: v for k, v in request_params.items() if k in all_params}
+        params.update(**kwargs)
+
+        # Validate and coerce parameters to the appropriate types.
+        for required in logic._doctor_params.required:
+            if required not in params:
+                raise InvalidValueError(f'{required} is required.')
+        sig = logic._doctor_signature
+        for name, value in params.items():
+            annotation = sig.parameters[name].annotation
+            params[name] = annotation(value)
+
+        response = logic(*args, **params)
+        # @TODO: Response type validation
+        if isinstance(response, Response):
+            return (response.content, STATUS_CODE_MAP.get(request.method, 200),
+                    response.headers)
+        return response, STATUS_CODE_MAP.get(request.method, 200)
+    except (InvalidValueError, TypeSystemError) as e:
+        errors = getattr(e, 'errors', None)
+        raise HTTP400Exception(e, errobj=errors)
+    except UnauthorizedError as e:
+        raise HTTP401Exception(e)
+    except ForbiddenError as e:
+        raise HTTP403Exception(e)
+    except NotFoundError as e:
+        raise HTTP404Exception(e)
+    except ImmutableError as e:
+        raise HTTP409Exception(e)
+    except Exception as e:
+        # Always re-raise exceptions when DEBUG is enabled for development.
+        if current_app.config.get('DEBUG', False):
+            raise
+        if allowed_exceptions and any(isinstance(e, cls)
+                                      for cls in allowed_exceptions):
+            raise
+        logging.exception(e)
+        raise HTTP500Exception('Uncaught error in logic function')
 
 
 def handle_http(schema, handler, args, kwargs, logic, request_schema,

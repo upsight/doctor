@@ -141,10 +141,6 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
                 sig.return_annotation(_response)
             except TypeSystemError as e:
                 response_str = str(_response)
-                # We need a limit on the response length because logexec
-                # which wraps this log has an 8k (8192 chars) limit.
-                if len(response_str) > MAX_RESPONSE_LENGTH:
-                    response_str = response_str[:MAX_RESPONSE_LENGTH] + '...'
                 logging.warning('Response to %s %s does not validate: %s.',
                                 request.method, request.path,
                                 response_str, exc_info=e)

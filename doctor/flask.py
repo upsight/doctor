@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import copy
 import logging
+import os
 from typing import Callable, Dict, List, Tuple, Union
 
 
@@ -75,8 +76,20 @@ class HTTP500Exception(SchematicHTTPException, InternalServerError):
     pass
 
 
+def should_raise_response_validation_errors() -> bool:
+    """Returns if the library should raise response validation errors or not.
+
+    If the app config has DEBUG set to True or the environment variable
+    `RAISE_RESPONSE_VALIDATION_ERRORS` is set, it will return True.
+
+    :returns: True if it should, False otherwise.
+    """
+    return (current_app.config.get('DEBUG', False) or
+            bool(os.environ.get('RAISE_RESPONSE_VALIDATION_ERRORS', False)))
+
+
 def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
-                   logic: Callable, allowed_exceptions: ListOrNone=None):
+                   logic: Callable):
     """Handle a Flask HTTP request
 
     @TODO:
@@ -89,9 +102,6 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
     :param dict kwargs: Any keyword arguments passed to the wrapper method.
     :param callable logic: The callable to invoke to actually perform the
         business logic for this request.
-    :param allowed_exceptions: If specified, these exception classes will be
-        re-raised instead of turning them into 500 errors.
-    :type allowed_exceptions: list(class) or None
     """
     try:
         # We are checking mimetype here instead of content_type because
@@ -121,7 +131,22 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
             params[name] = annotation(value)
 
         response = logic(*args, **params)
-        # @TODO: Response type validation
+
+        # response validation
+        if sig.return_annotation != sig.empty:
+            _response = response
+            if isinstance(response, Response):
+                _response = response.content
+            try:
+                sig.return_annotation(_response)
+            except TypeSystemError as e:
+                response_str = str(_response)
+                logging.warning('Response to %s %s does not validate: %s.',
+                                request.method, request.path,
+                                response_str, exc_info=e)
+                if should_raise_response_validation_errors():
+                    raise
+
         if isinstance(response, Response):
             return (response.content, STATUS_CODE_MAP.get(request.method, 200),
                     response.headers)
@@ -141,6 +166,7 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
         # Always re-raise exceptions when DEBUG is enabled for development.
         if current_app.config.get('DEBUG', False):
             raise
+        allowed_exceptions = logic._doctor_allowed_exceptions
         if allowed_exceptions and any(isinstance(e, cls)
                                       for cls in allowed_exceptions):
             raise

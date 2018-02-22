@@ -220,3 +220,8 @@ additional configuration:
     :private-members:
     :show-inheritance:
 
+.. automodule:: doctor.router_v3
+    :members:
+    :private-members:
+    :show-inheritance:
+

@@ -1,7 +1,10 @@
 import inspect
 
+from flask_restful import Resource
+
 from doctor.router_v3 import (
-    create_routes, delete, get, get_params_from_func, post, put, Params)
+    create_routes, delete, get, get_params_from_func, post, put, HTTPMethod,
+    Params, Route)
 from doctor.types import array, boolean, integer, string
 
 
@@ -39,33 +42,41 @@ def no_params() -> Foo:
 
 class TestRouterV3(object):
 
+    def test_httpmethod(self):
+        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError])
+        assert 'get' == m.method
+        assert get_foo == m.logic
+        assert inspect.signature(get_foo) == m.logic._doctor_signature
+        expected = Params(
+            all=['name', 'age', 'is_alive'],
+            optional=['is_alive'],
+            required=['name', 'age'])
+        assert expected == m.logic._doctor_params
+        assert [ValueError] == m.logic._doctor_allowed_exceptions
+
     def test_delete(self):
-        expected = {
-            'http_method': 'delete',
-            'logic': get_foo,
-        }
-        assert expected == delete(get_foo)
+        expected = HTTPMethod('delete', get_foo)
+        a = delete(get_foo)
+        assert a.method == expected.method
+        assert a.logic == expected.logic
 
     def test_get(self):
-        expected = {
-            'http_method': 'get',
-            'logic': get_foo,
-        }
-        assert expected == get(get_foo)
+        expected = HTTPMethod('get', get_foo)
+        actual = get(get_foo)
+        assert actual.method == expected.method
+        assert actual.logic == expected.logic
 
     def test_post(self):
-        expected = {
-            'http_method': 'post',
-            'logic': get_foo,
-        }
-        assert expected == post(get_foo)
+        expected = HTTPMethod('post', get_foo)
+        actual = post(get_foo)
+        assert actual.method == expected.method
+        assert actual.logic == expected.logic
 
     def test_put(self):
-        expected = {
-            'http_method': 'put',
-            'logic': get_foo,
-        }
-        assert expected == put(get_foo)
+        expected = HTTPMethod('put', get_foo)
+        actual = put(get_foo)
+        assert actual.method == expected.method
+        assert actual.logic == expected.logic
 
     def test_get_params_from_func(self):
         get_foo._doctor_signature = inspect.signature(get_foo)
@@ -81,11 +92,15 @@ class TestRouterV3(object):
         assert expected == get_params_from_func(no_params)
 
     def test_create_routes(self):
+        class MyHandler(Resource):
+            pass
+
         routes = (
-            ('^/foo/?$', (
+            Route('^/foo/?$', (
                 get(get_foos),
-                post(create_foo))),
-            ('^/foo/<int:foo_id>/?$', (
+                post(create_foo)), base_handler_class=MyHandler,
+                handler_name='MyHandler'),
+            Route('^/foo/<int:foo_id>/?$', (
                 delete(delete_foo),
                 get(get_foo),
                 put(update_foo))),
@@ -98,6 +113,11 @@ class TestRouterV3(object):
         # verify the first route
         route, handler = actual[0]
         assert r'^/foo/?$' == route
+
+        # verify it's an instance of our base handler class.
+        assert issubclass(handler, MyHandler)
+        # verify it used our custom handler name
+        assert 'MyHandler' == handler.__name__
 
         # verify each http method was added
         assert hasattr(handler, 'get')

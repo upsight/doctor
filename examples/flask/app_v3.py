@@ -5,7 +5,7 @@
 from flask import Flask
 from flask_restful import Api
 from doctor.errors import NotFoundError
-from doctor.router_v3 import create_routes, get, post, put, delete
+from doctor.router_v3 import Route, create_routes, get, post, put, delete
 from doctor.types import array, boolean, integer, string, Object
 
 # -- mark-types
@@ -18,18 +18,20 @@ Status = string('API status')
 
 class Note(Object):
     description = 'A note object'
+    additional_properties = False
     properties = {
         'note_id': NoteId,
         'body': Body,
         'done': Done,
     }
+    required = ['body', 'done', 'note_id']
 
 
 Notes = array('Array of notes', items=Note)
 
 # -- mark-logic
 
-note = {'note_id': 1, 'body': 'Example body', 'done': False}
+note = {'note_id': 1, 'body': 'Example body', 'done': True}
 
 
 def get_note(note_id: NoteId) -> Note:
@@ -76,15 +78,17 @@ def status() -> Status:
 # -- mark-app
 
 routes = (
-    ('/', (
+    Route('/', methods=(
         get(status),)),
-    ('/note/', (
+    Route('/note/', methods=(
         get(get_notes),
-        post(create_note))),
-    ('/note/<int:note_id>/', (
+        post(create_note)), handler_name='NoteListHandler'
+    ),
+    Route('/note/<int:note_id>/', methods=(
         delete(delete_note),
         get(get_note),
-        put(update_note))),
+        put(update_note))
+    ),
 )
 
 app = Flask('Doctor example')

@@ -19,7 +19,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.6',
     ],
     keywords=['python', 'flask', 'json', 'jsonschema', 'validation',
@@ -44,6 +43,7 @@ setup(
         'docs': [
             'mock >= 2.0.0, < 3.0.0',
             'sphinx >= 1.5.4, < 2.0.0',
+            'sphinx-autodoc-typehints >= 1.2.4, < 2.0.0',
             'sphinx-rtd-theme >= 0.2.4, < 1.0.0',
             'sphinxcontrib-httpdomain >= 1.5.0, < 2.0.0',
         ],

@@ -92,10 +92,6 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
                    logic: Callable):
     """Handle a Flask HTTP request
 
-    @TODO:
-        - allowed_exceptions
-        - response validation
-
     :param handler: flask_restful.Resource: An instance of a Flask Restful
         resource class.
     :param tuple args: Any positional arguments passed to the wrapper method.

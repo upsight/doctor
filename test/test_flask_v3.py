@@ -1,7 +1,7 @@
 import inspect
 import os
-from unittest import mock
 
+import mock
 import pytest
 
 from doctor.flask import (

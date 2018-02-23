@@ -6,6 +6,7 @@ from typing import Callable, List, Tuple
 from flask_restful import Resource
 
 from doctor.flask import handle_http_v3
+from doctor.types import SuperType
 
 
 #: A named tuple that holds all, optional, and required request parameters.
@@ -89,7 +90,12 @@ def get_params_from_func(func: Callable) -> Params:
         required paramters.
     """
     s = func._doctor_signature
-    required = [key for key, p in s.parameters.items() if p.default == p.empty]
+    # Required is a positional argument with no defualt value and it's
+    # annotation must sub class SuperType.  This is so we don't try to
+    # require parameters passed to a logic function by a decorator that are
+    # not part of a request.
+    required = [key for key, p in s.parameters.items()
+                if p.default == p.empty and issubclass(p.annotation, SuperType)]
     optional = [key for key, p in s.parameters.items() if p.default != p.empty]
     all_params = [key for key in s.parameters.keys()]
     return Params(all_params, optional, required)

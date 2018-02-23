@@ -7,7 +7,7 @@ import pytest
 from doctor.flask import (
     handle_http_v3, HTTP400Exception, should_raise_response_validation_errors)
 from doctor.response import Response
-from doctor.router_v3 import get_params_from_func
+from doctor.routing import get_params_from_func
 from doctor.types import integer, boolean, Object, new_type
 
 

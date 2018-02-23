@@ -18,6 +18,7 @@ Usage
    schemas
    resource_schemas
    response
+   routing
    router
    parsing
    errors

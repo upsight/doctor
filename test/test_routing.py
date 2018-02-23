@@ -3,7 +3,7 @@ from functools import wraps
 
 from flask_restful import Resource
 
-from doctor.router_v3 import (
+from doctor.routing import (
     create_routes, delete, get, get_params_from_func, post, put, HTTPMethod,
     Params, Route)
 from doctor.types import array, boolean, integer, string

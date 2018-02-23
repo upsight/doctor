@@ -1,4 +1,5 @@
 import inspect
+from functools import wraps
 
 from flask_restful import Resource
 
@@ -37,6 +38,18 @@ def update_foo(foo_id: FooId, name: Name, is_alive: IsAlive=True) -> Foo:
 
 
 def no_params() -> Foo:
+    return ''
+
+
+def pass_pos_param(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func('extra!', *args, **kwargs)
+    return wrapper
+
+
+@pass_pos_param
+def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
     return ''
 
 
@@ -90,6 +103,19 @@ class TestRouterV3(object):
         no_params._doctor_signature = inspect.signature(no_params)
         expected = Params([], [], [])
         assert expected == get_params_from_func(no_params)
+
+    def test_get_params_from_func_decorated_func(self):
+        """
+        Verifies that we don't include the `extra` param as required since
+        it's not a sublcass of `SuperType` and is passed to the function
+        by a decorator.
+        """
+        decorated_func._doctor_signature = inspect.signature(decorated_func)
+        expected = Params(
+            all=['extra', 'name', 'is_alive'],
+            required=['name'],
+            optional=['is_alive'])
+        assert expected == get_params_from_func(decorated_func)
 
     def test_create_routes(self):
         class MyHandler(Resource):

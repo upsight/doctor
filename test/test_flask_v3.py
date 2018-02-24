@@ -8,17 +8,10 @@ import pytest
 from doctor.flask import (
     handle_http_v3, HTTP400Exception, should_raise_response_validation_errors)
 from doctor.response import Response
-from doctor.types import integer, boolean, Object, new_type, string
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
-
-Auth = string('auth token')
-ItemId = integer('item id', minimum=1)
-Item = new_type(Object, 'item', properties={'item_id': ItemId},
-                additional_properties=False, required=['item_id'])
-IncludeDeleted = boolean('indicates if deleted items should be included.')
-IsDeleted = boolean('Indicates if the item should be marked as deleted')
+from .types import Auth, Item, ItemId, IncludeDeleted
 
 
 def check_auth(func):
@@ -107,8 +100,8 @@ def test_handle_http_decorator_adds_param_annotations(
         mock_request, mock_get_logic):
     """
     This test verifies if a decorator uses doctor.utils.add_param_annotations
-    to the logic function that we fail to validate if the added params are
-    missing or invalid.
+    to add params to the logic function that we fail to validate if the added
+    params are missing or invalid.
     """
     mock_request.method = 'GET'
     mock_request.content_type = 'application/x-www-form-urlencoded'

@@ -1,6 +1,7 @@
 import inspect
 import os
 from functools import wraps
+from inspect import Parameter
 
 import mock
 import six
@@ -11,30 +12,13 @@ from doctor.utils import (
     nested_set, undecorate_func, Params, RequestParamAnnotation)
 
 from .base import TestCase
-from .types import Age, Foo, IsAlive, Name
+from .types import Age, Auth, Foo, IsAlive, IsDeleted, Name
 
 
 if six.PY2:
     getargspec_func = inspect.getargspec
 else:
     getargspec_func = inspect.getfullargspec
-
-
-def test_inject_parameters_into_logic_function():
-    def logic(foo: str, bar: bool=None) -> str:
-        return f'{foo} - {bar}'
-
-    logic._doctor_signature = inspect.signature(logic)
-    logic._doctor_params = get_params_from_func(logic)
-    print(logic._doctor_signature)
-    print(logic._doctor_params)
-    new_params = [
-        RequestParamAnnotation('test', int, True),
-        RequestParamAnnotation('l', str)
-    ]
-    actual = add_param_annotations(logic, new_params)
-    print(actual._doctor_signature)
-    print(actual._doctor_params)
 
 
 def does_nothing(func):
@@ -91,6 +75,36 @@ def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
 
 
 class TestUtils(TestCase):
+
+    def test_add_param_annotations(self):
+        new_params = [
+            RequestParamAnnotation('auth', Auth, required=True),
+            RequestParamAnnotation('is_deleted', IsDeleted)
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+        # auth and is_deleted should be added to `all`.
+        # auth should be added to `required`.
+        # is_deleted should be added to `optional`.
+        # `logic` should be unmodified.
+        expected_params = Params(
+            all=['name', 'age', 'is_alive', 'auth', 'is_deleted'],
+            logic=['name', 'age', 'is_alive'],
+            required=['name', 'age', 'auth'],
+            optional=['is_alive', 'is_deleted']
+        )
+        assert expected_params == actual._doctor_params
+
+        # verify `auth` added to the doctor_signature.
+        expected = Parameter('auth', Parameter.KEYWORD_ONLY,
+                             default=Parameter.empty, annotation=Auth)
+        auth = actual._doctor_signature.parameters['auth']
+        assert expected == auth
+
+        # verify `is_deleted` added to the doctor signature.
+        expected = Parameter('is_deleted', Parameter.KEYWORD_ONLY,
+                             default=None, annotation=IsDeleted)
+        is_deleted = actual._doctor_signature.parameters['is_deleted']
+        assert expected == is_deleted
 
     def test_exec_params_function(self):
         def logic(a, b, c=None):

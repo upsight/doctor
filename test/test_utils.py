@@ -7,15 +7,33 @@ import six
 
 from .base import TestCase
 
+from doctor.routing import get_params_from_func
 from doctor.utils import (
-    exec_params, get_description_lines, get_module_attr, nested_set,
-    undecorate_func)
+    add_param_annotations, exec_params, get_description_lines, get_module_attr,
+    nested_set, undecorate_func, RequestParamAnnotation)
 
 
 if six.PY2:
     getargspec_func = inspect.getargspec
 else:
     getargspec_func = inspect.getfullargspec
+
+
+def test_inject_parameters_into_logic_function():
+    def logic(foo: str, bar: bool=None) -> str:
+        return f'{foo} - {bar}'
+
+    logic._doctor_signature = inspect.signature(logic)
+    logic._doctor_params = get_params_from_func(logic)
+    print(logic._doctor_signature)
+    print(logic._doctor_params)
+    new_params = [
+        RequestParamAnnotation('test', int, True),
+        RequestParamAnnotation('l', str)
+    ]
+    actual = add_param_annotations(logic, new_params)
+    print(actual._doctor_signature)
+    print(actual._doctor_params)
 
 
 def does_nothing(func):

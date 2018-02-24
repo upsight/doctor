@@ -4,9 +4,9 @@ from functools import wraps
 from flask_restful import Resource
 
 from doctor.routing import (
-    create_routes, delete, get, get_params_from_func, post, put, HTTPMethod,
-    Params, Route)
+    create_routes, delete, get, post, put, HTTPMethod, Route)
 from doctor.types import array, boolean, integer, string
+from doctor.utils import get_params_from_func, Params
 
 
 Name = string('name', min_length=1)
@@ -53,7 +53,7 @@ def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
     return ''
 
 
-class TestRouterV3(object):
+class TestRouting(object):
 
     def test_httpmethod(self):
         m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError])
@@ -63,7 +63,8 @@ class TestRouterV3(object):
         expected = Params(
             all=['name', 'age', 'is_alive'],
             optional=['is_alive'],
-            required=['name', 'age'])
+            required=['name', 'age'],
+            logic=['name', 'age', 'is_alive'])
         assert expected == m.logic._doctor_params
         assert [ValueError] == m.logic._doctor_allowed_exceptions
 
@@ -96,12 +97,13 @@ class TestRouterV3(object):
         expected = Params(
             all=['name', 'age', 'is_alive'],
             optional=['is_alive'],
-            required=['name', 'age'])
+            required=['name', 'age'],
+            logic=['name', 'age', 'is_alive'])
         assert expected == get_params_from_func(get_foo)
 
     def test_get_params_from_func_no_params(self):
         no_params._doctor_signature = inspect.signature(no_params)
-        expected = Params([], [], [])
+        expected = Params([], [], [], [])
         assert expected == get_params_from_func(no_params)
 
     def test_get_params_from_func_decorated_func(self):
@@ -114,7 +116,8 @@ class TestRouterV3(object):
         expected = Params(
             all=['extra', 'name', 'is_alive'],
             required=['name'],
-            optional=['is_alive'])
+            optional=['is_alive'],
+            logic=['extra', 'name', 'is_alive'])
         assert expected == get_params_from_func(decorated_func)
 
     def test_create_routes(self):
@@ -152,7 +155,8 @@ class TestRouterV3(object):
         # verify params for get
         params = handler.get._doctor_params
         expected = Params(
-            all=['is_alive'], required=[], optional=['is_alive'])
+            all=['is_alive'], required=[], optional=['is_alive'],
+            logic=['is_alive'])
         assert expected == params
 
         # verify signature
@@ -163,7 +167,7 @@ class TestRouterV3(object):
         # verify params for post
         params = handler.post._doctor_params
         expected = Params(
-            all=['name'], required=['name'], optional=[])
+            all=['name'], required=['name'], optional=[], logic=['name'])
         assert expected == params
 
         # verify signature

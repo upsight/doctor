@@ -38,7 +38,6 @@ import isodate
 import rfc3987
 
 from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
-from doctor.flask import FlaskResourceSchema
 
 
 class SuperType(object):
@@ -397,6 +396,8 @@ class JsonSchema(SuperType):
     definition_key = None  # type: str
 
     def __init__(self, data: typing.Any):
+        # Importing here to avoid circular dependencies
+        from doctor.flask import FlaskResourceSchema
         self.schema = FlaskResourceSchema.from_file(self.schema_file)
         request_schema = None
 

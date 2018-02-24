@@ -1,16 +1,11 @@
 import functools
 import inspect
-from collections import namedtuple
 from typing import Callable, List, Tuple
 
 from flask_restful import Resource
 
 from doctor.flask import handle_http_v3
-from doctor.types import SuperType
-
-
-#: A named tuple that holds all, optional, and required request parameters.
-Params = namedtuple('Params', ['all', 'optional', 'required'])
+from doctor.utils import get_params_from_func
 
 
 class HTTPMethod(object):
@@ -19,8 +14,8 @@ class HTTPMethod(object):
     When instantiated the logic attribute will have 3 attributes added to it:
         - `_doctor_allowed_exceptions` - A list of excpetions that are allowed
           to be re-reaised if encountered during a request.
-        - `_doctor_params` - A `Params` namedtuple containg all params,
-          required params, and optional params.
+        - `_doctor_params` - A `Params` instance containg all params,
+          required params, optional params and logic function params.
         - `_doctor_signature` - The parsed function Signature.
 
     :param method: The HTTP method.  One of: (delete, get, post, put).
@@ -32,9 +27,11 @@ class HTTPMethod(object):
                  allowed_exceptions: List=None):
         self.method = method
         # Add doctor attributes to logic
-        logic._doctor_signature = inspect.signature(logic)
+        if not hasattr(logic, '_doctor_signature'):
+            logic._doctor_signature = inspect.signature(logic)
         logic._doctor_allowed_exceptions = allowed_exceptions
-        logic._doctor_params = get_params_from_func(logic)
+        if not hasattr(logic, '_doctor_params'):
+            logic._doctor_params = get_params_from_func(logic)
         self.logic = logic
 
 
@@ -80,25 +77,6 @@ def put(func: Callable, allowed_excpetions: List=None) -> HTTPMethod:
     :returns: HTTPMethod
     """
     return HTTPMethod('put', func)
-
-
-def get_params_from_func(func: Callable) -> Params:
-    """Gets all parameters from a function signature.
-
-    :param func: The function to inspect.
-    :returns: A named tuple containing information about all, optional and
-        required paramters.
-    """
-    s = func._doctor_signature
-    # Required is a positional argument with no defualt value and it's
-    # annotation must sub class SuperType.  This is so we don't try to
-    # require parameters passed to a logic function by a decorator that are
-    # not part of a request.
-    required = [key for key, p in s.parameters.items()
-                if p.default == p.empty and issubclass(p.annotation, SuperType)]
-    optional = [key for key, p in s.parameters.items() if p.default != p.empty]
-    all_params = [key for key in s.parameters.keys()]
-    return Params(all_params, optional, required)
 
 
 def create_http_method(logic: Callable, http_method: str) -> Callable:

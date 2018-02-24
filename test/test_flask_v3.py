@@ -1,5 +1,6 @@
 import inspect
 import os
+from functools import wraps
 
 import mock
 import pytest
@@ -7,15 +8,28 @@ import pytest
 from doctor.flask import (
     handle_http_v3, HTTP400Exception, should_raise_response_validation_errors)
 from doctor.response import Response
-from doctor.routing import get_params_from_func
-from doctor.types import integer, boolean, Object, new_type
+from doctor.types import integer, boolean, Object, new_type, string
+from doctor.utils import (
+    add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
 
+Auth = string('auth token')
 ItemId = integer('item id', minimum=1)
 Item = new_type(Object, 'item', properties={'item_id': ItemId},
                 additional_properties=False, required=['item_id'])
 IncludeDeleted = boolean('indicates if deleted items should be included.')
 IsDeleted = boolean('Indicates if the item should be marked as deleted')
+
+
+def check_auth(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    params = [
+        RequestParamAnnotation('auth', Auth, True),
+    ]
+    _wrapper = add_param_annotations(wrapper, params)
+    return _wrapper
 
 
 def get_item(item_id: ItemId, include_deleted: IncludeDeleted=False) -> Item:
@@ -31,7 +45,7 @@ def mock_request():
 
 @pytest.fixture
 def mock_get_logic():
-    mock_logic = mock.Mock(spec=get_item, return_value={'item_id': 1})
+    mock_logic = mock.MagicMock(spec=get_item, return_value={'item_id': 1})
     mock_logic._doctor_signature = inspect.signature(get_item)
     mock_logic._doctor_params = get_params_from_func(mock_logic)
     return mock_logic
@@ -87,6 +101,33 @@ def test_handle_http_missing_required_arg(mock_request, mock_get_logic):
 
     with pytest.raises(HTTP400Exception, match='item_id is required'):
         handle_http_v3(mock_handler, (), {}, mock_get_logic)
+
+
+def test_handle_http_decorator_adds_param_annotations(
+        mock_request, mock_get_logic):
+    """
+    This test verifies if a decorator uses doctor.utils.add_param_annotations
+    to the logic function that we fail to validate if the added params are
+    missing or invalid.
+    """
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': 1}
+    mock_handler = mock.Mock()
+    logic = check_auth(get_item)
+
+    expected_params = Params(all=['item_id', 'include_deleted', 'auth'],
+                             optional=['include_deleted'],
+                             required=['item_id', 'auth'],
+                             logic=['item_id', 'include_deleted'])
+    assert expected_params == logic._doctor_params
+    with pytest.raises(HTTP400Exception, match='auth is required'):
+        handle_http_v3(mock_handler, (), {}, logic)
+
+    # Add auth and it should validate
+    mock_request.values = {'item_id': 1, 'auth': 'auth'}
+    actual = handle_http_v3(mock_handler, (), {}, logic)
+    assert actual == ({'item_id': 1}, 200)
 
 
 def test_handle_http_invalid_param(mock_request, mock_get_logic):

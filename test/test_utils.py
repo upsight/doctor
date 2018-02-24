@@ -5,12 +5,13 @@ from functools import wraps
 import mock
 import six
 
-from .base import TestCase
-
 from doctor.routing import get_params_from_func
 from doctor.utils import (
     add_param_annotations, exec_params, get_description_lines, get_module_attr,
-    nested_set, undecorate_func, RequestParamAnnotation)
+    nested_set, undecorate_func, Params, RequestParamAnnotation)
+
+from .base import TestCase
+from .types import Age, Foo, IsAlive, Name
 
 
 if six.PY2:
@@ -67,6 +68,26 @@ def dec_with_args_one_of_which_allows_a_func(foo, bar=None):
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def no_params() -> Foo:
+    return ''
+
+
+def get_foo(name: Name, age: Age, is_alive: IsAlive=True) -> Foo:
+    return ''
+
+
+def pass_pos_param(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func('extra!', *args, **kwargs)
+    return wrapper
+
+
+@pass_pos_param
+def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
+    return ''
 
 
 class TestUtils(TestCase):
@@ -247,3 +268,39 @@ class TestUtils(TestCase):
             dec_with_args_one_of_which_allows_a_func('foo', bar)(foobar))
         actual = undecorate_func(decorated_with_arg_takes_func)
         self.assertEqual(foobar, actual)
+
+    def test_get_params_from_func(self):
+        get_foo._doctor_signature = inspect.signature(get_foo)
+        expected = Params(
+            all=['name', 'age', 'is_alive'],
+            optional=['is_alive'],
+            required=['name', 'age'],
+            logic=['name', 'age', 'is_alive'])
+        assert expected == get_params_from_func(get_foo)
+
+    def test_get_params_from_func_no_params(self):
+        # no signature passed or defined on the function
+        expected = Params([], [], [], [])
+        assert expected == get_params_from_func(no_params)
+
+        # signature passed in
+        signature = inspect.signature(no_params)
+        assert expected == get_params_from_func(no_params, signature)
+
+        # signature attached to logic function
+        no_params._doctor_signature = inspect.signature(no_params)
+        assert expected == get_params_from_func(no_params)
+
+    def test_get_params_from_func_decorated_func(self):
+        """
+        Verifies that we don't include the `extra` param as required since
+        it's not a sublcass of `SuperType` and is passed to the function
+        by a decorator.
+        """
+        decorated_func._doctor_signature = inspect.signature(decorated_func)
+        expected = Params(
+            all=['extra', 'name', 'is_alive'],
+            required=['name'],
+            optional=['is_alive'],
+            logic=['extra', 'name', 'is_alive'])
+        assert expected == get_params_from_func(decorated_func)

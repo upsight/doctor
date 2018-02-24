@@ -1,20 +1,12 @@
 import inspect
-from functools import wraps
 
 from flask_restful import Resource
 
 from doctor.routing import (
     create_routes, delete, get, post, put, HTTPMethod, Route)
-from doctor.types import array, boolean, integer, string
-from doctor.utils import get_params_from_func, Params
+from doctor.utils import Params
 
-
-Name = string('name', min_length=1)
-Age = integer('age', minimum=1, maximum=120)
-IsAlive = boolean('Is alive?')
-FooId = integer('foo id')
-Foo = string('foo')
-Foos = array('foos', items=Foo)
+from .types import Age, Foo, FooId, Foos, IsAlive, Name
 
 
 def delete_foo(foo_id: FooId):
@@ -34,22 +26,6 @@ def create_foo(name: Name) -> Foo:
 
 
 def update_foo(foo_id: FooId, name: Name, is_alive: IsAlive=True) -> Foo:
-    return ''
-
-
-def no_params() -> Foo:
-    return ''
-
-
-def pass_pos_param(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func('extra!', *args, **kwargs)
-    return wrapper
-
-
-@pass_pos_param
-def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
     return ''
 
 
@@ -91,34 +67,6 @@ class TestRouting(object):
         actual = put(get_foo)
         assert actual.method == expected.method
         assert actual.logic == expected.logic
-
-    def test_get_params_from_func(self):
-        get_foo._doctor_signature = inspect.signature(get_foo)
-        expected = Params(
-            all=['name', 'age', 'is_alive'],
-            optional=['is_alive'],
-            required=['name', 'age'],
-            logic=['name', 'age', 'is_alive'])
-        assert expected == get_params_from_func(get_foo)
-
-    def test_get_params_from_func_no_params(self):
-        no_params._doctor_signature = inspect.signature(no_params)
-        expected = Params([], [], [], [])
-        assert expected == get_params_from_func(no_params)
-
-    def test_get_params_from_func_decorated_func(self):
-        """
-        Verifies that we don't include the `extra` param as required since
-        it's not a sublcass of `SuperType` and is passed to the function
-        by a decorator.
-        """
-        decorated_func._doctor_signature = inspect.signature(decorated_func)
-        expected = Params(
-            all=['extra', 'name', 'is_alive'],
-            required=['name'],
-            optional=['is_alive'],
-            logic=['extra', 'name', 'is_alive'])
-        assert expected == get_params_from_func(decorated_func)
 
     def test_create_routes(self):
         class MyHandler(Resource):

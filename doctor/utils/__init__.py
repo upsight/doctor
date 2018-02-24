@@ -25,6 +25,8 @@ class RequestParamAnnotation(object):
 
     :param name: The name of the parameter.
     :param annotation: The annotation type of the parameter.
+    :type annotation: A doctor type that should subclass
+        :class:`~doctor.types.SuperType`.
     :param required: Indicates if the parameter is required or not.
     """
     def __init__(self, name: str, annotation, required: bool=False):
@@ -34,12 +36,13 @@ class RequestParamAnnotation(object):
 
 
 class Params(object):
-    """Represents parameters for a reuqest.
+    """Represents parameters for a request.
 
     :param all: A list of all paramter names for a request.
     :param required: A list of all required parameter names for a request.
     :param optional: A list of all optional parameter names for a request.
-    :param logic: A list of all parameter names for the logic function.
+    :param logic: A list of all parameter names that are part ofthe logic
+        function signature.
     """
     def __init__(self, all: List[str], required: List[str],
                  optional: List[str], logic: List[str]):
@@ -70,11 +73,17 @@ def get_params_from_func(func: Callable, signature: Signature=None) -> Params:
     """Gets all parameters from a function signature.
 
     :param func: The function to inspect.
+    :param signature: An inspect.Signature instance.
     :returns: A named tuple containing information about all, optional,
         required and logic function parameters.
     """
-    if not signature:
-        signature = func._doctor_signature
+    if signature is None:
+        # Check if the function already parsed the signature
+        signature = getattr(func, '_doctor_signature', None)
+        # Otherwise parse the signature
+        if signature is None:
+            signature = inspect.signature(func)
+
     # Required is a positional argument with no defualt value and it's
     # annotation must sub class SuperType.  This is so we don't try to
     # require parameters passed to a logic function by a decorator that are
@@ -84,6 +93,7 @@ def get_params_from_func(func: Callable, signature: Signature=None) -> Params:
     optional = [key for key, p in signature.parameters.items()
                 if p.default != p.empty]
     all_params = [key for key in signature.parameters.keys()]
+    # Logic params are all parameters that are part of the logic signature.
     logic_params = copy(all_params)
     return Params(all_params, required, optional, logic_params)
 

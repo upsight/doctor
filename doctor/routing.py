@@ -14,8 +14,7 @@ class HTTPMethod(object):
     When instantiated the logic attribute will have 3 attributes added to it:
         - `_doctor_allowed_exceptions` - A list of excpetions that are allowed
           to be re-reaised if encountered during a request.
-        - `_doctor_params` - A `Params` instance containg all params,
-          required params, optional params and logic function params.
+        - `_doctor_params` - A :class:`~doctor.utils.Params` instance.
         - `_doctor_signature` - The parsed function Signature.
 
     :param method: The HTTP method.  One of: (delete, get, post, put).
@@ -26,12 +25,17 @@ class HTTPMethod(object):
     def __init__(self, method: str, logic: Callable,
                  allowed_exceptions: List=None):
         self.method = method
-        # Add doctor attributes to logic
+
+        # Add doctor attributes to logic.  We do a check to ensure some
+        # attributes aren't already set in the event that
+        # doctor.utils.add_param_annotations was used to add additional
+        # request parameters to the logic function that aren't part of it's
+        # signature.
         if not hasattr(logic, '_doctor_signature'):
             logic._doctor_signature = inspect.signature(logic)
-        logic._doctor_allowed_exceptions = allowed_exceptions
         if not hasattr(logic, '_doctor_params'):
             logic._doctor_params = get_params_from_func(logic)
+        logic._doctor_allowed_exceptions = allowed_exceptions
         self.logic = logic
 
 

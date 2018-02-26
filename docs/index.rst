@@ -23,6 +23,7 @@ Usage
    parsing
    errors
    types
+   utils
 
 .. include:: ../CHANGELOG.rst
 

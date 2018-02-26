@@ -1,20 +1,12 @@
 import inspect
-from functools import wraps
 
 from flask_restful import Resource
 
 from doctor.routing import (
-    create_routes, delete, get, get_params_from_func, post, put, HTTPMethod,
-    Params, Route)
-from doctor.types import array, boolean, integer, string
+    create_routes, delete, get, post, put, HTTPMethod, Route)
+from doctor.utils import Params
 
-
-Name = string('name', min_length=1)
-Age = integer('age', minimum=1, maximum=120)
-IsAlive = boolean('Is alive?')
-FooId = integer('foo id')
-Foo = string('foo')
-Foos = array('foos', items=Foo)
+from .types import Age, Foo, FooId, Foos, IsAlive, Name
 
 
 def delete_foo(foo_id: FooId):
@@ -37,85 +29,58 @@ def update_foo(foo_id: FooId, name: Name, is_alive: IsAlive=True) -> Foo:
     return ''
 
 
-def no_params() -> Foo:
-    return ''
-
-
-def pass_pos_param(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func('extra!', *args, **kwargs)
-    return wrapper
-
-
-@pass_pos_param
-def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
-    return ''
-
-
-class TestRouterV3(object):
+class TestRouting(object):
 
     def test_httpmethod(self):
-        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError])
+        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError],
+                       title='Retrieve')
         assert 'get' == m.method
         assert get_foo == m.logic
         assert inspect.signature(get_foo) == m.logic._doctor_signature
         expected = Params(
             all=['name', 'age', 'is_alive'],
             optional=['is_alive'],
-            required=['name', 'age'])
+            required=['name', 'age'],
+            logic=['name', 'age', 'is_alive'])
         assert expected == m.logic._doctor_params
         assert [ValueError] == m.logic._doctor_allowed_exceptions
+        assert 'Retrieve' == m.logic._doctor_title
 
     def test_delete(self):
-        expected = HTTPMethod('delete', get_foo)
-        a = delete(get_foo)
+        expected = HTTPMethod('delete', get_foo,
+                              allowed_exceptions=[ValueError], title='Title')
+        a = delete(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert a.method == expected.method
         assert a.logic == expected.logic
+        assert a.logic._doctor_title == 'Title'
+        assert a.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_get(self):
-        expected = HTTPMethod('get', get_foo)
-        actual = get(get_foo)
+        expected = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError],
+                              title='Title')
+        actual = get(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
         assert actual.logic == expected.logic
+        assert actual.logic._doctor_title == 'Title'
+        assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_post(self):
-        expected = HTTPMethod('post', get_foo)
-        actual = post(get_foo)
+        expected = HTTPMethod('post', get_foo, allowed_exceptions=[ValueError],
+                              title='Title')
+        actual = post(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
         assert actual.logic == expected.logic
+        assert actual.logic._doctor_title == 'Title'
+        assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_put(self):
-        expected = HTTPMethod('put', get_foo)
-        actual = put(get_foo)
+        expected = HTTPMethod('put', get_foo, allowed_exceptions=[ValueError],
+                              title='Title')
+        actual = put(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
         assert actual.logic == expected.logic
-
-    def test_get_params_from_func(self):
-        get_foo._doctor_signature = inspect.signature(get_foo)
-        expected = Params(
-            all=['name', 'age', 'is_alive'],
-            optional=['is_alive'],
-            required=['name', 'age'])
-        assert expected == get_params_from_func(get_foo)
-
-    def test_get_params_from_func_no_params(self):
-        no_params._doctor_signature = inspect.signature(no_params)
-        expected = Params([], [], [])
-        assert expected == get_params_from_func(no_params)
-
-    def test_get_params_from_func_decorated_func(self):
-        """
-        Verifies that we don't include the `extra` param as required since
-        it's not a sublcass of `SuperType` and is passed to the function
-        by a decorator.
-        """
-        decorated_func._doctor_signature = inspect.signature(decorated_func)
-        expected = Params(
-            all=['extra', 'name', 'is_alive'],
-            required=['name'],
-            optional=['is_alive'])
-        assert expected == get_params_from_func(decorated_func)
+        assert actual.logic._doctor_title == 'Title'
+        assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_create_routes(self):
         class MyHandler(Resource):
@@ -123,13 +88,13 @@ class TestRouterV3(object):
 
         routes = (
             Route('^/foo/?$', (
-                get(get_foos),
+                get(get_foos, title='Retrieve List'),
                 post(create_foo)), base_handler_class=MyHandler,
-                handler_name='MyHandler'),
+                handler_name='MyHandler', heading='Foo'),
             Route('^/foo/<int:foo_id>/?$', (
                 delete(delete_foo),
                 get(get_foo),
-                put(update_foo))),
+                put(update_foo)), heading='Foo'),
         )
         actual = create_routes(routes)
 
@@ -149,10 +114,14 @@ class TestRouterV3(object):
         assert hasattr(handler, 'get')
         assert hasattr(handler, 'post')
 
+        # verify heading attr was added to handler
+        assert handler._doctor_heading == 'Foo'
+
         # verify params for get
         params = handler.get._doctor_params
         expected = Params(
-            all=['is_alive'], required=[], optional=['is_alive'])
+            all=['is_alive'], required=[], optional=['is_alive'],
+            logic=['is_alive'])
         assert expected == params
 
         # verify signature
@@ -160,10 +129,13 @@ class TestRouterV3(object):
         expected = inspect.signature(get_foos)
         assert expected == sig
 
+        # verify custom title
+        assert 'Retrieve List' == handler.get._doctor_title
+
         # verify params for post
         params = handler.post._doctor_params
         expected = Params(
-            all=['name'], required=['name'], optional=[])
+            all=['name'], required=['name'], optional=[], logic=['name'])
         assert expected == params
 
         # verify signature

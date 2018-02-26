@@ -10,9 +10,9 @@ from doctor.types import array, boolean, integer, string, Object
 
 # -- mark-types
 
-Body = string('Note body')
-Done = boolean('Marks if a note is done or not.')
-NoteId = integer('Note ID')
+Body = string('Note body', example='body')
+Done = boolean('Marks if a note is done or not.', example=False)
+NoteId = integer('Note ID', example=1)
 Status = string('API status')
 
 
@@ -25,9 +25,14 @@ class Note(Object):
         'done': Done,
     }
     required = ['body', 'done', 'note_id']
+    example = {
+        'body': 'Example Body',
+        'done': True,
+        'note_id': 1,
+    }
 
 
-Notes = array('Array of notes', items=Note)
+Notes = array('Array of notes', items=Note, example=[Note.example])
 
 # -- mark-logic
 
@@ -79,15 +84,15 @@ def status() -> Status:
 
 routes = (
     Route('/', methods=(
-        get(status),)),
+        get(status),), heading='API Status'),
     Route('/note/', methods=(
-        get(get_notes),
-        post(create_note)), handler_name='NoteListHandler'
+        get(get_notes, title='Retrieve List'),
+        post(create_note)), handler_name='NoteListHandler', heading='Notes (v1)'
     ),
     Route('/note/<int:note_id>/', methods=(
         delete(delete_note),
         get(get_note),
-        put(update_note))
+        put(update_note)), heading='Notes (v1)'
     ),
 )
 

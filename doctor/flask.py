@@ -126,7 +126,10 @@ def handle_http_v3(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
             annotation = sig.parameters[name].annotation
             params[name] = annotation(value)
 
-        response = logic(*args, **params)
+        # Only pass request parameters defined by the logic signature.
+        logic_params = {k: v for k, v in params.items()
+                        if k in logic._doctor_params.logic}
+        response = logic(*args, **logic_params)
 
         # response validation
         if sig.return_annotation != sig.empty:

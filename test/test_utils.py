@@ -1,15 +1,18 @@
 import inspect
 import os
 from functools import wraps
+from inspect import Parameter
 
 import mock
 import six
 
-from .base import TestCase
-
+from doctor.routing import get_params_from_func
 from doctor.utils import (
-    exec_params, get_description_lines, get_module_attr, nested_set,
-    undecorate_func)
+    add_param_annotations, exec_params, get_description_lines, get_module_attr,
+    nested_set, undecorate_func, Params, RequestParamAnnotation)
+
+from .base import TestCase
+from .types import Age, Auth, Foo, IsAlive, IsDeleted, Name
 
 
 if six.PY2:
@@ -51,7 +54,57 @@ def dec_with_args_one_of_which_allows_a_func(foo, bar=None):
     return decorator
 
 
+def no_params() -> Foo:
+    return ''
+
+
+def get_foo(name: Name, age: Age, is_alive: IsAlive=True) -> Foo:
+    return ''
+
+
+def pass_pos_param(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func('extra!', *args, **kwargs)
+    return wrapper
+
+
+@pass_pos_param
+def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
+    return ''
+
+
 class TestUtils(TestCase):
+
+    def test_add_param_annotations(self):
+        new_params = [
+            RequestParamAnnotation('auth', Auth, required=True),
+            RequestParamAnnotation('is_deleted', IsDeleted)
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+        # auth and is_deleted should be added to `all`.
+        # auth should be added to `required`.
+        # is_deleted should be added to `optional`.
+        # `logic` should be unmodified.
+        expected_params = Params(
+            all=['name', 'age', 'is_alive', 'auth', 'is_deleted'],
+            logic=['name', 'age', 'is_alive'],
+            required=['name', 'age', 'auth'],
+            optional=['is_alive', 'is_deleted']
+        )
+        assert expected_params == actual._doctor_params
+
+        # verify `auth` added to the doctor_signature.
+        expected = Parameter('auth', Parameter.KEYWORD_ONLY,
+                             default=Parameter.empty, annotation=Auth)
+        auth = actual._doctor_signature.parameters['auth']
+        assert expected == auth
+
+        # verify `is_deleted` added to the doctor signature.
+        expected = Parameter('is_deleted', Parameter.KEYWORD_ONLY,
+                             default=None, annotation=IsDeleted)
+        is_deleted = actual._doctor_signature.parameters['is_deleted']
+        assert expected == is_deleted
 
     def test_exec_params_function(self):
         def logic(a, b, c=None):
@@ -229,3 +282,39 @@ class TestUtils(TestCase):
             dec_with_args_one_of_which_allows_a_func('foo', bar)(foobar))
         actual = undecorate_func(decorated_with_arg_takes_func)
         self.assertEqual(foobar, actual)
+
+    def test_get_params_from_func(self):
+        get_foo._doctor_signature = inspect.signature(get_foo)
+        expected = Params(
+            all=['name', 'age', 'is_alive'],
+            optional=['is_alive'],
+            required=['name', 'age'],
+            logic=['name', 'age', 'is_alive'])
+        assert expected == get_params_from_func(get_foo)
+
+    def test_get_params_from_func_no_params(self):
+        # no signature passed or defined on the function
+        expected = Params([], [], [], [])
+        assert expected == get_params_from_func(no_params)
+
+        # signature passed in
+        signature = inspect.signature(no_params)
+        assert expected == get_params_from_func(no_params, signature)
+
+        # signature attached to logic function
+        no_params._doctor_signature = inspect.signature(no_params)
+        assert expected == get_params_from_func(no_params)
+
+    def test_get_params_from_func_decorated_func(self):
+        """
+        Verifies that we don't include the `extra` param as required since
+        it's not a sublcass of `SuperType` and is passed to the function
+        by a decorator.
+        """
+        decorated_func._doctor_signature = inspect.signature(decorated_func)
+        expected = Params(
+            all=['extra', 'name', 'is_alive'],
+            required=['name'],
+            optional=['is_alive'],
+            logic=['extra', 'name', 'is_alive'])
+        assert expected == get_params_from_func(decorated_func)

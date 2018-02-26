@@ -38,7 +38,6 @@ import isodate
 import rfc3987
 
 from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
-from doctor.flask import FlaskResourceSchema
 
 
 class SuperType(object):
@@ -50,6 +49,9 @@ class SuperType(object):
     """
     #: The description of what the type represents.
     description = None  # type: str
+
+    #: An example value for the type.
+    example = None
 
     def __init__(self, *args, **kwargs):
         if self.description is None:
@@ -225,6 +227,7 @@ class Enum(SuperType, str):
     """
     Represents a `str` type that must be one of any defined allowed values.
     """
+    native_type = str
     errors = {
         'invalid': 'Must be a valid choice.',
     }
@@ -239,6 +242,7 @@ class Enum(SuperType, str):
 
 class Object(SuperType, dict):
     """Represents a `dict` type."""
+    native_type = dict
     errors = {
         'type': 'Must be an object.',
         'invalid_key': 'Object keys must be strings.',
@@ -397,6 +401,8 @@ class JsonSchema(SuperType):
     definition_key = None  # type: str
 
     def __init__(self, data: typing.Any):
+        # Importing here to avoid circular dependencies
+        from doctor.flask import FlaskResourceSchema
         self.schema = FlaskResourceSchema.from_file(self.schema_file)
         request_schema = None
 

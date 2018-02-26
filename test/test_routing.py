@@ -32,7 +32,8 @@ def update_foo(foo_id: FooId, name: Name, is_alive: IsAlive=True) -> Foo:
 class TestRouting(object):
 
     def test_httpmethod(self):
-        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError])
+        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError],
+                       title='Retrieve')
         assert 'get' == m.method
         assert get_foo == m.logic
         assert inspect.signature(get_foo) == m.logic._doctor_signature
@@ -43,30 +44,43 @@ class TestRouting(object):
             logic=['name', 'age', 'is_alive'])
         assert expected == m.logic._doctor_params
         assert [ValueError] == m.logic._doctor_allowed_exceptions
+        assert 'Retrieve' == m.logic._doctor_title
 
     def test_delete(self):
-        expected = HTTPMethod('delete', get_foo)
-        a = delete(get_foo)
+        expected = HTTPMethod('delete', get_foo,
+                              allowed_exceptions=[ValueError], title='Title')
+        a = delete(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert a.method == expected.method
         assert a.logic == expected.logic
+        assert a.logic._doctor_title == 'Title'
+        assert a.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_get(self):
-        expected = HTTPMethod('get', get_foo)
-        actual = get(get_foo)
+        expected = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError],
+                              title='Title')
+        actual = get(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
         assert actual.logic == expected.logic
+        assert actual.logic._doctor_title == 'Title'
+        assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_post(self):
-        expected = HTTPMethod('post', get_foo)
-        actual = post(get_foo)
+        expected = HTTPMethod('post', get_foo, allowed_exceptions=[ValueError],
+                              title='Title')
+        actual = post(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
         assert actual.logic == expected.logic
+        assert actual.logic._doctor_title == 'Title'
+        assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_put(self):
-        expected = HTTPMethod('put', get_foo)
-        actual = put(get_foo)
+        expected = HTTPMethod('put', get_foo, allowed_exceptions=[ValueError],
+                              title='Title')
+        actual = put(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
         assert actual.logic == expected.logic
+        assert actual.logic._doctor_title == 'Title'
+        assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
     def test_create_routes(self):
         class MyHandler(Resource):
@@ -74,13 +88,13 @@ class TestRouting(object):
 
         routes = (
             Route('^/foo/?$', (
-                get(get_foos),
+                get(get_foos, title='Retrieve List'),
                 post(create_foo)), base_handler_class=MyHandler,
-                handler_name='MyHandler'),
+                handler_name='MyHandler', heading='Foo'),
             Route('^/foo/<int:foo_id>/?$', (
                 delete(delete_foo),
                 get(get_foo),
-                put(update_foo))),
+                put(update_foo)), heading='Foo'),
         )
         actual = create_routes(routes)
 
@@ -100,6 +114,9 @@ class TestRouting(object):
         assert hasattr(handler, 'get')
         assert hasattr(handler, 'post')
 
+        # verify heading attr was added to handler
+        assert handler._doctor_heading == 'Foo'
+
         # verify params for get
         params = handler.get._doctor_params
         expected = Params(
@@ -111,6 +128,9 @@ class TestRouting(object):
         sig = handler.get._doctor_signature
         expected = inspect.signature(get_foos)
         assert expected == sig
+
+        # verify custom title
+        assert 'Retrieve List' == handler.get._doctor_title
 
         # verify params for post
         params = handler.post._doctor_params

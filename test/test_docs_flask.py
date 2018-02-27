@@ -16,7 +16,7 @@ class TestDocsFlask(TestCase):
     def setUp(self):
         flask_folder = os.path.join(os.path.dirname(__file__), '..',
                                     'examples', 'flask')
-        self.harness = AutoFlaskHarness(os.path.join(flask_folder, 'app_v3.py'),
+        self.harness = AutoFlaskHarness(os.path.join(flask_folder, 'app.py'),
                                         'http://127.0.0.1/')
         self.harness.setup_app(mock.sentinel.sphinx_app)
         self.annotations = list(self.harness.iter_annotations())

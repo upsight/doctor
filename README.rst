@@ -27,6 +27,8 @@ Define some types that will be used to validate your request parameters.
     FooId = integer('The foo ID.', example=1)
     FetchBars = boolean('A flag that indicates if we should fetch bars', example=True)
     class Foo(Object):
+        description = 'A Foo object'
+        example = {'foo_id': 1}
         properties = {'foo_id': FooId}
         required = ['foo_id']
         additional_properties = False

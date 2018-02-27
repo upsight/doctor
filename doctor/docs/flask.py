@@ -99,8 +99,8 @@ class AutoFlaskHarness(BaseHarness):
 
         :param route: Werkzeug Route object.
         :param view_class: View class for the annotated method.
-        :param annotation: Schema annotation for the method to be requested.
-        :type annotation: doctor.resource.ResourceSchemaAnnotation
+        :param annotation: Annotation for the method to be requested.
+        :type annotation: doctor.resource.ResourceAnnotation
         :returns: dict
         """
         headers = self._get_headers(rule, annotation)

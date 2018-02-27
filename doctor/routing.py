@@ -4,7 +4,7 @@ from typing import Callable, List, Tuple
 
 from flask_restful import Resource
 
-from doctor.flask import handle_http_v3
+from doctor.flask import handle_http
 from doctor.utils import get_params_from_func
 
 
@@ -93,7 +93,7 @@ def create_http_method(logic: Callable, http_method: str) -> Callable:
     """
     @functools.wraps(logic)
     def fn(handler, *args, **kwargs):
-        return handle_http_v3(handler, args, kwargs, logic)
+        return handle_http(handler, args, kwargs, logic)
     return fn
 
 

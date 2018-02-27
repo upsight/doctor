@@ -1,9 +1,9 @@
-import os
 from functools import wraps
 
-from doctor.flask import FlaskResourceSchema, FlaskRouter
+from doctor.routing import create_routes, get, Route
 
 from .base import FlaskTestCase
+from .types import ItemId, Name
 
 
 def adds_positional_arg_to_func(arg=1):
@@ -16,9 +16,9 @@ def adds_positional_arg_to_func(arg=1):
 
 
 @adds_positional_arg_to_func(55)
-def logic_func(pos_arg, annotation_id, name=None):
+def logic_func(pos_arg, item_id: ItemId, name: Name=None):
     return {
-        'annotation_id': annotation_id,
+        'item_id': item_id,
         'name': name,
         'pos_arg': pos_arg,
     }
@@ -27,16 +27,11 @@ def logic_func(pos_arg, annotation_id, name=None):
 class RouterIntegrationTestCase(FlaskTestCase):
 
     def get_routes(self):
-        schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
-        router = FlaskRouter(schema_dir, FlaskResourceSchema)
-        return router.create_routes('Test', 'annotation.yaml', {
-            '/test/': {
-                'get': {
-                    'logic': logic_func,
-                    'omit_args': ['pos_arg'],
-                },
-            },
-        })
+        routes = (
+            Route('/test/', methods=(
+                get(logic_func),), heading='Test'),
+        )
+        return create_routes(routes)
 
     def test_decorated_logic_func_passes_arg_to_func(self):
         """
@@ -47,9 +42,9 @@ class RouterIntegrationTestCase(FlaskTestCase):
         into accout `omit_args` and just determining required arguments based
         on the function signature's non-keyword arguments.
         """
-        response = self.client.get('/test/', query_string={'annotation_id': 1})
+        response = self.client.get('/test/', query_string={'item_id': 1})
         expected = {
-            'annotation_id': 1,
+            'item_id': 1,
             'name': None,
             'pos_arg': 55,
         }

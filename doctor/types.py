@@ -402,8 +402,8 @@ class JsonSchema(SuperType):
 
     def __init__(self, data: typing.Any):
         # Importing here to avoid circular dependencies
-        from doctor.flask import FlaskResourceSchema
-        self.schema = FlaskResourceSchema.from_file(self.schema_file)
+        from doctor.resource import ResourceSchema
+        self.schema = ResourceSchema.from_file(self.schema_file)
         request_schema = None
 
         # Look up the description in the schema.

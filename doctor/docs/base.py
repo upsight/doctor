@@ -7,8 +7,9 @@ import logging
 import pipes
 import re
 from collections import defaultdict
+from inspect import Parameter
+from typing import Any, Dict, List
 
-import six
 try:
     from docutils import nodes
     from docutils.parsers.rst import Directive
@@ -22,6 +23,8 @@ except ImportError:  # pragma: no cover
 
 from doctor.docs.httpdomain import setup as setup_httpdomain
 from doctor.errors import SchemaError
+from doctor.resource import ResourceAnnotation
+from doctor.types import Array, Enum, Object
 from doctor.utils import get_description_lines
 
 
@@ -54,7 +57,8 @@ HEADING_TOKEN = '!!HEADING!!'
 HEADING_TOKEN_LENGTH = len(HEADING_TOKEN)
 
 
-def get_example_curl_lines(method, url, params, headers):
+def get_example_curl_lines(method: str, url: str, params: dict,
+                           headers: dict) -> List[str]:
     """Render a cURL command for the given request.
 
     :param str method: HTTP request method (e.g. "GET").
@@ -88,104 +92,8 @@ def get_example_curl_lines(method, url, params, headers):
     return wrapped
 
 
-def get_example_value(property_schema, schema, key):
-    """Returns the property's example value.
-
-    :param dict property_schema: The JSON schema for a single property.
-    :param doctor.resource.ResourceSchema schema: The root schema
-        object that the property schema belongs to.
-    :param str key: The property key.  This is used to make debugging errors
-        simpler.
-    :returns: mixed
-    """
-    # If the schema is a oneOf, anyOf, etc. definition, resolve it first.
-    if OF_TYPES.intersection(property_schema.keys()):
-        of_type = list(property_schema.keys())[0]
-        fragment = '#{0}/0'.format(of_type)
-        try:
-            property_schema = schema.resolve(fragment, property_schema)
-        except SchemaError as e:
-            raise SchemaError(
-                'Error resolving example value for {}. Could not resolve {} '
-                'from {}. {}'.format(
-                    key, fragment, property_schema, e))
-
-    # Resolve the type from the property.  Grab the first type if the property
-    # is an array of multiple types.
-    try:
-        schema_type = schema.resolve('#type', property_schema)
-    except SchemaError as e:
-        raise SchemaError('Error resolving #type from {} for {}. {}'.format(
-            property_schema, key, e))
-    if not isinstance(schema_type, six.string_types):
-        schema_type = schema_type[0]
-
-    # Handles the special cases where we have an object without an example
-    # which will isntead create the example from it's properties example values
-    # and creating an example from an array that has an object without
-    # an example, which also generates an example from it's properties
-    # example values..
-    if schema_type == 'object' and 'example' not in property_schema:
-        return get_example_for_object(property_schema, schema)
-    elif schema_type == 'array' and 'example' not in property_schema:
-        try:
-            items_type = schema.resolve('#items', property_schema)
-            # If it's a dict we grab the example from that schema, otherwise
-            # we assume an example was provided.
-            if isinstance(items_type, dict):
-                return [get_example_value(items_type, schema, key)]
-        except SchemaError:
-            # It's valid to not specify items for array types.  Just ignore
-            # and assume there will be an example.
-            pass
-
-    try:
-        value = schema.resolve('#example', property_schema)
-    except SchemaError as e:
-        # Catch the error so we can re-raise with the offending key.
-        raise SchemaError(
-            'Error resolving #example from {} for property `{}`. {}'.format(
-                property_schema, key, e))
-    if isinstance(value, dict):
-        # If the example value is a dict, it might be a oneOf. If so, we'll
-        # use the first value as an example. FIXME: provide examples for each?
-        keys = list(value.keys())
-        if len(keys) == 1 and keys[0] == 'oneOf':
-            value = value['oneOf'][0]
-    return value
-
-
-def get_example_for_object(object_schema, schema):
-    """Gets an example of an object from it's properties.
-
-    :param dict object_schema: The JSON schema for the object.
-    :param doctor.resource.ResourceSchema schema: The root schema
-        object that the object schema belongs to.
-    :returns: A resolved example dict from the object_schema.
-    :raises: SchemaError if example values can't be resolved from properties
-        in the object_schema.
-    """
-    # If the object_schema has a $schema key that means we are attempting
-    # to resolve a example values for a schema that is entirely different
-    # than the `schema` param.  So in that case we set schema to be
-    # a new instance of the same type but with the object_schema's specific
-    # schema.  We use type here to get the class since it could be either
-    # `FlaskResourceSchema` or a custom class.
-    if '$schema' in object_schema:
-        schema = type(schema)(object_schema)
-    try:
-        properties = schema.resolve('#properties', object_schema)
-    except SchemaError as e:
-        raise SchemaError('Error resolving #properties for {}. {}'.format(
-            object_schema, e))
-    return {
-        key: get_example_value(
-            schema.resolve('#' + key, properties), schema, key)
-        for key in properties
-    }
-
-
-def get_example_lines(headers, method, url, params, response):
+def get_example_lines(headers: Dict[str, str], method: str, url: str,
+                      params: Dict[str, Any], response: str) -> List[str]:
     """Render a reStructuredText example for the given request and response.
 
     :param dict headers: A dict of HTTP headers.
@@ -211,16 +119,16 @@ def get_example_lines(headers, method, url, params, response):
     return lines
 
 
-def get_json_object_lines(annotation, schema, field, url_params, request=False,
-                          object_property=False):
-    """Generate documentation for the given object's properties.
+def get_json_object_lines(annotation: ResourceAnnotation,
+                          properties: Dict[str, Any], field: str,
+                          url_params: Dict, request: bool=False,
+                          object_property: bool=False) -> List[str]:
+    """Generate documentation for the given object annotation.
 
-    :param doctor.resource.ResourceSchemaAnnotation annotation:
+    :param doctor.resource.ResourceAnnotation annotation:
         Annotation object for the associated handler method.
-    :param doctor.schema.Schema schema: Schema object to document.
-        Assumes that the schema is of type "object".
     :param str field: Sphinx field type to use (e.g. '<json').
-    :param list url_params: A list of url paramter strings.
+    :param list url_params: A list of url parameter strings.
     :param bool request: Whether the schema is for the request or not.
     :param bool object_property: If True it indicates this is a property of
         an object that we are documenting.  This is only set to True when
@@ -230,52 +138,37 @@ def get_json_object_lines(annotation, schema, field, url_params, request=False,
     """
     required_lines = []
     lines = []
-    properties = resolve('#properties', schema, annotation)
-    required_args = annotation.logic.required_args
     default_field = field
-    for prop in sorted(properties):
+    for prop in sorted(properties.keys()):
+        annotated_type = properties[prop]
         # If the property is a url parameter override the field to use
         # param so that it's not documented in the json body or query params.
+        field = default_field
         if request and prop in url_params:
             field = 'param'
-        else:
-            field = default_field
-        try:
-            prop_schema = annotation.schema.resolve('#' + prop, properties)
-        except SchemaError as e:
-            raise SchemaError('Error resolving #{} from {}. {}'.format(
-                prop, properties, e))
-        types = resolve('#type', prop_schema, annotation, [prop])
-        if isinstance(types, six.string_types):
-            types = [types]
-        types = [TYPE_MAP.get(t, t) for t in types]
-        description = resolve('#description', prop_schema, annotation, [prop])
+
+        types = [str(annotated_type.native_type.__name__)]
+        description = annotated_type.description
         is_object = False
-        # Determine If the property is an object and has any properties that
-        # we can try to document.
-        prop_type = prop_schema.get('type')
-        if (isinstance(prop_type, list) and 'object' in prop_type and
-                'properties' in prop_schema):
+        if issubclass(annotated_type, Object):
             is_object = True
-        elif prop_type == 'object' and 'properties' in prop_schema:
-            is_object = True
-        try:
-            enum = resolve('#enum', prop_schema, annotation, [prop])
-            enum = ' Must be one of: `%s`.' % (enum,)
-        except Exception:
-            enum = ''
+
+        # Document any enum.
+        enum = ''
+        if issubclass(annotated_type, Enum):
+            enum = ' Must be one of: `{}`.'.format(annotated_type.enum)
 
         field_prop = prop
         if is_object:
             field_prop = '{}|object'.format(prop)
         elif object_property:
             field_prop = '{}|objectproperty'.format(prop)
-        # If this is a request schema and the property is required
+        # If this is a request param and the property is required
         # add required text and append lines to required_lines.  This
         # will make the required properties appear in alphabetical order
         # before the optional.
         required_arg = False
-        if request and prop in required_args:
+        if request and prop in annotation.params.required:
             description = '**Required**.  ' + description
             required_lines.append(
                 ':{field} {types} {prop}: {description}{enum}'.format(
@@ -292,7 +185,7 @@ def get_json_object_lines(annotation, schema, field, url_params, request=False,
         if is_object:
             try:
                 object_properties = get_json_object_lines(
-                    annotation, prop_schema, field, {}, request,
+                    annotation, annotated_type.properties, field, {}, request,
                     object_property=True)
                 if required_arg:
                     required_lines.extend(object_properties)
@@ -316,44 +209,42 @@ def get_json_object_lines(annotation, schema, field, url_params, request=False,
     return required_lines + lines
 
 
-def get_json_schema_lines(annotation, schema, field, route, request=False):
-    """Generate documentation lines for the given schema.
+def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
+                   request: bool=False) -> List:
+    """Generate documentation lines for the given annotation.
 
     This only documents schemas of type "object", or type "list" where each
     "item" is an object. Other types are ignored (but a warning is logged).
 
-    :param doctor.resource.ResourceSchemaAnnotation annotation:
+    :param doctor.resource.ResourceAnnotation annotation:
         Annotation object for the associated handler method.
-    :param doctor.schema.Schema schema: Schema object to document.
     :param str field: Sphinx field type to use (e.g. '<json').
     :param str route: The route the annotation is attached to.
-    :param bool request: Whether the schema is for the request or not.
+    :param bool request: Whether the resource annotation is for the request or
+        not.
     :returns: list of strings, one for each line.
     """
     url_params = URL_PARAMS_RE.findall(route)
-    schema_type = resolve('#type', schema, annotation)
-    if not isinstance(schema_type, six.string_types):
-        schema_type = schema_type[0]
-    if schema_type == 'object':
-        return get_json_object_lines(annotation, schema, field, url_params,
-                                     request)
-    elif schema_type == 'array':
-        items = resolve('#items', schema, annotation)
-        items_type = resolve('#type', items, annotation, ['items'])
-        if isinstance(items_type, list) and items_type:
-            items_type = items_type[0]
-        if items_type == 'object':
-            return get_json_object_lines(annotation, items, field + 'arr',
-                                         url_params, request)
-        logging.warn('Not documenting list item of type %s (for %s %s)',
-                     items_type, annotation.http_method, route)
+    if not request:
+        return_type = annotation.logic._doctor_signature.return_annotation
+        if issubclass(return_type, Array):
+            if issubclass(return_type.items, Object):
+                properties = return_type.items.properties
+                field += 'arr'
+            else:
+                return []
+        elif issubclass(return_type, Object):
+            properties = return_type.properties
+        else:
+            return []
     else:
-        logging.warn('Not documenting schema of type %s (for %s %s)',
-                     schema_type, annotation.http_method, route)
-    return []
+        parameters = annotation.logic._doctor_signature.parameters
+        properties = {k: p.annotation for k, p in parameters.items()}
+    return get_json_object_lines(annotation, properties, field, url_params,
+                                 request)
 
 
-def get_name(value):
+def get_name(value) -> str:
     """Return a best guess at the qualified name for a class or function.
 
     :param value: A class or function object.
@@ -366,13 +257,13 @@ def get_name(value):
         return '.'.join((value.__module__, value.__name__))
 
 
-def normalize_route(route):
+def normalize_route(route: str) -> str:
     """Strip some of the ugly regexp characters from the given pattern.
 
     >>> normalize_route('^/user/<user_id:int>/?$')
     u'/user/(user_id:int)/'
     """
-    normalized_route = six.text_type(route).lstrip('^').rstrip('$').rstrip('?')
+    normalized_route = str(route).lstrip('^').rstrip('$').rstrip('?')
     normalized_route = normalized_route.replace('<', '(').replace('>', ')')
     return normalized_route
 
@@ -390,38 +281,9 @@ def prefix_lines(lines, prefix):
     :param str prefix: Prefix to add to the lines. Usually an indent.
     :returns: list
     """
-    if isinstance(lines, six.string_types):
+    if isinstance(lines, str):
         lines = lines.splitlines()
     return [prefix + line for line in lines]
-
-
-def resolve_of_type(annotation, schema):
-    """Resolves any Of items in the schema.
-
-    e.g. {'oneOf': [{'$ref': '#'}, {'$ref': '#/definitions/chart_with_query'}]}
-    will resolve to the first definition in the list `#`
-
-    :param ResourceSchemaAnnotation annotation:
-    :param dict schema: A dict of the item's schema.
-    :returns: The resolved reference of the first item in the list.
-    """
-    of_type = list(schema.keys())[0]
-    fragment = '#{0}/0'.format(of_type)
-    return annotation.schema.resolve(fragment, schema)
-
-
-def resolve(fragment, schema, annotation, fragment_stack=None):
-    # If the schema is a oneOf, anyOf, etc. definition, resolve it first.
-    if OF_TYPES.intersection(schema.keys()):
-        schema = resolve_of_type(annotation, schema)
-    try:
-        return annotation.schema.resolve(fragment, schema)
-    except Exception as e:
-        message = 'Error resolving {}{} definition for {} {} schema: {}'.format(
-            fragment, (' from ' + '=>'.join(fragment_stack)
-                       if fragment_stack else ''),
-            get_name(annotation.logic), annotation.http_method, e)
-        raise SphinxError(message)
 
 
 class BaseDirective(Directive):
@@ -454,7 +316,7 @@ class BaseDirective(Directive):
     def _make_example(
             self, route, handler, annotation):  # pragma: no cover
         self.harness.setup_request(self, route, handler, annotation)
-        headers = self.harness._get_headers(six.text_type(route), annotation)
+        headers = self.harness._get_headers(str(route), annotation)
         try:
             response_data = self.harness.request(route, handler, annotation)
             return get_example_lines(headers, **response_data)
@@ -521,17 +383,17 @@ class BaseDirective(Directive):
                     yield '#' * len(annotation.title)
                 docstring = get_description_lines(getattr(annotation.logic,
                                                           '__doc__', None))
-                if annotation.request_schema:
-                    field = '<json'
-                    if annotation.http_method in ('DELETE', 'GET'):
-                        field = 'query'
-                    docstring.extend(get_json_schema_lines(
-                        annotation, annotation.request_schema, field=field,
-                        route=normalized_route, request=True))
+                field = '<json'
+                if annotation.http_method in ('DELETE', 'GET'):
+                    field = 'query'
+                docstring.extend(get_json_lines(
+                    annotation, field=field, route=normalized_route,
+                    request=True)
+                )
 
                 # Document any request headers.
                 defined_headers = list(self.harness._get_headers(
-                    six.text_type(route), annotation).keys())
+                    str(route), annotation).keys())
                 defined_headers.sort()
                 for header in defined_headers:
                     definition = self.harness.header_definitions.get(
@@ -539,10 +401,11 @@ class BaseDirective(Directive):
                     docstring.append(':reqheader {}: {}'.format(
                         header, definition))
 
-                if annotation.response_schema:
-                    docstring.extend(get_json_schema_lines(
-                        annotation, annotation.response_schema, field='>json',
-                        route=normalized_route))
+                # Document response if a type was defined.
+                if annotation.return_annotation != Parameter.empty:
+                    docstring.extend(get_json_lines(
+                        annotation, field='>json', route=normalized_route))
+
                 docstring.extend(self._make_example(route, handler, annotation))
                 for line in http_directive(annotation.http_method,
                                            normalized_route, docstring):
@@ -762,7 +625,7 @@ class BaseHarness(object):
         """
         pass
 
-    def _get_annotation_heading(self, handler, route):
+    def _get_annotation_heading(self, handler, route, heading=None):
         """Returns the heading text for an annotation.
 
         Attempts to get the name of the heading from the handler attribute
@@ -785,11 +648,11 @@ class BaseHarness(object):
         :param str route: The route to the handler.
         :returns: The text for the heading as a string.
         """
-        if hasattr(handler, 'schematic_title'):
-            return handler.schematic_title
+        if hasattr(handler, '_doctor_heading'):
+            return handler._doctor_heading
 
         heading = ''
-        handler_path = six.text_type(handler)
+        handler_path = str(handler)
         try:
             handler_file_name = handler_path.split('.')[-2]
         except IndexError:
@@ -832,7 +695,7 @@ class BaseHarness(object):
         """
         headers = self.headers.copy()
         defined_header_values = self.defined_header_values.get(
-            (annotation.http_method.lower(), six.text_type(route)))
+            (annotation.http_method.lower(), str(route)))
         if defined_header_values is not None:
             if defined_header_values['update']:
                 headers.update(defined_header_values['values'])
@@ -840,7 +703,8 @@ class BaseHarness(object):
                 headers = defined_header_values['values']
         return headers
 
-    def _get_example_values(self, route, annotation):
+    def _get_example_values(self, route: str,
+                            annotation: ResourceAnnotation) -> Dict[str, Any]:
         """Gets example values for all properties in the annotation's schema.
 
         :param route: The route to get example values for.
@@ -851,57 +715,12 @@ class BaseHarness(object):
             as values.
         """
         defined_values = self.defined_example_values.get(
-            (annotation.http_method.lower(), six.text_type(route)))
+            (annotation.http_method.lower(), str(route)))
         if defined_values and not defined_values['update']:
             return defined_values['values']
-        schema = annotation.schema
-        try:
-            properties = (
-                schema.resolve('#properties', annotation.request_schema)
-                if annotation.request_schema else {})
-        except SchemaError as e:
-            raise SchemaError('Error resolving #properties from {}. {}'.format(
-                annotation.request_schema, e))
-        resolved_properties = {}
-        for prop in properties:
-            try:
-                # We are explicitly using the resolver instead of the
-                # convenience method so that we can get the returned url.
-                url, resolved_property = schema.resolver.resolve(
-                    '#' + prop, properties)
-            except Exception as e:
-                raise SchemaError('Error resolving #{} from {}. {}'.format(
-                    prop, properties, e))
-            # If the property is a oneOf or anyOf definition, resolve it first.
-            if OF_TYPES.intersection(resolved_property.keys()):
-                resolved_property = resolve_of_type(
-                    annotation, resolved_property)
-
-            resolved_properties[prop] = resolved_property
-            try:
-                resolved_type = schema.resolve('#type', resolved_property)
-            except SchemaError as e:
-                raise SchemaError(
-                    'Error resolving #type from {} for property {}. {}'.format(
-                        resolved_property, prop, e))
-            # Attempt to resolve any $refs in an array type's items key.
-            # We are prefixing the ref with the url so that we can resolve
-            # references in other yaml files.
-            if (resolved_type == 'array' and
-                    '$ref' in resolved_property['items']):
-                base_url = url.split('#')[0]
-                ref = '{0}{1}'.format(
-                    base_url, resolved_property['items']['$ref'])
-                try:
-                    resolved_items = schema.resolve(ref)
-                except SchemaError as e:
-                    raise SchemaError(
-                        'Error resolving array items $ref: {} for property {}. '
-                        '{}'.format(ref, prop, e))
-                resolved_properties[prop]['items'] = resolved_items
         values = {
-            key: get_example_value(resolved, schema, key)
-            for key, resolved in resolved_properties.items()
+            k: v.annotation.example
+            for k, v in annotation.annotated_parameters.items()
         }
         if defined_values:
             values.update(defined_values['values'])

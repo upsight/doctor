@@ -67,6 +67,28 @@ class ResourceSchemaAnnotation(object):
         return None
 
 
+class ResourceAnnotation(object):
+
+    """Metadata about the types used for a given request method."""
+
+    def __init__(self, logic, http_method, title=None):
+        self.annotated_parameters = logic._doctor_signature.parameters
+        self.http_method = http_method.upper()
+        self.logic = logic
+        self.params = logic._doctor_params
+        self.return_annotation = logic._doctor_signature.return_annotation
+        self.title = title
+        if title is None:
+            if http_method.upper() == 'GET':
+                self.title = 'Retrieve'
+            elif http_method.upper() == 'POST':
+                self.title = 'Create'
+            elif http_method.upper() == 'PUT':
+                self.title = 'Update'
+            elif http_method.upper() == 'DELETE':
+                self.title = 'Delete'
+
+
 class ResourceSchema(Schema):
 
     """

@@ -271,5 +271,5 @@ texinfo_documents = [
 from docs.flask_harness import CustomFlaskHarness
 
 
-autoflask_harness = CustomFlaskHarness('examples/flask/app.py',
+autoflask_harness = CustomFlaskHarness('examples/flask/app_v3.py',
                                        'http://127.0.0.1:8080')

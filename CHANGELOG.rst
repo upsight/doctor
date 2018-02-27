@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+V3.0.0-beta (2018-02-27)
+------------------------
+
+- First beta release of 3.0. This is a backwards incompatible change.  It drops
+  support for python 2 and the usage of json schemas.  See the documentation
+  for more information.
+
 v1.3.5 (2018-01-23)
 -------------------
 

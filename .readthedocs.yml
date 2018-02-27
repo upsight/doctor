@@ -3,4 +3,4 @@ python:
     - docs
     - tests
   pip_install: true
-  version: 2
+  version: 3

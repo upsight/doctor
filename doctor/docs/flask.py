@@ -9,11 +9,9 @@ from __future__ import absolute_import
 
 import json
 from collections import defaultdict
+from urllib import parse
 
-import six
-from six.moves.urllib import parse
-
-from ..resource import ResourceSchemaAnnotation
+from ..resource import ResourceAnnotation
 from ..utils import get_module_attr
 from .base import BaseDirective, BaseHarness, HTTP_METHODS
 
@@ -63,15 +61,17 @@ class AutoFlaskHarness(BaseHarness):
             view_class = getattr(view_function, 'view_class', None)
             if view_class is None:
                 continue
+
             annotations = []
             for method_name in HTTP_METHODS:
                 method = getattr(view_class, method_name, None)
-                annotation = ResourceSchemaAnnotation.get_annotation(method)
-                if annotation is not None:
-                    annotations.append(annotation)
+                if not method:
+                    continue
+                annotation = ResourceAnnotation(
+                    method, method_name, method._doctor_title)
+                annotations.append(annotation)
             if annotations:
-                heading = self._get_annotation_heading(view_class,
-                                                       six.text_type(rule))
+                heading = self._get_annotation_heading(view_class, str(rule))
                 section_map[heading].append((rule, view_class, annotations))
 
         # Loop through each heading and it's items and yield the values.

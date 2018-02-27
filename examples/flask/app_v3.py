@@ -6,7 +6,7 @@ from flask import Flask
 from flask_restful import Api
 from doctor.errors import NotFoundError
 from doctor.routing import Route, create_routes, get, post, put, delete
-from doctor.types import array, boolean, integer, string, Object
+from doctor.types import array, boolean, enum, integer, string, Object
 
 # -- mark-types
 
@@ -14,6 +14,7 @@ Body = string('Note body', example='body')
 Done = boolean('Marks if a note is done or not.', example=False)
 NoteId = integer('Note ID', example=1)
 Status = string('API status')
+NoteType = enum('The type of note', enum=['quick', 'detailed'], example='quick')
 
 
 class Note(Object):
@@ -39,7 +40,7 @@ Notes = array('Array of notes', items=Note, example=[Note.example])
 note = {'note_id': 1, 'body': 'Example body', 'done': True}
 
 
-def get_note(note_id: NoteId) -> Note:
+def get_note(note_id: NoteId, note_type: NoteType) -> Note:
     """Get a note by ID."""
     if note_id != 1:
         raise NotFoundError('Note does not exist')

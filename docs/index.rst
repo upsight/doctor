@@ -19,7 +19,6 @@ Usage
    resource_schemas
    response
    routing
-   router
    parsing
    errors
    types

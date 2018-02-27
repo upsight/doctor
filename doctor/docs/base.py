@@ -601,7 +601,7 @@ class BaseHarness(object):
         :param route: Path for the route. For Flask, this will be a Route
             object.
         :param handler: Flask resource for the route.
-        :param ResourceSchemaAnnotation annotation: Annotation for the request.
+        :param ResourceAnnotation annotation: Annotation for the request.
         """
         pass
 
@@ -621,7 +621,7 @@ class BaseHarness(object):
         :param route: Path for the route. For Flask, this will be a Route
             object.
         :param handler: Flask resource for the route.
-        :param ResourceSchemaAnnotation annotation: Annotation for the request.
+        :param ResourceAnnotation annotation: Annotation for the request.
         """
         pass
 
@@ -684,13 +684,13 @@ class BaseHarness(object):
                 heading += ' (Internal)'
         return heading.strip()
 
-    def _get_headers(self, route, annotation):
+    def _get_headers(self, route: str, annotation: ResourceAnnotation) -> Dict:
         """Gets headers for the provided route.
 
         :param route: The route to get example values for.
         :type route: werkzeug.routing.Rule for a flask api.
         :param annotation: Schema annotation for the method to be requested.
-        :type annotation: doctor.resource.ResourceSchemaAnnotation
+        :type annotation: doctor.resource.ResourceAnnotation
         :retruns: A dict containing headers.
         """
         headers = self.headers.copy()
@@ -710,7 +710,7 @@ class BaseHarness(object):
         :param route: The route to get example values for.
         :type route: werkzeug.routing.Rule for a flask api.
         :param annotation: Schema annotation for the method to be requested.
-        :type annotation: doctor.resource.ResourceSchemaAnnotation
+        :type annotation: doctor.resource.ResourceAnnotation
         :retruns: A dict containing property names as keys and example values
             as values.
         """

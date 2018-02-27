@@ -3,9 +3,12 @@ from functools import wraps
 import mock
 import six
 
-from doctor.resource import ResourceSchema, ResourceSchemaAnnotation
+from doctor.resource import (
+    ResourceAnnotation, ResourceSchema, ResourceSchemaAnnotation)
 from doctor.flask import handle_http
+
 from .base import TestCase
+from .utils import add_doctor_attrs
 
 
 def does_nothing(func):
@@ -324,6 +327,36 @@ class TestResourceSchema(TestCase):
                            required=s.required, title=s.title, before=None,
                            after=None, allowed_exceptions=None,
                            omit_args=None)])
+
+
+class TestResourceAnnotation(TestCase):
+
+    def test_init(self):
+        def logic():
+            pass
+
+        logic = add_doctor_attrs(logic)
+        annotation = ResourceAnnotation(logic, 'POST')
+        self.assertEqual(annotation.logic, logic)
+        self.assertEqual(annotation.http_method, 'POST')
+        self.assertEqual(annotation.title, 'Create')
+
+    def test_init_title(self):
+        def logic():
+            pass
+
+        logic = add_doctor_attrs(logic)
+        tests = (
+            # (http_method, title, expected)
+            ('GET', None, 'Retrieve'),
+            ('POST', None, 'Create'),
+            ('PUT', None, 'Update'),
+            ('DELETE', None, 'Delete'),
+            ('PUT', 'Batch', 'Batch'),
+        )
+        for http_method, title, expected in tests:
+            annotation = ResourceAnnotation(logic, http_method, title=title)
+            self.assertEqual(expected, annotation.title)
 
 
 class TestResourceSchemaAnnotation(TestCase):

@@ -6,7 +6,7 @@ import mock
 import pytest
 
 from doctor.flask import (
-    handle_http_v3, HTTP400Exception, should_raise_response_validation_errors)
+    handle_http, HTTP400Exception, should_raise_response_validation_errors)
 from doctor.response import Response
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
@@ -51,7 +51,7 @@ def test_handle_http_with_json(mock_request, mock_get_logic):
     mock_request.json = {'item_id': 1, 'include_deleted': True}
     mock_handler = mock.Mock()
 
-    actual = handle_http_v3(mock_handler, (), {}, mock_get_logic)
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
     assert actual == ({'item_id': 1}, 201)
 
     expected_call = mock.call(item_id=1, include_deleted=True)
@@ -64,7 +64,7 @@ def test_handle_http_non_json(mock_request, mock_get_logic):
     mock_request.values = {'item_id': 3}
     mock_handler = mock.Mock()
 
-    actual = handle_http_v3(mock_handler, (), {}, mock_get_logic)
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
     assert actual == ({'item_id': 1}, 200)
 
     expected_call = mock.call(item_id=3)
@@ -79,7 +79,7 @@ def test_handle_http_unsupported_http_method_with_body(
     mock_request.values = {'item_id': 3}
     mock_handler = mock.Mock()
 
-    actual = handle_http_v3(mock_handler, (), {}, mock_get_logic)
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
     assert actual == ({'item_id': 1}, 200)
 
     expected_call = mock.call(item_id=3)
@@ -93,7 +93,7 @@ def test_handle_http_missing_required_arg(mock_request, mock_get_logic):
     mock_handler = mock.Mock()
 
     with pytest.raises(HTTP400Exception, match='item_id is required'):
-        handle_http_v3(mock_handler, (), {}, mock_get_logic)
+        handle_http(mock_handler, (), {}, mock_get_logic)
 
 
 def test_handle_http_decorator_adds_param_annotations(
@@ -115,11 +115,11 @@ def test_handle_http_decorator_adds_param_annotations(
                              logic=['item_id', 'include_deleted'])
     assert expected_params == logic._doctor_params
     with pytest.raises(HTTP400Exception, match='auth is required'):
-        handle_http_v3(mock_handler, (), {}, logic)
+        handle_http(mock_handler, (), {}, logic)
 
     # Add auth and it should validate
     mock_request.values = {'item_id': 1, 'auth': 'auth'}
-    actual = handle_http_v3(mock_handler, (), {}, logic)
+    actual = handle_http(mock_handler, (), {}, logic)
     assert actual == ({'item_id': 1}, 200)
 
 
@@ -130,7 +130,7 @@ def test_handle_http_invalid_param(mock_request, mock_get_logic):
     mock_handler = mock.Mock()
 
     with pytest.raises(HTTP400Exception, match='Must be a valid number.'):
-        handle_http_v3(mock_handler, (), {}, mock_get_logic)
+        handle_http(mock_handler, (), {}, mock_get_logic)
 
 
 @mock.patch('doctor.flask.current_app')
@@ -144,7 +144,7 @@ def test_handle_http_allowed_exception(mock_app, mock_request, mock_get_logic):
     mock_get_logic._doctor_allowed_exceptions = [ValueError]
 
     with pytest.raises(ValueError, match='Allowed'):
-        handle_http_v3(mock_handler, (), {}, mock_get_logic)
+        handle_http(mock_handler, (), {}, mock_get_logic)
 
 
 def test_handle_http_response_instance_return_value(
@@ -156,7 +156,7 @@ def test_handle_http_response_instance_return_value(
     mock_get_logic.return_value = Response({'item_id': 3}, {'X-Header': 'Foo'})
     mock_handler = mock.Mock()
 
-    actual = handle_http_v3(mock_handler, (), {}, mock_get_logic)
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
     assert actual == ({'item_id': 3}, 200, {'X-Header': 'Foo'})
 
 
@@ -187,9 +187,9 @@ def test_handle_http_response_validation(
     expected = ("{'item_id': 'This field is required.', "
                 "'foo': 'Additional properties are not allowed.'}")
     with pytest.raises(HTTP400Exception, match=expected):
-        handle_http_v3(mock_handler, (), {}, mock_get_logic)
+        handle_http(mock_handler, (), {}, mock_get_logic)
 
     # Should also work with the response is an instance of Response
     mock_get_logic.return_value = Response({'foo': 'bar'})
     with pytest.raises(HTTP400Exception, match=expected):
-        handle_http_v3(mock_handler, (), {}, mock_get_logic)
+        handle_http(mock_handler, (), {}, mock_get_logic)

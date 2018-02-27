@@ -1,10 +1,12 @@
-import os
 import unittest
 
 import flask_restful
 import flask_testing
-from doctor.flask import FlaskResourceSchema, FlaskRouter
 from flask import Flask
+
+from doctor.routing import create_routes, get, Route
+
+from .types import ItemId, Name
 
 
 class TestCase(unittest.TestCase):
@@ -45,18 +47,14 @@ class FlaskTestCase(flask_testing.TestCase):
 
         :returns: The tuple described above.
         """
-        def logic_func(annotation_id, url=None):
-            return (annotation_id, url)
+        def logic_func(item_id: ItemId, name: Name=None):
+            return (item_id, name)
 
-        schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
-        router = FlaskRouter(schema_dir, FlaskResourceSchema)
-        return router.create_routes('Test', 'annotation.yaml', {
-            '/test/': {
-                'get': {
-                    'logic': logic_func,
-                },
-            },
-        })
+        routes = (
+            Route('/test/', methods=(
+                get(logic_func),), heading='Test'),
+        )
+        return create_routes(routes)
 
     def create_app(self):
         """This method creates the flask app.

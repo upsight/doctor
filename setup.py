@@ -10,8 +10,9 @@ with open(version_filename, 'r') as vf:
 setup(
     name='doctor',
     version=__version__,  # noqa -- flake8 should ignore this line
-    description=('A module that assists in using JSON schemas to validate data '
-                 'in Flask APIs and generate API documentation.'),
+    description=('This module uses python 3 type hints to validate request and '
+                 'response data in Flask Python APIs and generate API '
+                 'documentation.'),
     url='https://github.com/upsight/doctor',
     license='MIT',
     classifiers=[
@@ -21,7 +22,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6',
     ],
-    keywords=['python', 'flask', 'json', 'jsonschema', 'validation',
+    keywords=['python', 'flask', 'json', 'api', 'validation',
               'documentation', 'sphinx'],
     author='Upsight',
     author_email='dev@upsight.com',
@@ -36,7 +37,6 @@ setup(
         'pyyaml >= 3.11, < 4.0',
         'rfc3987 >= 1.3.4, < 2.0.0',
         'simplejson >= 3.6.3, < 4.0.0',
-        'six >= 1.10.0, < 2.0.0',
         'strict-rfc3339 >= 0.5, < 1.0',
     ],
     extras_require={

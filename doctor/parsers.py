@@ -6,7 +6,6 @@ their appropriate JSON schema types.
 import logging
 
 import simplejson as json
-import six
 
 from doctor.errors import ParseError
 
@@ -69,8 +68,7 @@ def _parse_string(value):
     :param str value: Value to parse.
     :returns: str
     """
-    if (not isinstance(value, six.string_types) and
-            isinstance(value, six.binary_type)):
+    if not isinstance(value, str):
         return value.decode('utf-8')
     return value
 
@@ -113,9 +111,9 @@ def parse_value(value, allowed_types, name='value'):
     :returns: a tuple of a type string and coerced value
     :raises: ParseError if the value cannot be coerced to any of the types
     """
-    if not isinstance(value, six.string_types):
+    if not isinstance(value, str):
         raise ValueError('value for %r must be a string' % name)
-    if isinstance(allowed_types, six.string_types):
+    if isinstance(allowed_types, str):
         allowed_types = [allowed_types]
 
     # Note that the order of these type considerations is important. Because we

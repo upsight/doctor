@@ -6,7 +6,6 @@ from copy import copy
 from inspect import Parameter, Signature
 from typing import Callable, List
 
-import six
 try:
     from sphinx.util.docstrings import prepare_docstring
 except ImportError:
@@ -185,7 +184,7 @@ def get_description_lines(docstring):
     if prepare_docstring is None:
         raise ImportError('sphinx must be installed to use this function.')
 
-    if not isinstance(docstring, six.string_types):
+    if not isinstance(docstring, str):
         return []
     lines = []
     for line in prepare_docstring(docstring):

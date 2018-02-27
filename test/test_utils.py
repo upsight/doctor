@@ -4,7 +4,6 @@ from functools import wraps
 from inspect import Parameter
 
 import mock
-import six
 
 from doctor.routing import get_params_from_func
 from doctor.utils import (
@@ -13,12 +12,6 @@ from doctor.utils import (
 
 from .base import TestCase
 from .types import Age, Auth, Foo, IsAlive, IsDeleted, Name
-
-
-if six.PY2:
-    getargspec_func = inspect.getargspec
-else:
-    getargspec_func = inspect.getfullargspec
 
 
 def does_nothing(func):

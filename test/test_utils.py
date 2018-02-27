@@ -8,8 +8,8 @@ import six
 
 from doctor.routing import get_params_from_func
 from doctor.utils import (
-    add_param_annotations, exec_params, get_description_lines, get_module_attr,
-    nested_set, undecorate_func, Params, RequestParamAnnotation)
+    add_param_annotations, get_description_lines, get_module_attr, Params,
+    RequestParamAnnotation)
 
 from .base import TestCase
 from .types import Age, Auth, Foo, IsAlive, IsDeleted, Name
@@ -106,75 +106,6 @@ class TestUtils(TestCase):
         is_deleted = actual._doctor_signature.parameters['is_deleted']
         assert expected == is_deleted
 
-    def test_exec_params_function(self):
-        def logic(a, b, c=None):
-            return a+1, b+1, c
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'c': 1, 'd': 'a'}
-        args = (1, 2)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, kwargs['c'])
-
-    def test_exec_params_callable(self):
-        kwargs = {'c': 1, 'd': 'a'}
-        args = (1, 2)
-
-        class Foo(object):
-            def __call__(self, a, b, c=None):
-                return a+1, b+1, c
-        logic = Foo()
-        logic._argspec = getargspec_func(logic.__call__)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, kwargs['c'])
-
-    def test_exec_params_args_only(self):
-        def logic(a, b, c):
-            return a+1, b+1, c
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'d': 1, 'e': 2}
-        args = (1, 2, 3)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, 3)
-
-    def test_exec_params_kwargs_only(self):
-        def logic(a=1, b=2, c=3):
-            return a+1, b+1, c
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'d': 1, 'e': 2}
-        args = (1, 2, 3)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, 3)
-
-    def test_exec_params_with_magic_kwargs(self):
-        """
-        This test replicates a bug where if a logic function were decorated
-        and we sendt a json body request that contained parameters not in
-        the logic function's signature it would cause a TypeError similar to
-        the following for the logic function defined in this test:
-
-        TypeError: logic() got an unexpected keyword argument 'e'
-
-        This test verifies if a logic function uses the **kwargs functionality
-        that we pass along those to the logic function in addition to any
-        other positional or keyword arguments.
-        """
-        def logic(a, b=2, c=3, **kwargs):
-            return (a, b, c, kwargs)
-
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'c': 3, 'e': 2}
-        args = (1, 2)
-        actual = exec_params(logic, *args, **kwargs)
-        self.assertEqual((1, 2, 3, {'e': 2}), actual)
-
     @mock.patch('doctor.utils.open',
                 new_callable=mock.mock_open,
                 read_data='mock_attr = "something"')
@@ -237,51 +168,6 @@ class TestUtils(TestCase):
     def test_get_description_lines_trailing_newline(self):
         """It should add a trailing line if necessary."""
         self.assertEqual(get_description_lines('foo\n:arg'), ['foo', ''])
-
-    def test_nested_set(self):
-        data_dict = {}
-        nested_set(data_dict, ["b", "v", "new"], {})
-        self.assertEqual(data_dict['b']['v']['new'], {})
-
-        nested_set(data_dict, ["b", "v", "new"], '4')
-        self.assertEqual(data_dict['b']['v']['new'], '4')
-
-        nested_set(data_dict, ["a", "v", "new"], '1')
-        self.assertEqual(data_dict['a']['v']['new'], '1')
-
-        nested_set(data_dict, ["a", "new"], 'new')
-        self.assertEqual(data_dict['a']['new'], 'new')
-
-    def test_undecorate_func(self):
-        def foobar(a, b=False):
-            pass
-
-        # No decorator just returns the function
-        actual = undecorate_func(foobar)
-        self.assertEqual(foobar, actual)
-
-        # Normal decorator with no args
-        decorated = does_nothing(foobar)
-        actual = undecorate_func(decorated)
-        self.assertEqual(foobar, actual)
-
-        # Ensure it can handle multiple decorators
-        double_decorated = does_nothing(does_nothing(foobar))
-        actual = undecorate_func(double_decorated)
-        self.assertEqual(foobar, actual)
-
-        # Ensure it works with decorators that take arguments
-        decorated_with_args = dec_with_args('foo1')(foobar)
-        actual = undecorate_func(decorated_with_args)
-        self.assertEqual(foobar, actual)
-
-        def bar(foo):
-            return 'foo ' + foo
-
-        decorated_with_arg_takes_func = (
-            dec_with_args_one_of_which_allows_a_func('foo', bar)(foobar))
-        actual = undecorate_func(decorated_with_arg_takes_func)
-        self.assertEqual(foobar, actual)
 
     def test_get_params_from_func(self):
         get_foo._doctor_signature = inspect.signature(get_foo)

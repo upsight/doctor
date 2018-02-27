@@ -13,7 +13,7 @@ run:
 
 The application will be running on http://127.0.0.1:5000.
 
-.. include:: _schema.rst
+.. include:: _doctor_types.rst
 
 .. include:: _logic_functions.rst
 
@@ -23,11 +23,13 @@ The application will be running on http://127.0.0.1:5000.
 
 .. include:: _routes.rst
 
-Finally, we specify the routes and create the application. The first step is
-initializing the :class:`~doctor.flask.FlaskRouter` class.
-We must pass the absolute path to the directory where all of our schema
-files reside.
+.. literalinclude:: examples/flask/app.py
+    :start-after: mark-routes
+    :end-before: # --
 
+We then create our Flask app and add our created resources to it.  These
+resources are created by calling :func:`~doctor.routing.create_routes` with
+our routes we defined above.
 
 .. literalinclude:: examples/flask/app.py
     :start-after: mark-app

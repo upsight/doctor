@@ -1,9 +1,12 @@
+.. _doctor-types:
+
 Types
 =====
 
 Doctor :ref:`types<types-module-documentation>` validate request parameters
 passed to logic functions.  Every request parameter that gets passed to your
-logic function should define a type from one of those below.  See ... for 
+logic function should define a type from one of those below.  See 
+:ref:`quick type creation<quick-type-creation>` for 
 functions that allow you to create types easily on the fly.
 
 String
@@ -314,6 +317,9 @@ Example
 
     class Annotation(JsonSchema):
         schema_file = '/full/path/to/annotation.yaml'
+
+
+.. _quick-type-creation:
 
 Quick Type Creation
 -------------------

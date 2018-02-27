@@ -6,9 +6,9 @@ from flask import Flask
 from flask_restful import Api
 from doctor.errors import NotFoundError
 from doctor.routing import Route, create_routes, get, post, put, delete
+# -- mark-types
 from doctor.types import array, boolean, enum, integer, string, Object
 
-# -- mark-types
 
 Body = string('Note body', example='body')
 Done = boolean('Marks if a note is done or not.', example=False)
@@ -81,7 +81,7 @@ def status() -> Status:
     return 'Notes API v1.0.0'
 
 
-# -- mark-app
+# -- mark-routes
 
 routes = (
     Route('/', methods=(
@@ -96,6 +96,8 @@ routes = (
         put(update_note)), heading='Notes (v1)'
     ),
 )
+
+# -- mark-app
 
 app = Flask('Doctor example')
 

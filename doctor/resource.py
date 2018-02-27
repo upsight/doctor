@@ -1,3 +1,5 @@
+from typing import Callable
+
 from .schema import Schema
 
 
@@ -61,9 +63,16 @@ class ResourceSchemaAnnotation(object):
 
 class ResourceAnnotation(object):
 
-    """Metadata about the types used for a given request method."""
+    """Metadata about the types used for a given request method.
 
-    def __init__(self, logic, http_method, title=None):
+    :param logic: The logic function for the resource.
+    :param http_method: The http method for this resource.  One of `DELETE`,
+        `GET`, `POST` or `PUT`.
+    :param title: The title to be used by the api documentation for this
+        resource.
+    """
+
+    def __init__(self, logic: Callable, http_method: str, title: str=None):
         self.annotated_parameters = logic._doctor_signature.parameters
         self.http_method = http_method.upper()
         self.logic = logic

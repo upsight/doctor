@@ -133,57 +133,6 @@ def add_param_annotations(
     return logic
 
 
-def nested_set(data, keys, value):
-    """Set a nested key value in a dict based on key list.
-
-    :param data dict: the dict to set nested key in.
-    :param keys list: the nested list of keys.
-    :param value object: the final value to set.
-    """
-    for key in keys[:-1]:
-        data = data.setdefault(key, {})
-    data[keys[-1]] = value
-
-
-def exec_params(call, *args, **kwargs):
-    """Execute a callable with only the defined parameters
-    and not just *args, **kwargs.
-
-    :param callable call: The callable to exec with the given params as
-        defined by itself. call should have an inspect.ArgSpec attached
-        as an attribute _argspec
-    :returns anything:
-    :raises TypeError:
-    """
-    arg_spec = getattr(call, '_argspec', None)
-    if arg_spec and not (arg_spec.keywords if six.PY2 else arg_spec.varkw):
-        kwargs = {key: value for key, value in kwargs.items()
-                  if key in arg_spec.args}
-    return call(*args, **kwargs)
-
-
-def undecorate_func(func):
-    """Returns the original function from the decorated one.
-
-    The purpose of this function is to return the original `func` in the
-    event that it has decorators attached to it, instead of the decorated
-    function.
-
-    :param function func: The function to unwrap.
-    :returns: The unwrapped function.
-    """
-    while True:
-        if func.__closure__:
-            for cell in func.__closure__:
-                if inspect.isfunction(cell.cell_contents):
-                    if func.__name__ == cell.cell_contents.__name__:
-                        func = cell.cell_contents
-                        break
-        else:
-            break
-    return func
-
-
 def get_module_attr(module_filename, module_attr, namespace=None):
     """Get an attribute from a module.
 

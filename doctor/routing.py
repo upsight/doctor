@@ -45,7 +45,7 @@ class HTTPMethod(object):
 
 def delete(func: Callable, allowed_exceptions: List=None,
            title: str=None) -> HTTPMethod:
-    """Returns a dict with required args to create a DELETE route.
+    """Returns a HTTPMethod instance to create a DELETE route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
@@ -55,7 +55,7 @@ def delete(func: Callable, allowed_exceptions: List=None,
 
 def get(func: Callable, allowed_exceptions: List=None,
         title: str=None) -> HTTPMethod:
-    """Returns a dict with required args to create a GET route.
+    """Returns a HTTPMethod instance to create a GET route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
@@ -65,7 +65,7 @@ def get(func: Callable, allowed_exceptions: List=None,
 
 def post(func: Callable, allowed_exceptions: List=None,
          title: str=None) -> HTTPMethod:
-    """Returns a dict with required args to create a POST route.
+    """Returns a HTTPMethod instance to create a POST route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
@@ -75,7 +75,7 @@ def post(func: Callable, allowed_exceptions: List=None,
 
 def put(func: Callable, allowed_exceptions: List=None,
         title: str=None) -> HTTPMethod:
-    """Returns a dict with required args to create a PUT route.
+    """Returns a HTTPMethod instance to create a PUT route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """

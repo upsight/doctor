@@ -57,7 +57,8 @@ HEADING_TOKEN = '!!HEADING!!'
 HEADING_TOKEN_LENGTH = len(HEADING_TOKEN)
 
 
-def get_example_curl_lines(method: str, url: str, params: dict, headers: dict):
+def get_example_curl_lines(method: str, url: str, params: dict,
+                           headers: dict) -> List[str]:
     """Render a cURL command for the given request.
 
     :param str method: HTTP request method (e.g. "GET").
@@ -91,7 +92,8 @@ def get_example_curl_lines(method: str, url: str, params: dict, headers: dict):
     return wrapped
 
 
-def get_example_lines(headers, method, url, params, response):
+def get_example_lines(headers: Dict[str, str], method: str, url: str,
+                      params: Dict[str, Any], response: str) -> List[str]:
     """Render a reStructuredText example for the given request and response.
 
     :param dict headers: A dict of HTTP headers.
@@ -119,8 +121,8 @@ def get_example_lines(headers, method, url, params, response):
 
 def get_json_object_lines(annotation: ResourceAnnotation,
                           properties: Dict[str, Any], field: str,
-                          url_params: Dict,
-                          request: bool=False, object_property: bool=False):
+                          url_params: Dict, request: bool=False,
+                          object_property: bool=False) -> List[str]:
     """Generate documentation for the given object annotation.
 
     :param doctor.resource.ResourceAnnotation annotation:
@@ -701,7 +703,8 @@ class BaseHarness(object):
                 headers = defined_header_values['values']
         return headers
 
-    def _get_example_values(self, route, annotation):
+    def _get_example_values(self, route: str,
+                            annotation: ResourceAnnotation) -> Dict[str, Any]:
         """Gets example values for all properties in the annotation's schema.
 
         :param route: The route to get example values for.

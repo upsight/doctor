@@ -73,7 +73,7 @@ class ResourceAnnotation(object):
 
     def __init__(self, logic, http_method, title=None):
         self.annotated_parameters = logic._doctor_signature.parameters
-        self.http_method = http_method
+        self.http_method = http_method.upper()
         self.logic = logic
         self.params = logic._doctor_params
         self.return_annotation = logic._doctor_signature.return_annotation

@@ -435,7 +435,7 @@ class Array(SuperType, list):
 
     @classmethod
     def get_example(cls) -> list:
-        """Returns an example value for the JsonSchema type.
+        """Returns an example value for the Array type.
 
         If an example isn't a defined attribute on the class we return
         a list of 1 item containing the example value of the `items` attribute.

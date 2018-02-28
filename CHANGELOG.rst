@@ -8,14 +8,16 @@ V3.0.0-beta (2018-02-27)
 ------------------------
 
 - First beta release of 3.0. This is a backwards incompatible change.  It drops
-  support for python 2 and the usage of json schemas.  See the documentation
-  for more information.
+  support for python 2 and defining request parameters through the usage of json 
+  schemas. It's still possible to use the json schemas from previous versions
+  of doctor to generate new doctor types using doctor.types.json_schema_type.
+  See the documentation for more information.
 
 v1.3.5 (2018-01-23)
 -------------------
 
 - Fixed a few deprecation warnings about inspect.getargspec when running
-  doctor using python 3.  It will now use inspect.getfullargspec.  This 
+  doctor using python 3.  It will now use inspect.getfullargspec.  This
   also fixes the issue of not being able to use type hints on logic functions
   in python 3.
 

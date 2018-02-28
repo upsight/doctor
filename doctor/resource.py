@@ -3,6 +3,16 @@ from typing import Callable
 from .schema import Schema
 
 
+#: A mapping of HTTP method to title that should be used for it in
+#: API documentation.
+HTTP_METHOD_TITLES = {
+    'DELETE': 'Delete',
+    'GET': 'Retrieve',
+    'POST': 'Create',
+    'PUT': 'Update',
+}
+
+
 class ResourceSchemaAnnotation(object):
 
     """Metadata about the schema used for a given request method.
@@ -31,14 +41,7 @@ class ResourceSchemaAnnotation(object):
         self.response_schema = response_schema
         self.title = title
         if title is None:
-            if http_method.upper() == 'GET':
-                self.title = 'Retrieve'
-            elif http_method.upper() == 'POST':
-                self.title = 'Create'
-            elif http_method.upper() == 'PUT':
-                self.title = 'Update'
-            elif http_method.upper() == 'DELETE':
-                self.title = 'Delete'
+            self.title = HTTP_METHOD_TITLES.get(http_method.upper())
 
     @classmethod
     def get_annotation(cls, fn):
@@ -80,14 +83,7 @@ class ResourceAnnotation(object):
         self.return_annotation = logic._doctor_signature.return_annotation
         self.title = title
         if title is None:
-            if http_method.upper() == 'GET':
-                self.title = 'Retrieve'
-            elif http_method.upper() == 'POST':
-                self.title = 'Create'
-            elif http_method.upper() == 'PUT':
-                self.title = 'Update'
-            elif http_method.upper() == 'DELETE':
-                self.title = 'Delete'
+            self.title = HTTP_METHOD_TITLES.get(http_method.upper())
 
 
 class ResourceSchema(Schema):

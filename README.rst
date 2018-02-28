@@ -24,11 +24,14 @@ Define some types that will be used to validate your request parameters.
 .. code-block:: python
 
     # mytypes.py
-    from doctor.types import integer, boolean, Object
+    from doctor import types
 
-    FooId = integer('The foo ID.', example=1)
-    FetchBars = boolean('A flag that indicates if we should fetch bars', example=True)
-    class Foo(Object):
+    # doctor provides helper functions to easily define simple types.
+    FooId = types.integer('The foo ID.')
+    FetchBars = types.boolean('A flag that indicates if we should fetch bars')
+
+    # You can also inherit from type classes to create more complex types.
+    class Foo(types.Object):
         description = 'A Foo object'
         example = {'foo_id': 1}
         properties = {'foo_id': FooId}
@@ -42,6 +45,11 @@ Define the logic function that our endpoint will route to:
     # foo.py
     from mytypes import Foo, FooId, FetchBars
 
+    # Note the type annotations on this function definition. This tells Doctor how
+    # to parse and validate parameters for routes attached to this logic function.
+    # The return type annotation will validate the response conforms to an
+    # expected definition in development environments.  In non-development
+    # enviornments a warning will be logged.
     def get_foo(foo_id: FooId, fetch_bars: FetchBars=False) -> Foo:
         """Fetches the Foo object and optionally related bars."""
         return Foo.get_by_id(foo_id, fetch_bars=fetch_bars)

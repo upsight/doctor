@@ -20,17 +20,20 @@ Attributes
 
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 * :attr:`~doctor.types.String.format` - An identifier indicating a complex 
   datatype with a string representation. For example `date`, to represent an 
   ISO 8601 formatted date string.  The following formats are supported:
 
-    * `date` - Will format the string as a `datetime.datetime` instance.  Expects
+    * `date` - Will parse the string as a `datetime.datetime` instance.  Expects
       the format `'%Y-%m-%d'`
-    * `date-time` - Will format the string as a `datetime.datetime` instance.
+    * `date-time` - Will parse the string as a `datetime.datetime` instance.
       Expects a valid ISO8601 string.  e.g. `'2018-02-21T16:09:02Z'`
-    * `email` - Does basic validation that the string is an emai by checking
+    * `email` - Does basic validation that the string is an email by checking
       for an `'@'` character in the string.
-    * `time` - Will format the string as a `datetime.datetime` instance.  Expects
+    * `time` - Will parse the string as a `datetime.datetime` instance.  Expects
       the format `'%H:%M:%S'`
     * `uri` - Will validate the string is a valid URI.
 
@@ -65,6 +68,9 @@ Attributes
 
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 * :attr:`~doctor.types._NumericType.exclusive_maximum`- If `True` and
   :attr:`~doctor.types._NumericType.maximum` is set, the maximum value should
   be treated as exclusive (value can not be equal to maximum).
@@ -101,6 +107,9 @@ Attributes
 
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 * :attr:`~doctor.types._NumericType.exclusive_maximum`- If `True` and the
   :attr:`~doctor.types._NumericType.maximum` is set, the maximum value should
   be treated as exclusive (value can not be equal to maximum).
@@ -145,6 +154,9 @@ Attributes
 
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 
 Example
 #######
@@ -168,6 +180,9 @@ Attributes
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
 * :attr:`~doctor.types.Enum.enum` - A list of `str` containing valid values.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 
 Example
 #######
@@ -190,11 +205,14 @@ define properties and required properties.
 Attributes
 ##########
 
-* :attr:`~doctor.types.Object.additional_properties` - If `True` additional
-  properties will be allowed in the object that are not defined in
-  :attr:`~doctor.types.Object.properties`.
+* :attr:`~doctor.types.Object.additional_properties` - If `True`, additional
+  properties (that is, ones not defined in
+  :attr:`~doctor.types.Object.properties`) will be allowed.
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
 * :attr:`~doctor.types.Object.required` - A list of required properties.
@@ -229,6 +247,9 @@ Attributes
   are allowed in the list.
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
 * :attr:`~doctor.types.Array.items` - The type each item should be, or a list of
   types where the position of the type in the list represents the type at that
   position in the array the item should be.

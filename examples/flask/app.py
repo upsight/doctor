@@ -7,16 +7,17 @@ from flask_restful import Api
 from doctor.errors import NotFoundError
 from doctor.routing import Route, create_routes, get, post, put, delete
 # -- mark-types
-from doctor.types import array, boolean, enum, integer, string, Object
+from doctor import types
 
 
-Body = string('Note body', example='body')
-Done = boolean('Marks if a note is done or not.', example=False)
-NoteId = integer('Note ID', example=1)
-Status = string('API status')
-NoteType = enum('The type of note', enum=['quick', 'detailed'], example='quick')
+# doctor provides helper functions to easily define simple types.
+Body = types.string('Note body', example='body')
+Done = types.boolean('Marks if a note is done or not.', example=False)
+NoteId = types.integer('Note ID')
+Status = types.string('API status')
+NoteType = types.enum('The type of note', enum=['quick', 'detailed'])
 
-
+# You can also inherit from type classes to create more complex types.
 class Note(Object):
     description = 'A note object'
     additional_properties = False
@@ -26,11 +27,6 @@ class Note(Object):
         'done': Done,
     }
     required = ['body', 'done', 'note_id']
-    example = {
-        'body': 'Example Body',
-        'done': True,
-        'note_id': 1,
-    }
 
 
 Notes = array('Array of notes', items=Note, example=[Note.example])
@@ -39,7 +35,11 @@ Notes = array('Array of notes', items=Note, example=[Note.example])
 
 note = {'note_id': 1, 'body': 'Example body', 'done': True}
 
-
+# Note the type annotations on this function definition. This tells Doctor how
+# to parse and validate parameters for routes attached to this logic function.
+# The return type annotation will validate the response conforms to an
+# expected definition in development environments.  In non-development
+# enviornments a warning will be logged.
 def get_note(note_id: NoteId, note_type: NoteType) -> Note:
     """Get a note by ID."""
     if note_id != 1:

@@ -11,7 +11,7 @@ methods will be automatically generated for you based on your defined routes.
 The logic function signature will be used to determine what the request
 parameters are for the route/HTTP method and to determine which are required.
 Each parameter must specify a `type hint <https://docs.python.org/3/library/typing.html>`_
-which is a sublcass of one of the :ref:`builtin doctor types<doctor-types>`.  
+which is a subclass of one of the :ref:`builtin doctor types<doctor-types>`.
 These types perform validation on the request parameters passed to the logic
 function. See :ref:`doctor-types` for more information.
 Any argument without a default value is considered required while others are

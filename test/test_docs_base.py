@@ -15,6 +15,15 @@ from .utils import add_doctor_attrs
 
 class TestDocsBase(TestCase):
 
+    def test_prefix_lines_bytes(self):
+        """
+        This is a regression test where the response was a bytes instance.
+        """
+        lines = b'"Notes API v1.0.0"'
+        prefix = '   '
+        expected = ['   "Notes API v1.0.0"']
+        assert expected == base.prefix_lines(lines, prefix)
+
     def test_get_example_lines_json(self):
         """Tests an example when the response is valid JSON."""
         headers = {'GeoIp-Country-Code': 'US'}

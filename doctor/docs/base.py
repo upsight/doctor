@@ -281,6 +281,8 @@ def prefix_lines(lines, prefix):
     :param str prefix: Prefix to add to the lines. Usually an indent.
     :returns: list
     """
+    if isinstance(lines, bytes):
+        lines = lines.decode('utf-8')
     if isinstance(lines, str):
         lines = lines.splitlines()
     return [prefix + line for line in lines]

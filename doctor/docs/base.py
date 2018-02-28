@@ -719,7 +719,7 @@ class BaseHarness(object):
         if defined_values and not defined_values['update']:
             return defined_values['values']
         values = {
-            k: v.annotation.example
+            k: v.annotation.get_example()
             for k, v in annotation.annotated_parameters.items()
         }
         if defined_values:

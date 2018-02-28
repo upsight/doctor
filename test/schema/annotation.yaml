@@ -4,6 +4,7 @@ definitions:
   annotation_id:
     description: Auto-increment ID.
     type: integer
+    example: 1
   auth:
     $ref: 'common.yaml#/definitions/auth'
   bad_ref:
@@ -15,15 +16,19 @@ definitions:
   name:
     description: Human readable name.
     type: string
+    example: Annotation
   url:
     description: The URL to the detail page for the annotation.
     type: string
     format: uri
+    example: https://upsight.com
   urls:
     description: An array of url's.
     type: array
     items:
       '$ref': '#/definitions/url'
+    example:
+      - https://upsight.com
   annotation:
     $ref: '#'
   annotations:
@@ -59,6 +64,12 @@ invalid_ref_chain_1:
 invalid_ref_chain_2:
   $ref: '#/invalid_ref_chain_3'
 additionalProperties: no
+example:
+  annotation_id: 1
+  auth: token
+  more_id: 1
+  name: Annotation
+  url: https://upsight.com
 allOf:
   - $ref: "common.yaml"
   - $ref: "subdir/more.yaml"

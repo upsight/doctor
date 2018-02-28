@@ -114,6 +114,14 @@ class TestString(object):
         with pytest.raises(TypeSystemError, match=expected_msg):
             S('foo')
 
+    def test_get_example(self):
+        S = string('A string.', example='Foo')
+        assert 'Foo' == S.get_example()
+
+        # Default example
+        S = string('A string.')
+        assert 'string' == S.get_example()
+
 
 class TestNumericType(object):
 
@@ -169,6 +177,28 @@ class TestNumericType(object):
             N(5)
 
 
+class TestNumber(object):
+
+    def test_get_example(self):
+        N = number('A float', example=1.12)
+        assert 1.12 == N.get_example()
+
+        # Default example
+        N = number('Pi')
+        assert 3.14 == N.get_example()
+
+
+class TestInteger(object):
+
+    def test_get_example(self):
+        I = integer('An int', example=1022)  # noqa
+        assert 1022 == I.get_example()
+
+        # Default example
+        I = integer('An ID')  # noqa
+        assert 1 == I.get_example()
+
+
 class TestBoolean(object):
 
     def test_boolean_type(self):
@@ -193,6 +223,14 @@ class TestBoolean(object):
         with pytest.raises(TypeSystemError, match='Must be a valid boolean.'):
             B('dog')
 
+    def test_get_example(self):
+        B = boolean('A bool', example=False)
+        assert B.get_example() is False
+
+        # Default example
+        B = boolean('A bool')
+        assert B.get_example() is True
+
 
 class TestEnum(object):
 
@@ -204,6 +242,14 @@ class TestEnum(object):
         # not in choices
         with pytest.raises(TypeSystemError, match='Must be a valid choice'):
             E('dog')
+
+    def test_get_example(self):
+        E = enum('choices', enum=['foo', 'bar'], example='bar')
+        assert 'bar' == E.get_example()
+
+        # Default example (1st item in enum)
+        E = enum('choices', enum=['foo', 'bar'])
+        assert 'foo' == E.get_example()
 
 
 class FooObject(Object):
@@ -264,6 +310,13 @@ class TestObject(object):
                            match="{'bar': 'This field is required.'}"):
             RequiredPropsObject(expected)
 
+    def test_get_example(self):
+        # default example is generated from example values of it's properties.
+        assert {'foo': 'string', 'bar': 1} == RequiredPropsObject.get_example()
+        # with a defined example
+        setattr(RequiredPropsObject, 'example', {'foo': 'foo', 'bar': 33})
+        assert {'foo': 'foo', 'bar': 33} == RequiredPropsObject.get_example()
+
 
 class TestArray(object):
 
@@ -323,6 +376,16 @@ class TestArray(object):
         A = array('unique', unique_items=True)
         with pytest.raises(TypeSystemError, match='This item is not unique.'):
             A([1, 1, 1, 2])
+
+    def test_get_example(self):
+        A = array('No example of items')
+        assert [1] == A.get_example()
+
+        A = array('Defined example', example=['a', 'b'])
+        assert ['a', 'b'] == A.get_example()
+
+        A = array('No example, defined items', items=string('letter'))
+        assert ['string'] == A.get_example()
 
 
 class TestJsonSchema(object):

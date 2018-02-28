@@ -49,7 +49,7 @@ Define the logic function that our endpoint will route to:
     # to parse and validate parameters for routes attached to this logic function.
     # The return type annotation will validate the response conforms to an
     # expected definition in development environments.  In non-development
-    # enviornments a warning will be logged.
+    # environments a warning will be logged.
     def get_foo(foo_id: FooId, fetch_bars: FetchBars=False) -> Foo:
         """Fetches the Foo object and optionally related bars."""
         return Foo.get_by_id(foo_id, fetch_bars=fetch_bars)

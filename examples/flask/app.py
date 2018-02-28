@@ -47,7 +47,7 @@ note = {'note_id': 1, 'body': 'Example body', 'done': True}
 # to parse and validate parameters for routes attached to this logic function.
 # The return type annotation will validate the response conforms to an
 # expected definition in development environments.  In non-development
-# enviornments a warning will be logged.
+# environments a warning will be logged.
 def get_note(note_id: NoteId, note_type: NoteType) -> Note:
     """Get a note by ID."""
     if note_id != 1:

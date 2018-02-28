@@ -4,6 +4,14 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0-beta.3 (2018-02-28)
+-------------------------
+
+- Added default example values for all doctor types.
+- Documentation updates
+- Updated doctor code to work agnostic of the framework so eventually
+  other backends than flask could be used.
+
 V3.0.0-beta (2018-02-27)
 ------------------------
 

@@ -120,7 +120,7 @@ class TestSchemaRefResolver(TestCase):
         uri, value = self.resolver.resolve('#/test_ref')
         self.assertEqual(uri, self.base_uri + '#/definitions/annotation_id')
         self.assertEqual(value, {'description': 'Auto-increment ID.',
-                                 'type': 'integer'})
+                                 'type': 'integer', 'example': 1})
 
     def test_resolve_external(self):
         """Should be able to resolve references to other files."""

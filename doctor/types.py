@@ -127,6 +127,13 @@ class String(SuperType, str):
 
         return value
 
+    @classmethod
+    def get_example(cls) -> str:
+        """Returns an example value for the String type."""
+        if cls.example is not None:
+            return cls.example
+        return 'string'
+
 
 class _NumericType(SuperType):
     """
@@ -193,10 +200,24 @@ class Number(_NumericType, float):
     """Represents a `float` type."""
     native_type = float
 
+    @classmethod
+    def get_example(cls) -> float:
+        """Returns an example value for the Number type."""
+        if cls.example is not None:
+            return cls.example
+        return 3.14
+
 
 class Integer(_NumericType, int):
     """Represents an `int` type."""
     native_type = int
+
+    @classmethod
+    def get_example(cls) -> int:
+        """Returns an example value for the Integer type."""
+        if cls.example is not None:
+            return cls.example
+        return 1
 
 
 class Boolean(SuperType):
@@ -222,6 +243,13 @@ class Boolean(SuperType):
                 raise TypeSystemError(cls=cls, code='type') from None
         return bool(*args, **kwargs)
 
+    @classmethod
+    def get_example(cls) -> bool:
+        """Returns an example value for the Boolean type."""
+        if cls.example is not None:
+            return cls.example
+        return True
+
 
 class Enum(SuperType, str):
     """
@@ -238,6 +266,13 @@ class Enum(SuperType, str):
         if value not in cls.enum:
             raise TypeSystemError(cls=cls, code='invalid')
         return value
+
+    @classmethod
+    def get_example(cls) -> str:
+        """Returns an example value for the Enum type."""
+        if cls.example is not None:
+            return cls.example
+        return cls.enum[0]
 
 
 class Object(SuperType, dict):
@@ -317,6 +352,17 @@ class Object(SuperType, dict):
         if errors:
             raise TypeSystemError(errors)
 
+    @classmethod
+    def get_example(cls) -> dict:
+        """Returns an example value for the Dict type.
+
+        If an example isn't a defined attribute on the class we return
+        a dict of example values based on each property's annotation.
+        """
+        if cls.example is not None:
+            return cls.example
+        return {k: v.get_example() for k, v in cls.properties.items()}
+
 
 class Array(SuperType, list):
     """Represents a `list` type."""
@@ -387,6 +433,20 @@ class Array(SuperType, list):
         if errors:
             raise TypeSystemError(errors)
 
+    @classmethod
+    def get_example(cls) -> list:
+        """Returns an example value for the JsonSchema type.
+
+        If an example isn't a defined attribute on the class we return
+        a list of 1 item containing the example value of the `items` attribute.
+        If `items` is None we simply return a `[1]`.
+        """
+        if cls.example is not None:
+            return cls.example
+        if cls.items is not None:
+            return [cls.items.get_example()]
+        return [1]
+
 
 class JsonSchema(SuperType):
     """Represents a type loaded from a json schema."""
@@ -426,6 +486,15 @@ class JsonSchema(SuperType):
                         f'description.', cls=self.__class__)
                 except SchemaError as e:
                     raise TypeSystemError(str(e), cls=self.__class__)
+                try:
+                    self.example = self.schema.resolve(
+                        definition['$ref'])['example']
+                except KeyError:
+                    raise TypeSystemError(
+                        f'Definition `{self.definition_key}` is missing an '
+                        f'example.', cls=self.__class__)
+                except SchemaError as e:
+                    raise TypeSystemError(str(e), cls=self.__class__)
             else:
                 try:
                     self.description = definition['description']
@@ -433,6 +502,12 @@ class JsonSchema(SuperType):
                     raise TypeSystemError(
                         f'Definition `{self.definition_key}` is missing a '
                         f'description.', cls=self.__class__)
+                try:
+                    self.example = definition['example']
+                except KeyError:
+                    raise TypeSystemError(
+                        f'Definition `{self.definition_key}` is missing an '
+                        f'example.', cls=self.__class__)
             data = {self.definition_key: data}
         else:
             try:
@@ -449,6 +524,16 @@ class JsonSchema(SuperType):
             self.schema.validate(data, validator)
         except SchemaValidationError as e:
             raise TypeSystemError(e.args[0], cls=self.__class__)
+
+    @classmethod
+    def get_example(cls) -> typing.Any:
+        """Returns an example value for the JsonSchema type.
+
+        @NOTE: There isn't a good way to get an example value currently
+               without instantiating an instance so it can parse the json
+               schema to pull out the examples from the definitions.
+        """
+        return cls.example
 
 
 def json_schema_type(**kwargs) -> typing.Type:

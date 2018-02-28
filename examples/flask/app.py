@@ -13,12 +13,14 @@ from doctor import types
 # doctor provides helper functions to easily define simple types.
 Body = types.string('Note body', example='body')
 Done = types.boolean('Marks if a note is done or not.', example=False)
-NoteId = types.integer('Note ID')
+NoteId = types.integer('Note ID', example=1)
 Status = types.string('API status')
-NoteType = types.enum('The type of note', enum=['quick', 'detailed'])
+NoteType = types.enum('The type of note', enum=['quick', 'detailed'],
+                      example='quick')
+
 
 # You can also inherit from type classes to create more complex types.
-class Note(Object):
+class Note(types.Object):
     description = 'A note object'
     additional_properties = False
     properties = {
@@ -27,13 +29,19 @@ class Note(Object):
         'done': Done,
     }
     required = ['body', 'done', 'note_id']
+    example = {
+        'body': 'Example Body',
+        'done': True,
+        'note_id': 1,
+    }
 
 
-Notes = array('Array of notes', items=Note, example=[Note.example])
+Notes = types.array('Array of notes', items=Note, example=[Note.example])
 
 # -- mark-logic
 
 note = {'note_id': 1, 'body': 'Example body', 'done': True}
+
 
 # Note the type annotations on this function definition. This tells Doctor how
 # to parse and validate parameters for routes attached to this logic function.

@@ -120,6 +120,8 @@ will be generated based on the http method. The automatic title will be one of
 Overriding Example Values For Specific Endpoints
 ------------------------------------------------
 
+By default doctor will use the example value you specified on your custom type
+or if one wasn't given, the default example for the subclass of your type.
 Sometimes you need to set a very specific value for a parameter in a request
 when generating documentation.  doctor supports this behavior by
 using :func:`~doctor.docs.base.BaseHarness.define_example_values`.

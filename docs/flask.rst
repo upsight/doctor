@@ -57,6 +57,47 @@ The :class:`~doctor.response.Response` class takes the response data as the
 first parameter and a dict of HTTP response headers as the second parameter.
 The response headers can contain standard and any custom values.
 
+Response Validation
+-------------------
+
+doctor can also validate your responses.
+
+Enabling
+########
+
+By default doctor will only raise exceptions for invalid response when a
+application config variable `DEBUG` is `True`.  It can also be enabled by
+specifying a truthy value for the environment variable `RAISE_RESPONSE_VALIDATION_ERRORS`.
+This will cause a HTTP 400 error which wil give details on why the response is
+not valid.  If either of those conditions are not true only a warning will be
+logged.
+
+Usage
+#####
+
+To tell doctor to validate a response you must define a return annotation on
+your logic function.  Simply use doctor types to define a valid response and
+annotate it on your logic function.
+
+.. code-block:: python
+
+    from doctor import types
+
+    Color = types.enum('A color', enum=['blue', 'green'])
+    Colors = types.array('Array of colors', items=Color)
+
+    def get_colors() -> Colors:
+        # ... logic to fetch colors
+        return colors
+
+The return value of `get_colors` will be validated against the type that we
+created. If we have enabled raising response validation errors  and our
+response does not validate, we will get a 400 response.  If the above example
+returned an array with an integer like `[1]` our response would look like:
+
+```
+Response to GET /colors `[1]` does not validate: {0: 'Must be a valid choice.'}
+```
 
 Example API Documentation
 -------------------------

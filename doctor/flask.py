@@ -138,7 +138,11 @@ def handle_http(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
                                 request.method, request.path,
                                 response_str, exc_info=e)
                 if should_raise_response_validation_errors():
-                    raise
+                    error = ('Response to {method} {path} `{response}` does not'
+                             ' validate: {error}'.format(
+                                method=request.method, path=request.path,
+                                response=response, error=e.detail))
+                    raise TypeSystemError(error)
 
         if isinstance(response, Response):
             return (response.content, STATUS_CODE_MAP.get(request.method, 200),

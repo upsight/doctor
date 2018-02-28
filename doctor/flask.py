@@ -6,8 +6,8 @@ from typing import Callable, Dict, List, Tuple, Union
 
 
 try:
-    import flask_restful
     from flask import current_app, request
+    from flask_restful import Resource
     from werkzeug.exceptions import (BadRequest, Conflict, Forbidden,
                                      HTTPException, NotFound, Unauthorized,
                                      InternalServerError)
@@ -19,6 +19,8 @@ from .constants import HTTP_METHODS_WITH_JSON_BODY
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      NotFoundError, TypeSystemError, UnauthorizedError)
 from .response import Response
+from .routing import create_routes as doctor_create_routes
+from .routing import Route
 
 
 STATUS_CODE_MAP = {
@@ -82,8 +84,7 @@ def should_raise_response_validation_errors() -> bool:
             bool(os.environ.get('RAISE_RESPONSE_VALIDATION_ERRORS', False)))
 
 
-def handle_http(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
-                logic: Callable):
+def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
     """Handle a Flask HTTP request
 
     :param handler: flask_restful.Resource: An instance of a Flask Restful
@@ -165,3 +166,14 @@ def handle_http(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
             raise
         logging.exception(e)
         raise HTTP500Exception('Uncaught error in logic function')
+
+
+def create_routes(routes: Tuple[Route]) -> List[Tuple[str, Resource]]:
+    """A thin wrapper around create_routes that passes in flask specific values.
+
+    :param routes: A tuple containing the route and another tuple with
+        all http methods allowed for the route.
+    :returns: A list of tuples containing the route and generated handler.
+    """
+    return doctor_create_routes(
+        routes, handle_http, default_base_handler_class=Resource)

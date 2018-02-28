@@ -1,10 +1,7 @@
 import functools
 import inspect
-from typing import Callable, List, Tuple
+from typing import Any, Callable, List, Tuple
 
-from flask_restful import Resource
-
-from doctor.flask import handle_http
 from doctor.utils import get_params_from_func
 
 
@@ -83,12 +80,15 @@ def put(func: Callable, allowed_exceptions: List=None,
                       title=title)
 
 
-def create_http_method(logic: Callable, http_method: str) -> Callable:
+def create_http_method(logic: Callable, http_method: str,
+                       handle_http: Callable) -> Callable:
     """Create a handler method to be used in a handler class.
 
     :param callable logic: The underlying function to execute with the
         parsed and validated parameters.
     :param str http_method: HTTP method this will handle.
+    :param handle_http: The HTTP handler function that should be
+        used to wrap the logic functions.
     :returns: A handler function.
     """
     @functools.wraps(logic)
@@ -109,7 +109,7 @@ class Route(object):
     :param handler_name: The name that should be given to the handler class.
     """
     def __init__(self, route: str, methods: Tuple[HTTPMethod],
-                 heading: str=None, base_handler_class=Resource,
+                 heading: str=None, base_handler_class=None,
                  handler_name: str=None):
         self.base_handler_class = base_handler_class
         self.handler_name = handler_name
@@ -118,20 +118,29 @@ class Route(object):
         self.route = route
 
 
-def create_routes(routes: Tuple[HTTPMethod]) -> List[Tuple[str, Resource]]:
+def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
+                  default_base_handler_class: Any) -> List[Tuple[str, Any]]:
     """Creates handler routes from the provided routes.
 
     :param routes: A tuple containing the route and another tuple with
         all http methods allowed for the route.
+    :param handle_http: The HTTP handler function that should be
+        used to wrap the logic functions.
+    :param default_base_handler_class: The default base handler class that
+        should be used.
     :returns: A list of tuples containing the route and generated handler.
     """
     created_routes = []
     for r in routes:
         handler = None
+        if r.base_handler_class is not None:
+            base_handler_class = r.base_handler_class
+        else:
+            base_handler_class = default_base_handler_class
         for method in r.methods:
             logic = method.logic
             http_method = method.method
-            http_func = create_http_method(logic, http_method)
+            http_func = create_http_method(logic, http_method, handle_http)
             handler_name = r.handler_name or logic.__name__
             handler_methods_and_properties = {
                 '__name__': handler_name,
@@ -140,7 +149,7 @@ def create_routes(routes: Tuple[HTTPMethod]) -> List[Tuple[str, Resource]]:
             }
             if handler is None:
                 handler = type(
-                    handler_name, (r.base_handler_class,),
+                    handler_name, (base_handler_class,),
                     handler_methods_and_properties)
             else:
                 setattr(handler, http_method, http_func)

@@ -2,6 +2,7 @@ import inspect
 
 from flask_restful import Resource
 
+from doctor.flask import handle_http
 from doctor.routing import (
     create_routes, delete, get, post, put, HTTPMethod, Route)
 from doctor.utils import Params
@@ -96,7 +97,7 @@ class TestRouting(object):
                 get(get_foo),
                 put(update_foo)), heading='Foo'),
         )
-        actual = create_routes(routes)
+        actual = create_routes(routes, handle_http, Resource)
 
         # 2 routes created
         assert 2 == len(actual)

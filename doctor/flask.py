@@ -114,7 +114,7 @@ def handle_http(handler: flask_restful.Resource, args: Tuple, kwargs: Dict,
         # Validate and coerce parameters to the appropriate types.
         for required in logic._doctor_params.required:
             if required not in params:
-                raise InvalidValueError(f'{required} is required.')
+                raise InvalidValueError('{} is required.'.format(required))
         sig = logic._doctor_signature
         for name, value in params.items():
             annotation = sig.parameters[name].annotation

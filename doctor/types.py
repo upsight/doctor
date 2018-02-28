@@ -344,7 +344,8 @@ class Object(SuperType, dict):
             properties = list(self.properties.keys())
             for key in value.keys():
                 if key not in properties:
-                    detail = f'{key} not in {properties}'
+                    detail = '{key} not in {properties}'.format(
+                        key=key, properties=properties)
                     exc = TypeSystemError(detail, cls=self.__class__,
                                           code='additional_properties')
                     errors[key] = exc.detail
@@ -474,16 +475,16 @@ class JsonSchema(SuperType):
                 definition = request_schema['definitions'][self.definition_key]
             except KeyError:
                 raise TypeSystemError(
-                    f'Definition `{self.definition_key}` is not defined in the '
-                    'schema.', cls=self.__class__)
+                    'Definition `{}` is not defined in the schema.'.format(
+                        self.definition_key), cls=self.__class__)
             if '$ref' in request_schema['definitions'][self.definition_key]:
                 try:
                     self.description = self.schema.resolve(
                         definition['$ref'])['description']
                 except KeyError:
                     raise TypeSystemError(
-                        f'Definition `{self.definition_key}` is missing a '
-                        f'description.', cls=self.__class__)
+                        'Definition `{}` is missing a description.'.format(
+                            self.definition_key), cls=self.__class__)
                 except SchemaError as e:
                     raise TypeSystemError(str(e), cls=self.__class__)
                 try:
@@ -491,8 +492,8 @@ class JsonSchema(SuperType):
                         definition['$ref'])['example']
                 except KeyError:
                     raise TypeSystemError(
-                        f'Definition `{self.definition_key}` is missing an '
-                        f'example.', cls=self.__class__)
+                        'Definition `{}` is missing an example.'.format(
+                            self.definition_key), cls=self.__class__)
                 except SchemaError as e:
                     raise TypeSystemError(str(e), cls=self.__class__)
             else:
@@ -500,14 +501,14 @@ class JsonSchema(SuperType):
                     self.description = definition['description']
                 except KeyError:
                     raise TypeSystemError(
-                        f'Definition `{self.definition_key}` is missing a '
-                        f'description.', cls=self.__class__)
+                        'Definition `{}` is missing a description.'.format(
+                            self.definition_key), cls=self.__class__)
                 try:
                     self.example = definition['example']
                 except KeyError:
                     raise TypeSystemError(
-                        f'Definition `{self.definition_key}` is missing an '
-                        f'example.', cls=self.__class__)
+                        'Definition `{}` is missing an example.'.format(
+                            self.definition_key), cls=self.__class__)
             data = {self.definition_key: data}
         else:
             try:

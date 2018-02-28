@@ -1,6 +1,7 @@
 from functools import wraps
 
-from doctor.routing import create_routes, get, Route
+from doctor.flask import create_routes
+from doctor.routing import get, Route
 
 from .base import FlaskTestCase
 from .types import ItemId, Name

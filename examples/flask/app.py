@@ -5,7 +5,8 @@
 from flask import Flask
 from flask_restful import Api
 from doctor.errors import NotFoundError
-from doctor.routing import Route, create_routes, get, post, put, delete
+from doctor.flask import create_routes
+from doctor.routing import Route, get, post, put, delete
 # -- mark-types
 from doctor import types
 

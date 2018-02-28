@@ -4,7 +4,8 @@ import flask_restful
 import flask_testing
 from flask import Flask
 
-from doctor.routing import create_routes, get, Route
+from doctor.flask import create_routes
+from doctor.routing import get, Route
 
 from .types import ItemId, Name
 

@@ -201,7 +201,7 @@ def get_valid_class_name(s: str) -> str:
 
     Remove leading and trailing spaces; removes spaces and capitalizes each
     word; and remove anything that is not alphanumeric.  Returns a pep8
-    compaitble class name.
+    compatible class name.
 
     :param s: The string to convert.
     :returns: The updated string.

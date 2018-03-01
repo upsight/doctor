@@ -2,7 +2,7 @@ import functools
 import inspect
 from typing import Any, Callable, List, Tuple
 
-from doctor.utils import get_params_from_func
+from doctor.utils import get_params_from_func, get_valid_class_name
 
 
 class HTTPMethod(object):
@@ -118,6 +118,25 @@ class Route(object):
         self.route = route
 
 
+def get_handler_name(route: Route, logic: Callable) -> str:
+    """Gets the handler name.
+
+    :param route: A Route instance.
+    :param logic: The logic function.
+    :returns: A handler class name.
+    """
+    if route.handler_name is not None:
+        return route.handler_name
+    if any(m for m in route.methods if m.method.lower() == 'post'):
+        # A list endpoint
+        if route.heading:
+            return '{}ListHandler'.format(get_valid_class_name(route.heading))
+        return '{}ListHandler'.format(get_valid_class_name(logic.__name__))
+    if route.heading:
+        return '{}Handler'.format(get_valid_class_name(route.heading))
+    return '{}Handler'.format(get_valid_class_name(logic.__name__))
+
+
 def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
                   default_base_handler_class: Any) -> List[Tuple[str, Any]]:
     """Creates handler routes from the provided routes.
@@ -141,7 +160,7 @@ def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
             logic = method.logic
             http_method = method.method
             http_func = create_http_method(logic, http_method, handle_http)
-            handler_name = r.handler_name or logic.__name__
+            handler_name = get_handler_name(r, logic)
             handler_methods_and_properties = {
                 '__name__': handler_name,
                 '_doctor_heading': r.heading,

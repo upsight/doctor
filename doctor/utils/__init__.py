@@ -194,3 +194,18 @@ def get_description_lines(docstring):
     if lines and lines[-1] != '':
         lines.append('')
     return lines
+
+
+def get_valid_class_name(s: str) -> str:
+    """Return the given string converted so that it can be used for a class name
+
+    Remove leading and trailing spaces; removes spaces and capitalizes each
+    word; and remove anything that is not alphanumeric.  Returns a pep8
+    compaitble class name.
+
+    :param s: The string to convert.
+    :returns: The updated string.
+    """
+    s = str(s).strip()
+    s = ''.join([w.title() for w in re.split('\W+|_', s)])
+    return re.sub(r'[^\w|_]', '', s)

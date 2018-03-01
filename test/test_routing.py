@@ -4,7 +4,7 @@ from flask_restful import Resource
 
 from doctor.flask import handle_http
 from doctor.routing import (
-    create_routes, delete, get, post, put, HTTPMethod, Route)
+    create_routes, delete, get, get_handler_name, post, put, HTTPMethod, Route)
 from doctor.utils import Params
 
 from .types import Age, Foo, FooId, Foos, IsAlive, Name
@@ -151,3 +151,39 @@ class TestRouting(object):
         assert hasattr(handler, 'get')
         assert hasattr(handler, 'delete')
         assert hasattr(handler, 'put')
+        # verify it generated an appropriate class handler name
+        assert 'FooHandler' == handler.__name__
+
+    def test_get_handler_name_route_has_handler_name(self):
+        """Tests handler name comes from one defined on Route"""
+        route = Route('/', (get(get_foos),), handler_name='FooFooHandler')
+        assert 'FooFooHandler' == get_handler_name(route, get_foos)
+
+    def test_get_handler_name_from_logic_function_name(self):
+        """Tests handler names is generated from logic func name."""
+        route = Route('/', (get(get_foos),))
+        assert 'GetFoosHandler' == get_handler_name(route, get_foos)
+
+    def test_get_handler_name_heading_list_handler(self):
+        """
+        Tests that we get the handler name from the defined heading and
+        http methods.  Since post is included it infers it's a list endpoint.
+        """
+        route = Route('/', (post(create_foo),), heading='Dinosaur (v1)')
+        assert 'DinosaurV1ListHandler' == get_handler_name(route, create_foo)
+
+    def test_get_handler_name_list_handler(self):
+        """
+        Tests that we get the handler name using the logic function and also
+        including List in the name since it contains a post method.
+        """
+        route = Route('/', (post(create_foo),))
+        assert 'CreateFooListHandler' == get_handler_name(route, create_foo)
+
+    def test_get_handler_name_route_heading(self):
+        """
+        Tests that we get the handler name using the route heading for a non
+        list endpoint.
+        """
+        route = Route('/', (put(update_foo),), heading='Dinosaur (v1)')
+        assert 'DinosaurV1Handler' == get_handler_name(route, update_foo)

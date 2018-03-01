@@ -7,8 +7,8 @@ import mock
 
 from doctor.routing import get_params_from_func
 from doctor.utils import (
-    add_param_annotations, get_description_lines, get_module_attr, Params,
-    RequestParamAnnotation)
+    add_param_annotations, get_description_lines, get_module_attr,
+    get_valid_class_name, Params, RequestParamAnnotation)
 
 from .base import TestCase
 from .types import Age, Auth, Foo, IsAlive, IsDeleted, Name
@@ -197,3 +197,16 @@ class TestUtils(TestCase):
             optional=['is_alive'],
             logic=['extra', 'name', 'is_alive'])
         assert expected == get_params_from_func(decorated_func)
+
+    def test_get_valid_class_name(self):
+        tests = (
+            # (input, expected)
+            ('Notes', 'Notes'),
+            ('Notes (v1)', 'NotesV1'),
+            ('Notes - "v1"', 'NotesV1'),
+            ('note_book.', 'NoteBook'),
+            ('notes', 'Notes'),
+            ('note-book_v1 .', 'NoteBookV1'),
+        )
+        for s, expected in tests:
+            assert expected == get_valid_class_name(s)

@@ -54,6 +54,7 @@ class SuperType(object):
     example = None
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         if self.description is None:
             raise ValueError('Each type must define a description attribute')
 
@@ -301,18 +302,16 @@ class Object(SuperType, dict):
     additional_properties = True  # type: bool
 
     def __init__(self, *args, **kwargs):
-        if len(args) == 1 and not kwargs and isinstance(args[0], dict):
-            value = args[0]
-        else:
-            try:
-                value = dict(*args, **kwargs)
-            except (ValueError, TypeError):
-                if (len(args) == 1 and not kwargs and
-                        hasattr(args[0], '__dict__')):
-                    value = dict(args[0].__dict__)
-                else:
-                    raise TypeSystemError(
-                        cls=self.__class__, code='type') from None
+        try:
+            super().__init__(*args, **kwargs)
+        except (ValueError, TypeError):
+            if (len(args) == 1 and not kwargs and
+                    hasattr(args[0], '__dict__')):
+                value = dict(args[0].__dict__)
+            else:
+                raise TypeSystemError(
+                    cls=self.__class__, code='type') from None
+        value = self
 
         # Ensure all property keys are strings.
         errors = {}

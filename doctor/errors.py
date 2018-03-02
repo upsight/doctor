@@ -10,17 +10,22 @@ class TypeSystemError(Exception):
     :param detail: Detail about the error.
     :param cls: The class type that was being instantiated.
     :param code: The error code.
+    :param errobj: A dict containing all validation errors during the request.
+        The key is the param and the value is the error message.
     """
     def __init__(self,
                  detail: Union[str, dict]=None,
                  cls: type=None,
-                 code: str=None) -> None:
+                 code: str=None, errobj: dict=None) -> None:
 
         if cls is not None and code is not None:
             errors = getattr(cls, 'errors')
             detail = errors[code].format(**cls.__dict__)
 
         self.detail = detail
+        self.errobj = errobj
+        if errobj and len(errobj) == 1:
+            self.detail = list(errobj.values())[0]
         super().__init__(detail)
 
 

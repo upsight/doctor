@@ -37,9 +37,13 @@ class SchematicHTTPException(HTTPException):
 
     Note that this adds a flask-restful specific data attribute to the class,
     as the error wouldn't render properly without it.
+
+    :param description: The error description.
+    :param errobj: A dict containing all validation errors during the request.
+        The key is the param and the value is the error message.
     """
 
-    def __init__(self, description=None, errobj=None):
+    def __init__(self, description: str=None, errobj: dict=None):
         super(SchematicHTTPException, self).__init__(description)
         self.data = {'status': self.code, 'message': description}
         self.errobj = errobj
@@ -49,6 +53,12 @@ class SchematicHTTPException(HTTPException):
 
 
 class HTTP400Exception(SchematicHTTPException, BadRequest):
+    """Reperesents a HTTP 400 error.
+
+    :param description: The error description.
+    :param errobj: A dict containing all validation errors during the request.
+        The key is the param and the value is the error message.
+    """
     pass
 
 
@@ -112,14 +122,31 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
         params = {k: v for k, v in request_params.items() if k in all_params}
         params.update(**kwargs)
 
-        # Validate and coerce parameters to the appropriate types.
+        # Check for required params
+        missing = []
         for required in logic._doctor_params.required:
             if required not in params:
-                raise InvalidValueError('{} is required.'.format(required))
+                missing.append(required)
+        if missing:
+            if len(missing) == 1:
+                verb = 'is'
+                missing = missing[0]
+            else:
+                verb = 'are'
+            error = '{} {} required.'.format(missing, verb)
+            raise InvalidValueError(error)
+
+        # Validate and coerce parameters to the appropriate types.
+        errors = {}
         sig = logic._doctor_signature
         for name, value in params.items():
             annotation = sig.parameters[name].annotation
-            params[name] = annotation.native_type(annotation(value))
+            try:
+                params[name] = annotation.native_type(annotation(value))
+            except TypeSystemError as e:
+                errors[name] = '{} - {}'.format(name, e.detail)
+        if errors:
+            raise TypeSystemError(errors, errobj=errors)
 
         # Only pass request parameters defined by the logic signature.
         logic_params = {k: v for k, v in params.items()
@@ -150,8 +177,8 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                     response.headers)
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, TypeSystemError) as e:
-        errors = getattr(e, 'errors', None)
-        raise HTTP400Exception(e, errobj=errors)
+        errobj = getattr(e, 'errobj', None)
+        raise HTTP400Exception(e, errobj=errobj)
     except UnauthorizedError as e:
         raise HTTP401Exception(e)
     except ForbiddenError as e:

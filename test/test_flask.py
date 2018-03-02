@@ -66,7 +66,7 @@ def test_handle_http_object_array_types(mock_request):
     """
     This test verifies that we pass native types to the logic function rather
     than the doctor types that annotate the parameters of the logic function.
-    This is done to prevent downstream issues form happening by passing say
+    This is done to prevent downstream issues from happening by passing say
     an Integer instance instead of an int to pymysql.  pymysql doesn't know
     about this type and tries to escape it like a string which causes an
     AttributeError.

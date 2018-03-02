@@ -198,7 +198,7 @@ class _NumericType(SuperType):
             if failed:
                 raise TypeSystemError(cls=cls, code='multiple_of')
 
-        # Coerce value to the native str type.  We only do this if the value
+        # Coerce value to the native type.  We only do this if the value
         # is an instance of the class.
         if isinstance(value, cls):
             value = cls.native_type(value)

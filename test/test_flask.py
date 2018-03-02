@@ -11,7 +11,7 @@ from doctor.response import Response
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
-from .types import Auth, Item, ItemId, IncludeDeleted
+from .types import Auth, Colors, Item, ItemId, IncludeDeleted
 
 
 def check_auth(func):
@@ -26,6 +26,10 @@ def check_auth(func):
 
 
 def get_item(item_id: ItemId, include_deleted: IncludeDeleted=False) -> Item:
+    return {'item_id': 1}
+
+
+def create_item(item: Item, colors: Colors) -> Item:
     return {'item_id': 1}
 
 
@@ -56,6 +60,37 @@ def test_handle_http_with_json(mock_request, mock_get_logic):
 
     expected_call = mock.call(item_id=1, include_deleted=True)
     assert expected_call == mock_get_logic.call_args
+
+
+def test_handle_http_object_array_types(mock_request):
+    """
+    This test verifies that we pass native types to the logic function rather
+    than the doctor types that annotate the parameters of the logic function.
+    This is done to prevent downstream issues form happening by passing say
+    an Integer instance instead of an int to pymysql.  pymysql doesn't know
+    about this type and tries to escape it like a string which causes an
+    AttributeError.
+    """
+    mock_logic = mock.MagicMock(spec=create_item, return_value={'item_id': 1})
+    mock_logic._doctor_signature = inspect.signature(create_item)
+    mock_logic._doctor_params = get_params_from_func(mock_logic)
+
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.json = {'item': {'item_id': 1}, 'colors': ['blue', 'green']}
+
+    mock_handler = mock.Mock()
+    actual = handle_http(mock_handler, (), {}, mock_logic)
+    assert actual == ({'item_id': 1}, 201)
+
+    expected_call = mock.call(item={'item_id': 1}, colors=['blue', 'green'])
+    assert expected_call == mock_logic.call_args
+
+    # Verify we're passing native types and not doctor types to logic functions
+    kwargs = mock_logic.call_args[1]
+    assert type(kwargs['item']) is dict
+    assert type(kwargs['colors']) is list
 
 
 def test_handle_http_non_json(mock_request, mock_get_logic):

@@ -119,7 +119,7 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
         sig = logic._doctor_signature
         for name, value in params.items():
             annotation = sig.parameters[name].annotation
-            params[name] = annotation(value)
+            params[name] = annotation.native_type(annotation(value))
 
         # Only pass request parameters defined by the logic signature.
         logic_params = {k: v for k, v in params.items()

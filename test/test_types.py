@@ -27,6 +27,10 @@ class TestSuperType(object):
 
 class TestString(object):
 
+    def test_type(self):
+        S = string('string')
+        assert type(S('string')) is str
+
     def test_trim_whitespace(self):
         S = string('a string', trim_whitespace=True)
         actual = S(' foo ')
@@ -179,6 +183,10 @@ class TestNumericType(object):
 
 class TestNumber(object):
 
+    def test_type(self):
+        N = number('float')
+        assert type(N(3.14)) is float
+
     def test_get_example(self):
         N = number('A float', example=1.12)
         assert 1.12 == N.get_example()
@@ -190,6 +198,10 @@ class TestNumber(object):
 
 class TestInteger(object):
 
+    def test_type(self):
+        I = integer('int')  # noqa
+        assert type(I(1)) is int
+
     def test_get_example(self):
         I = integer('An int', example=1022)  # noqa
         assert 1022 == I.get_example()
@@ -200,6 +212,10 @@ class TestInteger(object):
 
 
 class TestBoolean(object):
+
+    def test_type(self):
+        B = boolean('bool')
+        assert type(B('true')) is bool
 
     def test_boolean_type(self):
         B = boolean('A bool')
@@ -233,6 +249,10 @@ class TestBoolean(object):
 
 
 class TestEnum(object):
+
+    def test_type(self):
+        E = enum('choices', enum=['foo'])
+        assert type(E('foo')) is str
 
     def test_enum(self):
         E = enum('choices', enum=['foo', 'bar'])

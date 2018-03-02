@@ -125,6 +125,11 @@ class String(SuperType, str):
             except ValueError as e:
                 raise TypeSystemError(str(e), cls=cls)
 
+        # Coerce value to the native str type.  We only do this if the value
+        # is an instance of the class.  It could be a datetime instance or
+        # a str already if `trim_whitespace` is True.
+        if isinstance(value, cls):
+            value = cls.native_type(value)
         return value
 
     @classmethod
@@ -193,6 +198,10 @@ class _NumericType(SuperType):
             if failed:
                 raise TypeSystemError(cls=cls, code='multiple_of')
 
+        # Coerce value to the native type.  We only do this if the value
+        # is an instance of the class.
+        if isinstance(value, cls):
+            value = cls.native_type(value)
         return value
 
 
@@ -367,6 +376,7 @@ class Object(SuperType, dict):
 
 class Array(SuperType, list):
     """Represents a `list` type."""
+    native_type = list
     errors = {
         'type': 'Must be a list.',
         'min_items': 'Not enough items.',

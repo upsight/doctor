@@ -4,6 +4,16 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0-beta.4 (2018-03-02)
+--------------------------
+
+- Made validation errors better when raising http 400 exceptions.  They now
+  will display all missing required fields and all validation errors along with
+  have the param in the error message.
+- Fixed issue with doctor types being passed to logic functions.  Instead the
+  native types are now passed to prevent downstream issues from other code
+  encountering unexpected/unknown types.
+
 v3.0.0-beta.3 (2018-02-28)
 --------------------------
 

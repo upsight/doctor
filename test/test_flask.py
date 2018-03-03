@@ -155,8 +155,8 @@ def test_handle_http_multiple_invalid_args(mock_request, mock_post_logic):
     mock_request.json = {'item': 1, 'colors': 'blue'}
 
     mock_handler = mock.Mock()
-    expected_msg = ("{'item': 'item - Must be an object.', "
-                    "'colors': 'colors - Must be a list.'}")
+    expected_msg = ("{'item': 'Must be an object.', "
+                    "'colors': 'Must be a list.'}")
     with pytest.raises(HTTP400Exception, match=expected_msg):
         handle_http(mock_handler, (), {}, mock_post_logic)
 

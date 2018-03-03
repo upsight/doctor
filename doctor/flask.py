@@ -144,7 +144,7 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
             try:
                 params[name] = annotation.native_type(annotation(value))
             except TypeSystemError as e:
-                errors[name] = '{} - {}'.format(name, e.detail)
+                errors[name] = e.detail
         if errors:
             raise TypeSystemError(errors, errors=errors)
 

@@ -25,7 +25,9 @@ class TypeSystemError(Exception):
         self.detail = detail
         self.errors = errors
         if errors and len(errors) == 1:
-            self.detail = list(errors.values())[0]
+            param = list(errors.keys())[0]
+            msg = list(errors.values())[0]
+            self.detail = '{} - {}'.format(param, msg)
         super().__init__(detail)
 
 

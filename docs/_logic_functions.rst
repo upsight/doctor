@@ -20,7 +20,7 @@ required request parameter and `done` would be an optional request parameter.
 
 Any parameters that don't validate will raise a :class:`~doctor.flask.HTTP400Exception`.
 This exception will contain all validation errors and missing required properties.
-If there are more than one error, you can access them from the exception's
+If there is more than one error, you can access them from the exception's
 :attr:`~doctor.flask.HTTP400Exception.errobj` attribute.
 
 To abstract out the HTTP layer in logic functions, doctor provides

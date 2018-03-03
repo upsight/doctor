@@ -39,25 +39,25 @@ class SchematicHTTPException(HTTPException):
     as the error wouldn't render properly without it.
 
     :param description: The error description.
-    :param errobj: A dict containing all validation errors during the request.
-        The key is the param and the value is the error message.
+    :param errors: A dict containing all validation errors during the request.
+        The key is the param name and the value is the error message.
     """
 
-    def __init__(self, description: str=None, errobj: dict=None):
+    def __init__(self, description: str=None, errors: dict=None):
         super(SchematicHTTPException, self).__init__(description)
         self.data = {'status': self.code, 'message': description}
-        self.errobj = errobj
+        self.errors = errors
 
     def __str__(self):
         return '%d: %s: %s' % (self.code, self.name, self.description)
 
 
 class HTTP400Exception(SchematicHTTPException, BadRequest):
-    """Reperesents a HTTP 400 error.
+    """Represents a HTTP 400 error.
 
     :param description: The error description.
-    :param errobj: A dict containing all validation errors during the request.
-        The key is the param and the value is the error message.
+    :param errors: A dict containing all validation errors during the request.
+        The key is the param name and the value is the error message.
     """
     pass
 
@@ -146,7 +146,7 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
             except TypeSystemError as e:
                 errors[name] = '{} - {}'.format(name, e.detail)
         if errors:
-            raise TypeSystemError(errors, errobj=errors)
+            raise TypeSystemError(errors, errors=errors)
 
         # Only pass request parameters defined by the logic signature.
         logic_params = {k: v for k, v in params.items()
@@ -177,8 +177,8 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                     response.headers)
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, TypeSystemError) as e:
-        errobj = getattr(e, 'errobj', None)
-        raise HTTP400Exception(e, errobj=errobj)
+        errors = getattr(e, 'errors', None)
+        raise HTTP400Exception(e, errors=errors)
     except UnauthorizedError as e:
         raise HTTP401Exception(e)
     except ForbiddenError as e:

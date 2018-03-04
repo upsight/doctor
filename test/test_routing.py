@@ -96,11 +96,13 @@ class TestRouting(object):
                 delete(delete_foo),
                 get(get_foo),
                 put(update_foo)), heading='Foo'),
+            Route('^/foos/?$', (
+                put(lambda: 'put'),), heading='Foo'),
         )
         actual = create_routes(routes, handle_http, Resource)
 
         # 2 routes created
-        assert 2 == len(actual)
+        assert 3 == len(actual)
 
         # verify the first route
         route, handler = actual[0]
@@ -153,6 +155,11 @@ class TestRouting(object):
         assert hasattr(handler, 'put')
         # verify it generated an appropriate class handler name
         assert 'FooHandler' == handler.__name__
+
+        # Verify the 3rd handler which would have had a conflicting handler
+        # name has a number appended to the end of it.
+        route, handler = actual[2]
+        assert 'FooHandler2' == handler.__name__
 
     def test_get_handler_name_route_has_handler_name(self):
         """Tests handler name comes from one defined on Route"""

@@ -150,17 +150,28 @@ def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
     :returns: A list of tuples containing the route and generated handler.
     """
     created_routes = []
+    all_handler_names = []
     for r in routes:
         handler = None
         if r.base_handler_class is not None:
             base_handler_class = r.base_handler_class
         else:
             base_handler_class = default_base_handler_class
+
+        # Define the handler name.  To prevent issues where auto-generated
+        # handler names conflict with existing, appending a number to the
+        # end of the hanlder name if it already exists.
+        handler_name = get_handler_name(r, r.methods[0].logic)
+        if handler_name in all_handler_names:
+            handler_name = '{}{}'.format(
+                handler_name, len(all_handler_names))
+        all_handler_names.append(handler_name)
+
         for method in r.methods:
             logic = method.logic
             http_method = method.method
             http_func = create_http_method(logic, http_method, handle_http)
-            handler_name = get_handler_name(r, logic)
+
             handler_methods_and_properties = {
                 '__name__': handler_name,
                 '_doctor_heading': r.heading,

@@ -70,8 +70,6 @@ class TestDocsFlask(TestCase):
             RequestParamAnnotation('colors', Colors),
         ]
         view_class.get = add_param_annotations(view_class.get, params)
-        print(view_class.get._doctor_params)
-        print(view_class.get._doctor_signature)
         annotation = ResourceAnnotation(view_class.get, 'GET')
 
         result = self.harness.request(rule, view_class, annotation)

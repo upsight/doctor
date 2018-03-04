@@ -1,12 +1,12 @@
 import os
-from datetime import datetime
+from datetime import date, datetime
 
 import pytest
 
 from doctor.errors import TypeSystemError
 from doctor.types import (
     array, boolean, enum, integer, json_schema_type, number, string, Object,
-    SuperType)
+    MissingDescriptionError, SuperType)
 
 
 class TestSuperType(object):
@@ -70,7 +70,7 @@ class TestString(object):
         S = string('date', format='date')
         # No exception
         s = S('2018-10-22')
-        assert s == datetime(2018, 10, 22)
+        assert s == date(2018, 10, 22)
         # Invalid date
         expected_msg = "time data 'foo' does not match format '%Y-%m-%d'"
         with pytest.raises(TypeSystemError, match=expected_msg):
@@ -297,6 +297,14 @@ class TestObject(object):
         expected = {'foo': 'bar'}
         actual = FooObject(expected)
         assert expected == actual
+
+    def test_missing_description(self):
+        class MyObject(Object):
+            pass
+
+        expected_msg = "MyObject'> did not define a description attribute"
+        with pytest.raises(MissingDescriptionError, match=expected_msg):
+            MyObject({'foo': 'bar'})
 
     def test_invalid_object(self):
         with pytest.raises(TypeSystemError, match='Must be an object.'):

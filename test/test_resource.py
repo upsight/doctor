@@ -1,10 +1,12 @@
 from functools import wraps
+from inspect import Parameter
 
 import mock
 
 from doctor.resource import ResourceAnnotation, ResourceSchemaAnnotation
 
 from .base import TestCase
+from .types import ItemId
 from .utils import add_doctor_attrs
 
 
@@ -37,14 +39,21 @@ def decorated_logic_with_kwargs(a, b=1, **kwargs):
 class TestResourceAnnotation(TestCase):
 
     def test_init(self):
-        def logic():
+        def logic(user_id: int, item_id: ItemId):
             pass
 
         logic = add_doctor_attrs(logic)
         annotation = ResourceAnnotation(logic, 'POST')
-        self.assertEqual(annotation.logic, logic)
-        self.assertEqual(annotation.http_method, 'POST')
-        self.assertEqual(annotation.title, 'Create')
+        assert annotation.logic == logic
+        assert annotation.http_method == 'POST'
+        assert annotation.title == 'Create'
+
+        # Verify that the annotated_parameters attribute only has parameters
+        # from the signature that are doctor types.  It shouldn't include
+        # `user_id` since int doesn't extend doctor.types.SuperType
+        expected = Parameter('item_id', Parameter.POSITIONAL_OR_KEYWORD,
+                             default=Parameter.empty, annotation=ItemId)
+        assert {'item_id': expected} == annotation.annotated_parameters
 
     def test_init_title(self):
         def logic():

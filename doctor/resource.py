@@ -1,6 +1,7 @@
 from typing import Callable
 
 from .schema import Schema
+from .types import SuperType
 
 
 #: A mapping of HTTP method to title that should be used for it in
@@ -76,7 +77,10 @@ class ResourceAnnotation(object):
     """
 
     def __init__(self, logic: Callable, http_method: str, title: str=None):
-        self.annotated_parameters = logic._doctor_signature.parameters
+        self.annotated_parameters = {
+            k: p for k, p in logic._doctor_signature.parameters.items()
+            if issubclass(p.annotation, SuperType)
+        }
         self.http_method = http_method.upper()
         self.logic = logic
         self.params = logic._doctor_params

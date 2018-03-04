@@ -40,6 +40,11 @@ import rfc3987
 from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
 
 
+class MissingDescriptionError(ValueError):
+    """An exception raised when a type is missing a description."""
+    pass
+
+
 class SuperType(object):
     """A super type all custom types must extend from.
 
@@ -56,7 +61,9 @@ class SuperType(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.description is None:
-            raise ValueError('Each type must define a description attribute')
+            cls = self.__class__
+            raise MissingDescriptionError(
+                '{} did not define a description attribute'.format(cls))
 
 
 class String(SuperType, str):
@@ -104,7 +111,7 @@ class String(SuperType, str):
         # Validate format, if specified
         if cls.format == 'date':
             try:
-                value = datetime.strptime(value, "%Y-%m-%d")
+                value = datetime.strptime(value, "%Y-%m-%d").date()
             except ValueError as e:
                 raise TypeSystemError(str(e), cls=cls)
         elif cls.format == 'date-time':
@@ -304,6 +311,8 @@ class Object(SuperType, dict):
     def __init__(self, *args, **kwargs):
         try:
             super().__init__(*args, **kwargs)
+        except MissingDescriptionError:
+            raise
         except (ValueError, TypeError):
             if (len(args) == 1 and not kwargs and
                     hasattr(args[0], '__dict__')):

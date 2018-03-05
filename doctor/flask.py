@@ -144,9 +144,6 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                 params[name] = annotation.native_type(annotation(value))
             except TypeSystemError as e:
                 errors[name] = e.detail
-            except Exception as e:
-                import pdb
-                pdb.set_trace()
         if errors:
             raise TypeSystemError(errors, errors=errors)
 

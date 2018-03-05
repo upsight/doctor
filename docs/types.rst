@@ -282,18 +282,23 @@ from doctor `2.x.x` to `3.0.0`.  It allows you to specify an already defined
 schema file to represent a type.  You can use a definition within the schema
 as your type or the root type of the schema.
 
-This type is unique in that you don't need to explictly define a :attr:`~doctor.types.JsonSchema.description`
-attribute on your class as it will use the one defined in the schema.
+This type will use the json schema to set the description, example and native
+type attributes of the class.  This type should not be used directly, instead
+you should use :func:`~doctor.types.json_schema_type` to create your class.
 
 Attributes
 ##########
 
-* :attr:`~doctor.types.SuperType.description` - A human readable description
-  of what the type represents.  This will be used when generating documentation.
-* :attr:`~doctor.types.JsonSchema.schema_file` - The full path to the schema file.
-  This attribute is required to be defined on your class.
 * :attr:`~doctor.types.JsonSchema.definition_key` - The key of the definition
   within your schema that should be used for the type.
+* :attr:`~doctor.types.SuperType.description` - A human readable description
+  of what the type represents.  This will be used when generating documentation.
+  This value will automatically get loaded from your schema definition.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This value will automatically
+  get loaded from your schema definition.
+* :attr:`~doctor.types.JsonSchema.schema_file` - The full path to the schema file.
+  This attribute is required to be defined on your class.
 
 Example
 #######
@@ -308,9 +313,11 @@ Example
     definitions:
       annotation_id:
         description: Auto-increment ID.
+        example: 1
         type: integer
       name:
         description: The name of the annotation.
+        example: Example Annotation.
         type: string
     type: object
     properties:
@@ -324,20 +331,18 @@ Example
 
 .. code-block:: python
 
-    from doctor.types import JsonSchema
+    from doctor.types import json_schema_type
 
-    class AnnotationId(JsonSchema):
-        definition_key = 'annotation_id'
-        schema_file = '/full/path/to/annotation.yaml'
+    AnnotationId = json_schema_type(
+        '/full/path/to/annoation.yaml', definition_key='annotation_id')
 
 **Without `definition_key`**
 
 .. code-block:: python
 
-    from doctor.types import JsonSchema
+    from doctor.types import json_schema_type
 
-    class Annotation(JsonSchema):
-        schema_file = '/full/path/to/annotation.yaml'
+    Annotation = json_schema_type('/full/path/to/annotation.yaml')
 
 
 .. _quick-type-creation:

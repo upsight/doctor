@@ -4,6 +4,7 @@ from datetime import date, datetime
 import pytest
 
 from doctor.errors import TypeSystemError
+from doctor.resource import ResourceSchema
 from doctor.types import (
     array, boolean, enum, integer, json_schema_type, number, string, Object,
     MissingDescriptionError, SuperType)
@@ -422,15 +423,29 @@ class TestJsonSchema(object):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
         J = json_schema_type(schema_file=schema_file)
+
+        # Verify description and example were set as attributes based
+        # on values from the loaded json schema.
+        assert 'An annotation object.' == J.description
+        assert {
+            'annotation_id': 1,
+            'auth': 'token',
+            'more_id': 1,
+            'name': 'Annotation',
+            'url': 'https://upsight.com',
+        } == J.example
+        assert isinstance(J.schema, ResourceSchema)
+
         # no exception
         data = {
             'annotation_id': 1,
             'name': 'test',
         }
         actual = J(data)
+        assert data == actual
         # Verify description pulled from yaml file
         expected = 'An annotation object.'
-        assert expected == actual.description
+        assert expected == J.description
 
         # missing required field
         data = {'name': 'test'}
@@ -448,23 +463,46 @@ class TestJsonSchema(object):
                            match="'foobar' is not of type 'integer'"):
             J(data)
 
+    def test_no_definition_key_no_example(self):
+        """
+        This tests that if we don't pass a definition_key and the schema
+        doesn't define an example at the root that it will attempt to
+        resolve it from the properties if the root is an object.
+        """
+        schema_file = os.path.join(
+            os.path.dirname(__file__), 'schema', 'annotation_no_example.yaml')
+        J = json_schema_type(schema_file=schema_file)
+
+        # Verify description and example were set as attributes based
+        # on values from the loaded json schema.
+        assert 'An annotation object.' == J.description
+        assert {
+            'annotation_id': 1,
+            'auth': 'eb25f25becca416092752b0f457f1271',
+            'more_id': 1,
+            'name': 'Annotation',
+            'url': 'https://upsight.com',
+        } == J.example
+        assert isinstance(J.schema, ResourceSchema)
+
     def test_no_definition_key_missing_description(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'no_description.yaml')
-        J = json_schema_type(schema_file=schema_file)
-        data = {
-            'annotation_id': 1,
-            'name': 'test',
-        }
         with pytest.raises(TypeSystemError,
                            match='Schema is missing a description.'):
-            J(data)
+            json_schema_type(schema_file=schema_file)
 
     def test_definition_key(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
         J = json_schema_type(
             schema_file=schema_file, definition_key='annotation_id')
+        # Verify description and example were set as attributes based
+        # on values from the loaded json schema.
+        assert 'Auto-increment ID.' == J.description
+        assert 1 == J.example
+        assert isinstance(J.schema, ResourceSchema)
+
         # no exception
         J(1)
         # Not an int
@@ -475,21 +513,18 @@ class TestJsonSchema(object):
     def test_definition_key_missing(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = json_schema_type(
-            schema_file=schema_file, definition_key='does_not_exist')
         expected = "Definition `does_not_exist` is not defined in the schema."
         with pytest.raises(TypeSystemError, match=expected):
-            J(1)
+            json_schema_type(
+                schema_file=schema_file, definition_key='does_not_exist')
 
     def test_definition_key_missing_description(self):
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'no_description.yaml')
-        J = json_schema_type(
-            schema_file=schema_file, definition_key='annotation_id')
-        data = 1
         expected = 'Definition `annotation_id` is missing a description.'
         with pytest.raises(TypeSystemError, match=expected):
-            J(data)
+            json_schema_type(
+                schema_file=schema_file, definition_key='annotation_id')
 
     def test_definition_key_ref_missing_description(self):
         """
@@ -498,11 +533,10 @@ class TestJsonSchema(object):
         """
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = json_schema_type(
-            schema_file=schema_file, definition_key='dog')
         expected = "Definition `dog` is missing a description."
         with pytest.raises(TypeSystemError, match=expected):
-            J('dog')
+            json_schema_type(
+                schema_file=schema_file, definition_key='dog')
 
     def test_definition_key_bad_ref(self):
         """
@@ -510,8 +544,7 @@ class TestJsonSchema(object):
         """
         schema_file = os.path.join(
             os.path.dirname(__file__), 'schema', 'annotation.yaml')
-        J = json_schema_type(
-            schema_file=schema_file, definition_key='bad_ref')
         expected = "Unresolvable JSON pointer: 'definitions/doesnotexist'"
         with pytest.raises(TypeSystemError, match=expected):
-            J('dog')
+            json_schema_type(
+                schema_file=schema_file, definition_key='bad_ref')

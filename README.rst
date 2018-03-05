@@ -3,7 +3,7 @@ doctor
 |docs| |build| |pypi|
 
 This module uses python types to validate request and response data in
-Flask Python APIs.  It uses [python 3 type hints](https://docs.python.org/3/library/typing.html)
+Flask Python APIs.  It uses `python 3 type hints <https://docs.python.org/3/library/typing.html>`_
 to validate request paramters and generate API documentation. It also supports
 generic schema validation for plain dictionaries. An example of the generated
 API documentation can

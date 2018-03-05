@@ -79,6 +79,11 @@ That's it, you now have a functioning API endpoint you can curl and the request 
 schema.  Positional arguments in your logic function are considered required request parameters and keyword arguments are considered
 optional.  As a bonus, using the `autoflask <http://doctor.readthedocs.io/en/latest/docs.html>`_ sphinx directive, you will also get
 automatically generated API documentation.
+
+.. image:: example_api_docs.png
+    :alt: Generated API documentation
+    :align: left
+    :target: http://doctor.readthedocs.io/en/latest/docs.html
    
 Documentation
 -------------

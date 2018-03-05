@@ -129,10 +129,10 @@ def get_handler_name(route: Route, logic: Callable) -> str:
         return route.handler_name
     if any(m for m in route.methods if m.method.lower() == 'post'):
         # A list endpoint
-        if route.heading:
+        if route.heading != 'API':
             return '{}ListHandler'.format(get_valid_class_name(route.heading))
         return '{}ListHandler'.format(get_valid_class_name(logic.__name__))
-    if route.heading:
+    if route.heading != 'API':
         return '{}Handler'.format(get_valid_class_name(route.heading))
     return '{}Handler'.format(get_valid_class_name(logic.__name__))
 

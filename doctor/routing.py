@@ -109,7 +109,7 @@ class Route(object):
     :param handler_name: The name that should be given to the handler class.
     """
     def __init__(self, route: str, methods: Tuple[HTTPMethod],
-                 heading: str=None, base_handler_class=None,
+                 heading: str='API', base_handler_class=None,
                  handler_name: str=None):
         self.base_handler_class = base_handler_class
         self.handler_name = handler_name

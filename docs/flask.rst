@@ -65,9 +65,8 @@ doctor can also validate your responses.
 Enabling
 ########
 
-By default doctor will only raise exceptions for invalid response when a
-application config variable `DEBUG` is `True`.  It can also be enabled by
-specifying a truthy value for the environment variable `RAISE_RESPONSE_VALIDATION_ERRORS`.
+By default doctor will only raise exceptions for invalid response when there is a
+truthy value for the environment variable `RAISE_RESPONSE_VALIDATION_ERRORS`.
 This will cause a HTTP 400 error which wil give details on why the response is
 not valid.  If either of those conditions are not true only a warning will be
 logged.

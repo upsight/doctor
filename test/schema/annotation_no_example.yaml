@@ -36,13 +36,6 @@ definitions:
     type: array
     items:
       $ref: '#'
-    example:
-      -
-        annotation_id: 1
-        auth: token
-        more_id: 1
-        name: Annotation
-        url: https://upsight.com
 description: An annotation object.
 type: object
 properties:
@@ -71,12 +64,6 @@ invalid_ref_chain_1:
 invalid_ref_chain_2:
   $ref: '#/invalid_ref_chain_3'
 additionalProperties: no
-example:
-  annotation_id: 1
-  auth: token
-  more_id: 1
-  name: Annotation
-  url: https://upsight.com
 allOf:
   - $ref: "common.yaml"
   - $ref: "subdir/more.yaml"

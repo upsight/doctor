@@ -238,7 +238,7 @@ def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
         else:
             return []
     else:
-        parameters = annotation.logic._doctor_signature.parameters
+        parameters = annotation.annotated_parameters
         properties = {k: p.annotation for k, p in parameters.items()}
     return get_json_object_lines(annotation, properties, field, url_params,
                                  request)

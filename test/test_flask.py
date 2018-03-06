@@ -225,15 +225,9 @@ def test_handle_http_response_instance_return_value(
     assert actual == ({'item_id': 3}, 200, {'X-Header': 'Foo'})
 
 
-@mock.patch('doctor.flask.current_app')
-def test_should_raise_response_validation_errors(mock_app):
-    mock_app.config = {'DEBUG': False}
+def test_should_raise_response_validation_errors():
     assert should_raise_response_validation_errors() is False
 
-    mock_app.config = {'DEBUG': True}
-    assert should_raise_response_validation_errors() is True
-
-    mock_app.config = {'DEBUG': False}
     os.environ['RAISE_RESPONSE_VALIDATION_ERRORS'] = '1'
     assert should_raise_response_validation_errors() is True
 

@@ -85,13 +85,12 @@ class HTTP500Exception(SchematicHTTPException, InternalServerError):
 def should_raise_response_validation_errors() -> bool:
     """Returns if the library should raise response validation errors or not.
 
-    If the app config has DEBUG set to True or the environment variable
-    `RAISE_RESPONSE_VALIDATION_ERRORS` is set, it will return True.
+    If the environment variable `RAISE_RESPONSE_VALIDATION_ERRORS` is set,
+    it will return True.
 
     :returns: True if it should, False otherwise.
     """
-    return (current_app.config.get('DEBUG', False) or
-            bool(os.environ.get('RAISE_RESPONSE_VALIDATION_ERRORS', False)))
+    return bool(os.environ.get('RAISE_RESPONSE_VALIDATION_ERRORS', False))
 
 
 def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):

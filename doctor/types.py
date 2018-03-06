@@ -531,7 +531,7 @@ JSON_TYPES_TO_NATIVE = {
 
 
 def get_value_from_schema(schema, definition: dict, key: str,
-                          definition_key: str, resolve: bool=False):
+                          definition_key: str):
     """Gets a value from a schema and definition.
 
     If the value has references it will recursively attempt to resolve them.
@@ -540,14 +540,12 @@ def get_value_from_schema(schema, definition: dict, key: str,
     :param dict definition: The definition dict from the schema.
     :param str key: The key to use to get the value from the schema.
     :param str definition_key: The name of the definition.
-    :param bool resolve: If True we will attempt to resolve the definition
-        from the schema.
     :returns: The value.
     :raises TypeSystemError: If the key can't be found in the schema/definition
         or we can't resolve the definition.
     """
     resolved_definition = definition.copy()
-    if resolve and '$ref' in resolved_definition:
+    if '$ref' in resolved_definition:
         try:
             resolved_definition = schema.resolve(definition['$ref'])
         except SchemaError as e:
@@ -557,11 +555,10 @@ def get_value_from_schema(schema, definition: dict, key: str,
     except KeyError:
         # If the key was missing and this is an array, try to resolve it
         # from the items key.
-        if (resolved_definition['type'] == 'array' and
-                '$ref' in resolved_definition['items']):
+        if resolved_definition['type'] == 'array':
             return [
                 get_value_from_schema(schema, resolved_definition['items'], key,
-                                      definition_key, resolve=True)
+                                      definition_key)
             ]
         # If the key was missing and this is an object, resolve it from it's
         # properties.
@@ -569,7 +566,7 @@ def get_value_from_schema(schema, definition: dict, key: str,
             value = {}
             for prop, definition in resolved_definition['properties'].items():
                 value[prop] = get_value_from_schema(
-                    schema, definition, key, 'root', resolve=True)
+                    schema, definition, key, 'root')
             return value
         raise TypeSystemError(
             'Definition `{}` is missing a {}.'.format(
@@ -620,20 +617,12 @@ def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
             raise TypeSystemError(
                 'Definition `{}` is not defined in the schema.'.format(
                     definition_key))
-        if '$ref' in request_schema['definitions'][definition_key]:
-            description = get_value_from_schema(
-                schema, definition, 'description', definition_key, resolve=True)
-            example = get_value_from_schema(
-                schema, definition, 'example', definition_key, resolve=True)
-            json_type = get_value_from_schema(
-                schema, definition, 'type', definition_key, resolve=True)
-        else:
-            description = get_value_from_schema(
-                schema, definition, 'description', definition_key)
-            example = get_value_from_schema(
-                schema, definition, 'example', definition_key)
-            json_type = get_value_from_schema(
-                schema, definition, 'type', definition_key)
+        description = get_value_from_schema(
+            schema, definition, 'description', definition_key)
+        example = get_value_from_schema(
+            schema, definition, 'example', definition_key)
+        json_type = get_value_from_schema(
+            schema, definition, 'type', definition_key)
         json_type, native_type = get_types(json_type)
         kwargs['description'] = description
         kwargs['example'] = example
@@ -659,7 +648,7 @@ def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
                 example = {}
                 for prop, definition in schema.schema['properties'].items():
                     example[prop] = get_value_from_schema(
-                        schema, definition, 'example', 'root', resolve=True)
+                        schema, definition, 'example', 'root')
                 kwargs['example'] = example
             else:
                 raise TypeSystemError('Schema is missing an example.')

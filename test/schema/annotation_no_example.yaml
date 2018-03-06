@@ -27,8 +27,6 @@ definitions:
     type: array
     items:
       '$ref': '#/definitions/url'
-    example:
-      - https://upsight.com
   annotation:
     $ref: '#'
   annotations:
@@ -49,6 +47,8 @@ properties:
     $ref: '#/definitions/name'
   url:
     $ref: '#/definitions/url'
+  urls:
+    $ref: '#/definitions/urls'
 test_ref:
   $ref: '#/another_test_ref'
 another_test_ref:

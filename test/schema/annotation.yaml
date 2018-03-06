@@ -15,7 +15,9 @@ definitions:
     $ref: 'subdir/more.yaml#/definitions/more_id'
   name:
     description: Human readable name.
-    type: string
+    type:
+      - 'null'
+      - string
     example: Annotation
   url:
     description: The URL to the detail page for the annotation.

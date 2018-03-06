@@ -41,6 +41,9 @@ from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
 from doctor.parsers import parse_value
 
 
+StrOrList = typing.Union[str, typing.List[str]]
+
+
 class MissingDescriptionError(ValueError):
     """An exception raised when a type is missing a description."""
     pass
@@ -528,31 +531,71 @@ JSON_TYPES_TO_NATIVE = {
 
 
 def get_value_from_schema(schema, definition: dict, key: str,
-                          definition_key: str, resolve: bool=False):
+                          definition_key: str):
     """Gets a value from a schema and definition.
+
+    If the value has references it will recursively attempt to resolve them.
 
     :param ResourceSchema schema: The resource schema.
     :param dict definition: The definition dict from the schema.
     :param str key: The key to use to get the value from the schema.
     :param str definition_key: The name of the definition.
-    :param bool resolve: If True we will attempt to resolve the definition
-        from the schema.
     :returns: The value.
     :raises TypeSystemError: If the key can't be found in the schema/definition
         or we can't resolve the definition.
     """
+    resolved_definition = definition.copy()
+    if '$ref' in resolved_definition:
+        try:
+            # NOTE: The resolve method recursively resolves references, so
+            # we don't need to worry about that in this function.
+            resolved_definition = schema.resolve(definition['$ref'])
+        except SchemaError as e:
+            raise TypeSystemError(str(e))
     try:
-        if resolve:
-            value = schema.resolve(definition['$ref'])[key]
-        else:
-            value = definition[key]
+        value = resolved_definition[key]
     except KeyError:
+        # Before raising an error, the resolved definition may have an array
+        # or object inside it that needs to be resolved in order to get
+        # values.  Attempt that here and then fail if we still can't find
+        # the key we are looking for.
+
+        # If the key was missing and this is an array, try to resolve it
+        # from the items key.
+        if resolved_definition['type'] == 'array':
+            return [
+                get_value_from_schema(schema, resolved_definition['items'], key,
+                                      definition_key)
+            ]
+        # If the key was missing and this is an object, resolve it from it's
+        # properties.
+        elif resolved_definition['type'] == 'object':
+            value = {}
+            for prop, definition in resolved_definition['properties'].items():
+                value[prop] = get_value_from_schema(
+                    schema, definition, key, definition_key)
+            return value
         raise TypeSystemError(
             'Definition `{}` is missing a {}.'.format(
                 definition_key, key))
-    except SchemaError as e:
-        raise TypeSystemError(str(e))
     return value
+
+
+def get_types(json_type: StrOrList) -> typing.Tuple[str, str]:
+    """Returns the json and native python type based on the json_type input.
+
+    If json_type is a list of types it will return the first non 'null' value.
+
+    :param json_type: A json type or a list of json types.
+    :returns: A tuple containing the json type and native python type.
+    """
+    # If the type is a list, use the first non 'null' value as the type.
+    if isinstance(json_type, list):
+        for j_type in json_type:
+            if j_type != 'null':
+                json_type = j_type
+                break
+    return (json_type, JSON_TYPES_TO_NATIVE[json_type])
 
 
 def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
@@ -581,34 +624,29 @@ def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
             raise TypeSystemError(
                 'Definition `{}` is not defined in the schema.'.format(
                     definition_key))
-        if '$ref' in request_schema['definitions'][definition_key]:
-            description = get_value_from_schema(
-                schema, definition, 'description', definition_key, resolve=True)
-            example = get_value_from_schema(
-                schema, definition, 'example', definition_key, resolve=True)
-            native_type = get_value_from_schema(
-                schema, definition, 'type', definition_key, resolve=True)
-        else:
-            description = get_value_from_schema(
-                schema, definition, 'description', definition_key)
-            example = get_value_from_schema(
-                schema, definition, 'example', definition_key)
-            native_type = get_value_from_schema(
-                schema, definition, 'type', definition_key)
+        description = get_value_from_schema(
+            schema, definition, 'description', definition_key)
+        example = get_value_from_schema(
+            schema, definition, 'example', definition_key)
+        json_type = get_value_from_schema(
+            schema, definition, 'type', definition_key)
+        json_type, native_type = get_types(json_type)
         kwargs['description'] = description
         kwargs['example'] = example
-        kwargs['json_type'] = native_type
-        kwargs['native_type'] = JSON_TYPES_TO_NATIVE[native_type]
+        kwargs['json_type'] = json_type
+        kwargs['native_type'] = native_type
     else:
         try:
             kwargs['description'] = schema.schema['description']
         except KeyError:
             raise TypeSystemError('Schema is missing a description.')
         try:
-            kwargs['json_type'] = schema.schema['type']
-            kwargs['native_type'] = JSON_TYPES_TO_NATIVE[schema.schema['type']]
+            json_type = schema.schema['type']
         except KeyError:
             raise TypeSystemError('Schema is missing a type.')
+        json_type, native_type = get_types(json_type)
+        kwargs['json_type'] = json_type
+        kwargs['native_type'] = native_type
         try:
             kwargs['example'] = schema.schema['example']
         except KeyError:
@@ -616,8 +654,8 @@ def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
             if schema.schema.get('properties'):
                 example = {}
                 for prop, definition in schema.schema['properties'].items():
-                    example[prop] = schema.resolve(
-                        definition['$ref'])['example']
+                    example[prop] = get_value_from_schema(
+                        schema, definition, 'example', 'root')
                 kwargs['example'] = example
             else:
                 raise TypeSystemError('Schema is missing an example.')

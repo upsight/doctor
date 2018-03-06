@@ -568,10 +568,6 @@ def get_value_from_schema(schema, definition: dict, key: str,
                 value[prop] = get_value_from_schema(
                     schema, definition, key, definition_key)
             return value
-        # If the definition has a json reference, attempt to resolve it.
-        elif '$ref' in resolved_definition:
-            return get_value_from_schema(
-                schema, resolved_definition, key, definition_key)
         raise TypeSystemError(
             'Definition `{}` is missing a {}.'.format(
                 definition_key, key))

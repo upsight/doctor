@@ -547,12 +547,19 @@ def get_value_from_schema(schema, definition: dict, key: str,
     resolved_definition = definition.copy()
     if '$ref' in resolved_definition:
         try:
+            # NOTE: The resolve method recursively resolves references, so
+            # we don't need to worry about that in this function.
             resolved_definition = schema.resolve(definition['$ref'])
         except SchemaError as e:
             raise TypeSystemError(str(e))
     try:
         value = resolved_definition[key]
     except KeyError:
+        # Before raising an error, the resolved definition may have an array
+        # or object inside it that needs to be resolved in order to get
+        # values.  Attempt that here and then fail if we still can't find
+        # the key we are looking for.
+
         # If the key was missing and this is an array, try to resolve it
         # from the items key.
         if resolved_definition['type'] == 'array':

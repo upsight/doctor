@@ -95,7 +95,7 @@ class TestSchema(TestCase):
         errors = context.exception.errors
         expected = {
             'annotation_id': expected_error,
-            'name': "1 is not of type 'string'",
+            'name': "1 is not of type 'null', 'string'",
         }
         self.assertEqual(expected, errors)
 

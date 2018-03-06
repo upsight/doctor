@@ -482,6 +482,7 @@ class TestJsonSchema(object):
             'more_id': 1,
             'name': 'Annotation',
             'url': 'https://upsight.com',
+            'urls': ['https://upsight.com'],
         } == J.example
         assert isinstance(J.schema, ResourceSchema)
 
@@ -501,6 +502,8 @@ class TestJsonSchema(object):
         # on values from the loaded json schema.
         assert 'Auto-increment ID.' == J.description
         assert 1 == J.example
+        assert J.native_type is int
+        assert 'integer' == J.json_type
         assert isinstance(J.schema, ResourceSchema)
 
         # no exception
@@ -509,6 +512,29 @@ class TestJsonSchema(object):
         expected = "'not an int' is not of type 'integer'"
         with pytest.raises(TypeSystemError, match=expected):
             J('not an int')
+
+    def test_definition_key_resolve_array_of_object(self):
+        """
+        This tests that when the definition is an array of objects
+        that we resolve the array and object properties properly.
+        """
+        schema_file = os.path.join(
+            os.path.dirname(__file__), 'schema', 'annotation_no_example.yaml')
+        J = json_schema_type(
+            schema_file=schema_file, definition_key='annotations')
+        # Verify description and example were set as attributes based
+        # on values from the loaded json schema.
+        assert 'A list of annotation objects.' == J.description
+        assert 'array' == J.json_type
+        assert list == J.native_type
+        assert [{
+            'annotation_id': 1,
+            'auth': 'eb25f25becca416092752b0f457f1271',
+            'more_id': 1,
+            'name': 'Annotation',
+            'url': 'https://upsight.com',
+            'urls': ['https://upsight.com']
+        }] == J.example
 
     def test_definition_key_missing(self):
         schema_file = os.path.join(
@@ -548,3 +574,10 @@ class TestJsonSchema(object):
         with pytest.raises(TypeSystemError, match=expected):
             json_schema_type(
                 schema_file=schema_file, definition_key='bad_ref')
+
+    def test_definition_array_of_types(self):
+        schema_file = os.path.join(
+            os.path.dirname(__file__), 'schema', 'annotation.yaml')
+        J = json_schema_type(schema_file, definition_key='name')
+        assert 'string' == J.json_type
+        assert str == J.native_type

@@ -38,6 +38,7 @@ import isodate
 import rfc3987
 
 from doctor.errors import SchemaError, SchemaValidationError, TypeSystemError
+from doctor.parsers import parse_value
 
 
 class MissingDescriptionError(ValueError):
@@ -468,99 +469,159 @@ class Array(SuperType, list):
 
 
 class JsonSchema(SuperType):
-    """Represents a type loaded from a json schema."""
+    """Represents a type loaded from a json schema.
 
-    #: The description of what the type represents.  This is a placeholder
-    #: value, the actual value will come from your schema.
-    description = 'json type'
+    NOTE: This class should not be used directly.  Instead use
+    :func:`~doctor.types.json_schema_type` to create a new class based on
+    this one.
+    """
+    json_type = None
+    native_type = None
+    #: The loaded ResourceSchema
+    schema = None  # type: doctor.resource.ResourceSchema
     #: The full path to the schema file.
     schema_file = None  # type: str
     #: The key from the definitions in the schema file that the type should
     #: come from.
     definition_key = None  # type: str
 
-    def __init__(self, data: typing.Any):
-        # Importing here to avoid circular dependencies
-        from doctor.resource import ResourceSchema
-        self.schema = ResourceSchema.from_file(self.schema_file)
+    def __new__(cls, value):
+        # Attempt to parse the value if it came from a query string
+        try:
+            _, value = parse_value(value, [cls.json_type])
+        except ValueError:
+            pass
         request_schema = None
-
-        # Look up the description in the schema.
-        if self.definition_key is not None:
-            params = [self.definition_key]
-            request_schema = self.schema._create_request_schema(params, params)
-            try:
-                definition = request_schema['definitions'][self.definition_key]
-            except KeyError:
-                raise TypeSystemError(
-                    'Definition `{}` is not defined in the schema.'.format(
-                        self.definition_key), cls=self.__class__)
-            if '$ref' in request_schema['definitions'][self.definition_key]:
-                try:
-                    self.description = self.schema.resolve(
-                        definition['$ref'])['description']
-                except KeyError:
-                    raise TypeSystemError(
-                        'Definition `{}` is missing a description.'.format(
-                            self.definition_key), cls=self.__class__)
-                except SchemaError as e:
-                    raise TypeSystemError(str(e), cls=self.__class__)
-                try:
-                    self.example = self.schema.resolve(
-                        definition['$ref'])['example']
-                except KeyError:
-                    raise TypeSystemError(
-                        'Definition `{}` is missing an example.'.format(
-                            self.definition_key), cls=self.__class__)
-                except SchemaError as e:
-                    raise TypeSystemError(str(e), cls=self.__class__)
-            else:
-                try:
-                    self.description = definition['description']
-                except KeyError:
-                    raise TypeSystemError(
-                        'Definition `{}` is missing a description.'.format(
-                            self.definition_key), cls=self.__class__)
-                try:
-                    self.example = definition['example']
-                except KeyError:
-                    raise TypeSystemError(
-                        'Definition `{}` is missing an example.'.format(
-                            self.definition_key), cls=self.__class__)
-            data = {self.definition_key: data}
+        if cls.definition_key is not None:
+            params = [cls.definition_key]
+            request_schema = cls.schema._create_request_schema(params, params)
+            data = {cls.definition_key: value}
         else:
-            try:
-                self.description = self.schema.schema['description']
-            except KeyError:
-                raise TypeSystemError(
-                    'Schema is missing a description.', cls=self.__class__)
+            data = value
 
-        super(JsonSchema, self).__init__()
+        super().__new__(cls)
         # Validate the data against the schema and raise an error if it
         # does not validate.
-        validator = self.schema.get_validator(request_schema)
+        validator = cls.schema.get_validator(request_schema)
         try:
-            self.schema.validate(data, validator)
+            cls.schema.validate(data, validator)
         except SchemaValidationError as e:
-            raise TypeSystemError(e.args[0], cls=self.__class__)
+            raise TypeSystemError(e.args[0], cls=cls)
+
+        return value
 
     @classmethod
     def get_example(cls) -> typing.Any:
-        """Returns an example value for the JsonSchema type.
-
-        @NOTE: There isn't a good way to get an example value currently
-               without instantiating an instance so it can parse the json
-               schema to pull out the examples from the definitions.
-        """
+        """Returns an example value for the JsonSchema type."""
         return cls.example
 
 
-def json_schema_type(**kwargs) -> typing.Type:
+#: A mapping of json types to native python types.
+JSON_TYPES_TO_NATIVE = {
+    'array': list,
+    'boolean': bool,
+    'integer': int,
+    'object': dict,
+    'number': float,
+    'string': str,
+}
+
+
+def get_value_from_schema(schema, definition: dict, key: str,
+                          definition_key: str, resolve: bool=False):
+    """Gets a value from a schema and definition.
+
+    :param ResourceSchema schema: The resource schema.
+    :param dict definition: The definition dict from the schema.
+    :param str key: The key to use to get the value from the schema.
+    :param str definition_key: The name of the definition.
+    :param bool resolve: If True we will attempt to resolve the definition
+        from the schema.
+    :returns: The value.
+    :raises TypeSystemError: If the key can't be found in the schema/definition
+        or we can't resolve the definition.
+    """
+    try:
+        if resolve:
+            value = schema.resolve(definition['$ref'])[key]
+        else:
+            value = definition[key]
+    except KeyError:
+        raise TypeSystemError(
+            'Definition `{}` is missing a {}.'.format(
+                definition_key, key))
+    except SchemaError as e:
+        raise TypeSystemError(str(e))
+    return value
+
+
+def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
     """Create a :class:`~doctor.types.JsonSchema` type.
 
+    This function will automatically load the schema and set it as an attribute
+    of the class along with the description and example.
+
+    :param schema_file: The full path to the json schema file to load.
     :param kwargs: Can include any attribute defined in
         :class:`~doctor.types.JsonSchema`
     """
+    # Importing here to avoid circular dependencies
+    from doctor.resource import ResourceSchema
+    schema = ResourceSchema.from_file(schema_file)
+    kwargs['schema'] = schema
+
+    # Look up the description, example and type in the schema.
+    definition_key = kwargs.get('definition_key')
+    if definition_key:
+        params = [definition_key]
+        request_schema = schema._create_request_schema(params, params)
+        try:
+            definition = request_schema['definitions'][definition_key]
+        except KeyError:
+            raise TypeSystemError(
+                'Definition `{}` is not defined in the schema.'.format(
+                    definition_key))
+        if '$ref' in request_schema['definitions'][definition_key]:
+            description = get_value_from_schema(
+                schema, definition, 'description', definition_key, resolve=True)
+            example = get_value_from_schema(
+                schema, definition, 'example', definition_key, resolve=True)
+            native_type = get_value_from_schema(
+                schema, definition, 'type', definition_key, resolve=True)
+        else:
+            description = get_value_from_schema(
+                schema, definition, 'description', definition_key)
+            example = get_value_from_schema(
+                schema, definition, 'example', definition_key)
+            native_type = get_value_from_schema(
+                schema, definition, 'type', definition_key)
+        kwargs['description'] = description
+        kwargs['example'] = example
+        kwargs['json_type'] = native_type
+        kwargs['native_type'] = JSON_TYPES_TO_NATIVE[native_type]
+    else:
+        try:
+            kwargs['description'] = schema.schema['description']
+        except KeyError:
+            raise TypeSystemError('Schema is missing a description.')
+        try:
+            kwargs['json_type'] = schema.schema['type']
+            kwargs['native_type'] = JSON_TYPES_TO_NATIVE[schema.schema['type']]
+        except KeyError:
+            raise TypeSystemError('Schema is missing a type.')
+        try:
+            kwargs['example'] = schema.schema['example']
+        except KeyError:
+            # Attempt to load from properties, if defined.
+            if schema.schema.get('properties'):
+                example = {}
+                for prop, definition in schema.schema['properties'].items():
+                    example[prop] = schema.resolve(
+                        definition['$ref'])['example']
+                kwargs['example'] = example
+            else:
+                raise TypeSystemError('Schema is missing an example.')
+
     return type('JsonSchema', (JsonSchema,), kwargs)
 
 

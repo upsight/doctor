@@ -5,6 +5,7 @@ type: object
 definitions:
   more_id:
     description: Auto-increment ID.
+    example: 1
     type: integer
 properties:
   more_id:

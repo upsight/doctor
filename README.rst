@@ -3,7 +3,7 @@ doctor
 |docs| |build| |pypi|
 
 This module uses python types to validate request and response data in
-Flask Python APIs.  It uses [python 3 type hints](https://docs.python.org/3/library/typing.html)
+Flask Python APIs.  It uses `python 3 type hints <https://docs.python.org/3/library/typing.html>`_
 to validate request paramters and generate API documentation. It also supports
 generic schema validation for plain dictionaries. An example of the generated
 API documentation can
@@ -79,6 +79,11 @@ That's it, you now have a functioning API endpoint you can curl and the request 
 schema.  Positional arguments in your logic function are considered required request parameters and keyword arguments are considered
 optional.  As a bonus, using the `autoflask <http://doctor.readthedocs.io/en/latest/docs.html>`_ sphinx directive, you will also get
 automatically generated API documentation.
+
+.. image:: example_api_docs.png
+    :alt: Generated API documentation
+    :align: left
+    :target: http://doctor.readthedocs.io/en/latest/docs.html
    
 Documentation
 -------------

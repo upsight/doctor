@@ -4,6 +4,23 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0-beta.5 (2018-03-05)
+--------------------------
+
+- Fixed doctor attempting to document non doctor type params (#70)
+- String with format of date now returns datetime.date (#69)
+- Fixed swallowing of TypeError from SuperType class in Object init (#68)
+- Changed the flask code to only raise response validation errors if an
+  environment variable is set. Before it also raised them when DEBUG
+  was True in the config. In practice this was incredibly annoying and
+  slowed down development. Especially in the case where a datetime
+  string was returned that didn't include timezone information. Updated
+  the docs to reflect this too.
+- Fixed issue that could create duplicate handler names which would
+  cause an exception in flask restful (#67 )
+- Made the `JsonSchema` doctor type work in validating/coercing params
+  in the api and for generating api documentation.
+
 v3.0.0-beta.4 (2018-03-02)
 --------------------------
 

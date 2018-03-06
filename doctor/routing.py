@@ -109,7 +109,7 @@ class Route(object):
     :param handler_name: The name that should be given to the handler class.
     """
     def __init__(self, route: str, methods: Tuple[HTTPMethod],
-                 heading: str=None, base_handler_class=None,
+                 heading: str='API', base_handler_class=None,
                  handler_name: str=None):
         self.base_handler_class = base_handler_class
         self.handler_name = handler_name
@@ -129,10 +129,10 @@ def get_handler_name(route: Route, logic: Callable) -> str:
         return route.handler_name
     if any(m for m in route.methods if m.method.lower() == 'post'):
         # A list endpoint
-        if route.heading:
+        if route.heading != 'API':
             return '{}ListHandler'.format(get_valid_class_name(route.heading))
         return '{}ListHandler'.format(get_valid_class_name(logic.__name__))
-    if route.heading:
+    if route.heading != 'API':
         return '{}Handler'.format(get_valid_class_name(route.heading))
     return '{}Handler'.format(get_valid_class_name(logic.__name__))
 

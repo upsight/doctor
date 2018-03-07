@@ -99,6 +99,27 @@ class TestUtils(TestCase):
         is_deleted = actual._doctor_signature.parameters['is_deleted']
         assert expected == is_deleted
 
+    @mock.patch('doctor.utils.logging')
+    def test_add_param_annotations_duplicate_param(self, mock_logging):
+        new_params = [
+            # name param is already in `get_foo` signature
+            RequestParamAnnotation('name', Name, required=True),
+            RequestParamAnnotation('is_deleted', IsDeleted)
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+
+        # verify `is_deleted` added to the doctor signature.
+        expected = Parameter('is_deleted', Parameter.KEYWORD_ONLY,
+                             default=None, annotation=IsDeleted)
+        is_deleted = actual._doctor_signature.parameters['is_deleted']
+        assert expected == is_deleted
+
+        # verify a warning was logged.
+        expected_call = mock.call(
+            'Not adding %s to signature of %s, function already has that '
+            'parameter in its signature.', 'name', 'get_foo')
+        assert expected_call == mock_logging.warning.call_args
+
     @mock.patch('doctor.utils.open',
                 new_callable=mock.mock_open,
                 read_data='mock_attr = "something"')

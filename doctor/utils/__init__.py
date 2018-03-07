@@ -1,4 +1,5 @@
 import inspect
+import logging
 import os
 import re
 import sys
@@ -112,8 +113,16 @@ def add_param_annotations(
     sig = inspect.signature(logic)
     doctor_params = get_params_from_func(logic, sig)
 
+    prev_parameters = {name: param for name, param in sig.parameters.items()}
     new_params = []
     for param in params:
+        # If the parameter already exists in the function signature, log
+        # a warning and skip it.
+        if param.name in prev_parameters:
+            logging.warning('Not adding %s to signature of %s, function '
+                            'already has that parameter in its signature.',
+                            param.name, logic.__name__)
+            continue
         doctor_params.all.append(param.name)
         default = None
         if param.required:
@@ -125,8 +134,8 @@ def add_param_annotations(
                 Parameter(param.name, Parameter.KEYWORD_ONLY, default=default,
                           annotation=param.annotation))
 
-    prev_parameters = [p for _, p in sig.parameters.items()]
-    new_sig = sig.replace(parameters=prev_parameters + new_params)
+    new_sig = sig.replace(
+        parameters=list(prev_parameters.values()) + new_params)
     logic._doctor_signature = new_sig
     logic._doctor_params = doctor_params
     return logic

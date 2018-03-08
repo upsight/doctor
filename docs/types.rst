@@ -39,6 +39,8 @@ Attributes
 
 * :attr:`~doctor.types.String.max_length` - The maximum length of the string.
 * :attr:`~doctor.types.String.min_length` - The minimum length of the string.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 * :attr:`~doctor.types.String.pattern` - A regex pattern the string should
   match anywhere whitin it.  Uses `re.search`.
 * :attr:`~doctor.types.String.trim_whitespace` - If `True` the string will be
@@ -81,6 +83,8 @@ Attributes
 * :attr:`~doctor.types._NumericType.minimum` - The minimum value allowed.
 * :attr:`~doctor.types._NumericType.multiple_of` - The value is required to be
   a multiple of this value.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 
 Example
 #######
@@ -120,6 +124,8 @@ Attributes
 * :attr:`~doctor.types._NumericType.minimum` - The minimum value allowed.
 * :attr:`~doctor.types._NumericType.multiple_of` - The value is required to be
   a multiple of this value.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 
 Example
 #######
@@ -157,6 +163,8 @@ Attributes
 * :attr:`~doctor.types.SuperType.example` - An example value to send to the
   endpoint when generating API documentation.  This is optional and a default
   example value will be generated for you.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 
 Example
 #######
@@ -183,6 +191,8 @@ Attributes
 * :attr:`~doctor.types.SuperType.example` - An example value to send to the
   endpoint when generating API documentation.  This is optional and a default
   example value will be generated for you.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 
 Example
 #######
@@ -213,6 +223,8 @@ Attributes
 * :attr:`~doctor.types.SuperType.example` - An example value to send to the
   endpoint when generating API documentation.  This is optional and a default
   example value will be generated for you.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
 * :attr:`~doctor.types.Object.required` - A list of required properties.
@@ -257,6 +269,8 @@ Attributes
   in the list.
 * :attr:`~doctor.types.Array.max_items` - The maximum number of items allowed
   in the list.
+* :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
+  is allowed to be None.
 * :attr:`~doctor.types.Array.unique_items` - If `True`, items in the array
   should be unique from one another.
 
@@ -400,13 +414,16 @@ Examples
                 if not value.lower().startswith('foo'):
                     raise TypeSystemError('Must start with foo', cls=cls)
 
-    MyFooString = new_type(FooString, 'My foo string')
+    MyFooString = new_type(FooString)
 
     # Create a new number type
     ProductRating = number('Product rating', maximum=10, minimum=1)
 
     # Create a new string type
     FirstName = string('First name', min_length=2, max_length=255)
+
+    # Create a new type based on FirstName, but is allowed to be None
+    NullableFirstName = new_type(FirstName, nullable=True)
 
 .. _types-module-documentation:
 

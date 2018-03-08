@@ -4,6 +4,18 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0-beta.6 (2018-03-08)
+--------------------------
+
+- Updated handle_http to parse query and form parameters from strings to
+  their expected type before we do validation on them.
+- Fixed issue where if multiple decorators were used on a logic function
+  and each one added param annotations the outer most decorator would
+  erase any param annotations added from the previous decorator.
+- Added a nullable attribute to all types to signify that None is a valid value
+  for the type, in addition to it's native type.
+
+
 v3.0.0-beta.5 (2018-03-05)
 --------------------------
 

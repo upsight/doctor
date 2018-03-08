@@ -130,11 +130,10 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
             if required not in params:
                 missing.append(required)
         if missing:
+            verb = 'are'
             if len(missing) == 1:
                 verb = 'is'
                 missing = missing[0]
-            else:
-                verb = 'are'
             error = '{} {} required.'.format(missing, verb)
             raise InvalidValueError(error)
 
@@ -143,6 +142,8 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
         sig = logic._doctor_signature
         for name, value in params.items():
             annotation = sig.parameters[name].annotation
+            if annotation.nullable and value is None:
+                continue
             try:
                 params[name] = annotation.native_type(annotation(value))
             except TypeSystemError as e:

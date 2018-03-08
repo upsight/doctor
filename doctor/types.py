@@ -62,6 +62,9 @@ class SuperType(object):
     #: An example value for the type.
     example = None
 
+    #: Indicates if the value of this type is allowed to be None.
+    nullable = False  # type: bool
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.description is None:
@@ -92,6 +95,9 @@ class String(SuperType, str):
     trim_whitespace = True
 
     def __new__(cls, *args, **kwargs):
+        if cls.nullable and args[0] is None:
+            return None
+
         value = super().__new__(cls, *args, **kwargs)
 
         if cls.trim_whitespace:
@@ -178,6 +184,9 @@ class _NumericType(SuperType):
     multiple_of = None  # type: typing.Union[float, int]
 
     def __new__(cls, *args, **kwargs):
+        if cls.nullable and args[0] is None:
+            return None
+
         try:
             value = cls.native_type.__new__(cls, *args, **kwargs)
         except (TypeError, ValueError):
@@ -249,6 +258,9 @@ class Boolean(SuperType):
     }
 
     def __new__(cls, *args, **kwargs) -> bool:
+        if cls.nullable and args[0] is None:
+            return None
+
         if args and isinstance(args[0], str):
             try:
                 return {
@@ -283,7 +295,10 @@ class Enum(SuperType, str):
     #: A list of valid values.
     enum = []  # type: typing.List[str]
 
-    def __new__(cls, value: str):
+    def __new__(cls, value: typing.Union[None, str]):
+        if cls.nullable and value is None:
+            return None
+
         if value not in cls.enum:
             raise TypeSystemError(cls=cls, code='invalid')
         return value
@@ -313,6 +328,9 @@ class Object(SuperType, dict):
     additional_properties = True  # type: bool
 
     def __init__(self, *args, **kwargs):
+        if self.nullable and args[0] is None:
+            return
+
         try:
             super().__init__(*args, **kwargs)
         except MissingDescriptionError:
@@ -410,6 +428,9 @@ class Array(SuperType, list):
     unique_items = False  # type: bool
 
     def __init__(self, *args, **kwargs):
+        if self.nullable and args[0] is None:
+            return
+
         if args and isinstance(args[0], (str, bytes)):
             raise TypeSystemError(cls=self.__class__, code='type')
 
@@ -729,12 +750,13 @@ def array(description, **kwargs) -> typing.Type:
     return type('Array', (Array,), kwargs)
 
 
-def new_type(cls, description, **kwargs) -> typing.Type:
+def new_type(cls, **kwargs) -> typing.Type:
     """Create a user defined type.
 
     :param description: A description of the type.
     :param kwargs: Can include any attribute defined in
         the provided user defined type.
     """
-    kwargs['description'] = description
+    if getattr(cls, 'description', None):
+        kwargs['description'] = cls.description
     return type(cls.__name__, (cls,), kwargs)

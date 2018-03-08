@@ -117,9 +117,9 @@ def parse_value(value, allowed_types, name='value'):
         allowed_types = [allowed_types]
 
     # Note that the order of these type considerations is important. Because we
-    # an untyped value that may be one of any given number of types, we need
-    # a consistent order of evaluation cases when there is ambiguity between
-    # types.
+    # have an untyped value that may be one of any given number of types, we
+    # need a consistent order of evaluation in cases when there is ambiguity
+    # between types.
 
     if 'null' in allowed_types and value == '':
         return 'null', None

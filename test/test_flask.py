@@ -29,7 +29,7 @@ def get_item(item_id: ItemId, include_deleted: IncludeDeleted=False) -> Item:
     return {'item_id': 1}
 
 
-def create_item(item: Item, colors: Colors) -> Item:
+def create_item(item: Item, colors: Colors, optional_id: ItemId=None) -> Item:
     return {'item_id': 1}
 
 
@@ -58,18 +58,25 @@ def mock_post_logic():
     return mock_logic
 
 
-def test_handle_http_with_json(mock_request, mock_get_logic):
+def test_handle_http_with_json(mock_request, mock_post_logic):
     mock_request.method = 'POST'
     mock_request.content_type = 'application/json; charset=UTF8'
     mock_request.mimetype = 'application/json'
-    mock_request.json = {'item_id': 1, 'include_deleted': True}
+    mock_request.json = {
+        'item': {
+            'item_id': 1,
+        },
+        'colors': ['blue'],
+        'optional_id': None,
+    }
     mock_handler = mock.Mock()
 
-    actual = handle_http(mock_handler, (), {}, mock_get_logic)
+    actual = handle_http(mock_handler, (), {}, mock_post_logic)
     assert actual == ({'item_id': 1}, 201)
 
-    expected_call = mock.call(item_id=1, include_deleted=True)
-    assert expected_call == mock_get_logic.call_args
+    expected_call = mock.call(
+        item={'item_id': 1}, colors=['blue'], optional_id=None)
+    assert expected_call == mock_post_logic.call_args
 
 
 def test_handle_http_object_array_types(mock_request, mock_post_logic):

@@ -101,6 +101,7 @@ class TestUtils(TestCase):
 
     @mock.patch('doctor.utils.logging')
     def test_add_param_annotations_duplicate_param(self, mock_logging):
+        delattr(get_foo, '_doctor_signature')
         new_params = [
             # name param is already in `get_foo` signature
             RequestParamAnnotation('name', Name, required=True),

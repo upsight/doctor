@@ -45,6 +45,7 @@ def mock_get_logic():
     mock_logic = mock.MagicMock(spec=get_item, return_value={'item_id': 1})
     mock_logic._doctor_signature = inspect.signature(get_item)
     mock_logic._doctor_params = get_params_from_func(mock_logic)
+    mock_logic._doctor_allowed_exceptions = None
     return mock_logic
 
 
@@ -53,6 +54,7 @@ def mock_post_logic():
     mock_logic = mock.MagicMock(spec=create_item, return_value={'item_id': 1})
     mock_logic._doctor_signature = inspect.signature(create_item)
     mock_logic._doctor_params = get_params_from_func(mock_logic)
+    mock_logic._doctor_allowed_exceptions = None
     return mock_logic
 
 
@@ -100,7 +102,7 @@ def test_handle_http_object_array_types(mock_request, mock_post_logic):
 def test_handle_http_non_json(mock_request, mock_get_logic):
     mock_request.method = 'GET'
     mock_request.content_type = 'application/x-www-form-urlencoded'
-    mock_request.values = {'item_id': 3}
+    mock_request.values = {'item_id': '3'}
     mock_handler = mock.Mock()
 
     actual = handle_http(mock_handler, (), {}, mock_get_logic)
@@ -115,7 +117,7 @@ def test_handle_http_unsupported_http_method_with_body(
     mock_request.method = 'GET'
     mock_request.content_type = 'application/json; charset=UTF8'
     mock_request.mimetype = 'application/json'
-    mock_request.values = {'item_id': 3}
+    mock_request.values = {'item_id': '3'}
     mock_handler = mock.Mock()
 
     actual = handle_http(mock_handler, (), {}, mock_get_logic)
@@ -170,7 +172,7 @@ def test_handle_http_decorator_adds_param_annotations(
     """
     mock_request.method = 'GET'
     mock_request.content_type = 'application/x-www-form-urlencoded'
-    mock_request.values = {'item_id': 1}
+    mock_request.values = {'item_id': '1'}
     mock_handler = mock.Mock()
     logic = check_auth(get_item)
 
@@ -183,7 +185,7 @@ def test_handle_http_decorator_adds_param_annotations(
         handle_http(mock_handler, (), {}, logic)
 
     # Add auth and it should validate
-    mock_request.values = {'item_id': 1, 'auth': 'auth'}
+    mock_request.values = {'item_id': '1', 'auth': 'auth'}
     actual = handle_http(mock_handler, (), {}, logic)
     assert actual == ({'item_id': 1}, 200)
 
@@ -194,7 +196,8 @@ def test_handle_http_invalid_param(mock_request, mock_get_logic):
     mock_request.values = {'item_id': 'string'}
     mock_handler = mock.Mock()
 
-    with pytest.raises(HTTP400Exception, match='Must be a valid number.'):
+    expected_msg = 'item_id - value must be a valid type \(integer\)'
+    with pytest.raises(HTTP400Exception, match=expected_msg):
         handle_http(mock_handler, (), {}, mock_get_logic)
 
 
@@ -203,7 +206,7 @@ def test_handle_http_allowed_exception(mock_app, mock_request, mock_get_logic):
     mock_app.config = {'DEBUG': False}
     mock_request.method = 'GET'
     mock_request.content_type = 'application/x-www-form-urlencoded'
-    mock_request.values = {'item_id': 1}
+    mock_request.values = {'item_id': '1'}
     mock_handler = mock.Mock()
     mock_get_logic.side_effect = ValueError('Allowed')
     mock_get_logic._doctor_allowed_exceptions = [ValueError]
@@ -217,7 +220,7 @@ def test_handle_http_response_instance_return_value(
     mock_request.method = 'GET'
     mock_request.content_type = 'application/json; charset=UTF8'
     mock_request.mimetype = 'application/json'
-    mock_request.values = {'item_id': 3}
+    mock_request.values = {'item_id': '3'}
     mock_get_logic.return_value = Response({'item_id': 3}, {'X-Header': 'Foo'})
     mock_handler = mock.Mock()
 
@@ -239,7 +242,7 @@ def test_handle_http_response_validation(
 
     mock_request.method = 'GET'
     mock_request.content_type = 'application/x-www-form-urlencoded'
-    mock_request.values = {'item_id': 3}
+    mock_request.values = {'item_id': '3'}
     mock_handler = mock.Mock()
     mock_get_logic.return_value = {'foo': 'bar'}
 

@@ -6,8 +6,8 @@ import pytest
 from doctor.errors import TypeSystemError
 from doctor.resource import ResourceSchema
 from doctor.types import (
-    array, boolean, enum, integer, json_schema_type, number, string, Object,
-    MissingDescriptionError, SuperType)
+    array, boolean, enum, integer, json_schema_type, new_type, number, string,
+    Object, MissingDescriptionError, SuperType)
 
 
 class TestSuperType(object):
@@ -31,6 +31,10 @@ class TestString(object):
     def test_type(self):
         S = string('string')
         assert type(S('string')) is str
+
+    def test_type_nullable(self):
+        S = string('string', nullable=True)
+        assert S(None) is None
 
     def test_trim_whitespace(self):
         S = string('a string', trim_whitespace=True)
@@ -130,6 +134,10 @@ class TestString(object):
 
 class TestNumericType(object):
 
+    def test_nullable(self):
+        N = number('int', nullable=True)
+        assert N(None) is None
+
     def test_minimum(self):
         N = number('float', minimum=3.22)
         # No exception
@@ -218,6 +226,10 @@ class TestBoolean(object):
         B = boolean('bool')
         assert type(B('true')) is bool
 
+    def test_nullable(self):
+        B = boolean('bool', nullable=True)
+        assert B(None) is None
+
     def test_boolean_type(self):
         B = boolean('A bool')
         tests = (
@@ -255,6 +267,10 @@ class TestEnum(object):
         E = enum('choices', enum=['foo'])
         assert type(E('foo')) is str
 
+    def test_nullalbe(self):
+        E = enum('choices', enum=['foo'], nullable=True)
+        assert E(None) is None
+
     def test_enum(self):
         E = enum('choices', enum=['foo', 'bar'])
         # no exception
@@ -279,6 +295,10 @@ class FooObject(Object):
     properties = {'foo': string('foo property', min_length=2)}
 
 
+class NullableFooObject(FooObject):
+    nullable = True
+
+
 class NoAddtPropsObject(FooObject):
     additional_properties = False
 
@@ -298,6 +318,10 @@ class TestObject(object):
         expected = {'foo': 'bar'}
         actual = FooObject(expected)
         assert expected == actual
+
+    def test_nullable(self):
+        # Just test that this does not raise an exception.
+        NullableFooObject(None)
 
     def test_missing_description(self):
         class MyObject(Object):
@@ -348,6 +372,11 @@ class TestObject(object):
 
 
 class TestArray(object):
+
+    def test_nullable(self):
+        A = array('array', items=string('string', max_length=1), nullable=True)
+        # Just tests that this does not raise an exception.
+        A(None)
 
     def test_items(self):
         A = array('array', items=string('string', max_length=1))
@@ -581,3 +610,11 @@ class TestJsonSchema(object):
         J = json_schema_type(schema_file, definition_key='name')
         assert 'string' == J.json_type
         assert str == J.native_type
+
+
+def test_new_type_uses_parent_description():
+    S = string('A string', example='Foo')
+    N = new_type(S, nullable=True)
+    assert 'A string' == N.description
+    assert S.nullable is False
+    assert N.nullable is True

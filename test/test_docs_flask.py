@@ -4,20 +4,16 @@ import os
 import mock
 
 from doctor.docs.flask import AutoFlaskHarness
-from doctor.resource import ResourceAnnotation
-from doctor.utils import add_param_annotations, RequestParamAnnotation
 
 from .base import TestCase
-from .types import Colors, Item
 
 
 class TestDocsFlask(TestCase):
 
     def setUp(self):
-        flask_folder = os.path.join(os.path.dirname(__file__), '..',
-                                    'examples', 'flask')
-        self.harness = AutoFlaskHarness(os.path.join(flask_folder, 'app.py'),
-                                        'http://127.0.0.1/')
+        flask_folder = os.path.join(os.path.dirname(__file__))
+        self.harness = AutoFlaskHarness(
+            os.path.join(flask_folder, 'flask_app.py'), 'http://127.0.0.1/')
         self.harness.setup_app(mock.sentinel.sphinx_app)
         self.annotations = list(self.harness.iter_annotations())
 
@@ -25,7 +21,7 @@ class TestDocsFlask(TestCase):
         self.harness.teardown_app(mock.sentinel.sphinx_app)
 
     def test_harness_iter_annotations(self):
-        self.assertEqual(len(self.annotations), 3)
+        self.assertEqual(len(self.annotations), 4)
 
         heading, rule, view_class, annotations = self.annotations[0]
         self.assertEqual(heading, 'API Status')
@@ -45,6 +41,11 @@ class TestDocsFlask(TestCase):
         self.assertEqual([annotation.http_method for annotation in annotations],
                          ['GET', 'PUT', 'DELETE'])
 
+        heading, rule, view_class, annotations = self.annotations[3]
+        assert 'Z' == heading
+        assert '/example/list-obj/' == rule.rule
+        assert ['GET'] == [annotation.http_method for annotation in annotations]
+
     def test_harness_request_get_query_string(self):
         _, rule, view_class, annotations = self.annotations[2]
         annotation = annotations[0]
@@ -63,28 +64,18 @@ class TestDocsFlask(TestCase):
         This test verifies that we json dumps object and array types when
         building the url's query string parameters if this is a GET request.
         """
-        _, rule, view_class, annotations = self.annotations[2]
+        _, rule, view_class, annotations = self.annotations[3]
         annotation = annotations[0]
-        params = [
-            RequestParamAnnotation('item', Item),
-            RequestParamAnnotation('colors', Colors),
-        ]
-        view_class.get = add_param_annotations(view_class.get, params)
-        annotation = ResourceAnnotation(view_class.get, 'GET')
-
         result = self.harness.request(rule, view_class, annotation)
         result['response'] = json.loads(result['response'])
         expected = {
 
             'method': 'GET',
             'params': {},
-            'response': {
-                'body': 'Example body',
-                'done': True,
-                'note_id': 1
-            },
-            'url': ('http://127.0.0.1/note/1/?note_type=quick&'
-                    'item=%7B%22item_id%22%3A+1%7D&colors=%5B%22green%22%5D'),
+            'response': {},
+            'url': ('http://127.0.0.1/example/list-obj/?note_types=%5B%22quick'
+                    '%22%5D&a_note=%7B%22body%22%3A+%22Example+Body%22%2C+%22'
+                    'done%22%3A+true%2C+%22note_id%22%3A+1%7D')
         }
         self.assertEqual(expected, result)
 

@@ -110,8 +110,14 @@ def add_param_annotations(
     :param params: The list of RequestParamAnnotations to add to the logic func.
     :returns: The logic func with updated parameter annotations.
     """
-    sig = inspect.signature(logic)
-    doctor_params = get_params_from_func(logic, sig)
+    # If we've already added param annotations to this function get the
+    # values from the logic, otherwise we need to inspect it.
+    if hasattr(logic, '_doctor_signature'):
+        sig = logic._doctor_signature
+        doctor_params = logic._doctor_params
+    else:
+        sig = inspect.signature(logic)
+        doctor_params = get_params_from_func(logic, sig)
 
     prev_parameters = {name: param for name, param in sig.parameters.items()}
     new_params = []

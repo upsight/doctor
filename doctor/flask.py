@@ -18,6 +18,7 @@ except ImportError:  # pragma: no cover
 from .constants import HTTP_METHODS_WITH_JSON_BODY
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      NotFoundError, TypeSystemError, UnauthorizedError)
+from .parsers import parse_form_and_query_params
 from .response import Response
 from .routing import create_routes as doctor_create_routes
 from .routing import Route
@@ -115,7 +116,9 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
             request_params = request.json
         else:
             # Try to parse things from normal HTTP parameters
-            request_params = request.values
+            request_params = parse_form_and_query_params(
+                request.values, logic._doctor_signature.parameters)
+
         # Filter out any params not part of the logic signature.
         all_params = logic._doctor_params.all
         params = {k: v for k, v in request_params.items() if k in all_params}
@@ -127,11 +130,10 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
             if required not in params:
                 missing.append(required)
         if missing:
+            verb = 'are'
             if len(missing) == 1:
                 verb = 'is'
                 missing = missing[0]
-            else:
-                verb = 'are'
             error = '{} {} required.'.format(missing, verb)
             raise InvalidValueError(error)
 
@@ -140,6 +142,8 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
         sig = logic._doctor_signature
         for name, value in params.items():
             annotation = sig.parameters[name].annotation
+            if annotation.nullable and value is None:
+                continue
             try:
                 params[name] = annotation.native_type(annotation(value))
             except TypeSystemError as e:

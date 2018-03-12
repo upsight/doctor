@@ -36,7 +36,6 @@ class TestRouting(object):
         m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError],
                        title='Retrieve')
         assert 'get' == m.method
-        assert get_foo == m.logic
         assert inspect.signature(get_foo) == m.logic._doctor_signature
         expected = Params(
             all=['name', 'age', 'is_alive'],
@@ -52,7 +51,6 @@ class TestRouting(object):
                               allowed_exceptions=[ValueError], title='Title')
         a = delete(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert a.method == expected.method
-        assert a.logic == expected.logic
         assert a.logic._doctor_title == 'Title'
         assert a.logic._doctor_allowed_exceptions == [ValueError]
 
@@ -61,7 +59,6 @@ class TestRouting(object):
                               title='Title')
         actual = get(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
-        assert actual.logic == expected.logic
         assert actual.logic._doctor_title == 'Title'
         assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
@@ -70,7 +67,6 @@ class TestRouting(object):
                               title='Title')
         actual = post(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
-        assert actual.logic == expected.logic
         assert actual.logic._doctor_title == 'Title'
         assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
@@ -79,7 +75,6 @@ class TestRouting(object):
                               title='Title')
         actual = put(get_foo, allowed_exceptions=[ValueError], title='Title')
         assert actual.method == expected.method
-        assert actual.logic == expected.logic
         assert actual.logic._doctor_title == 'Title'
         assert actual.logic._doctor_allowed_exceptions == [ValueError]
 
@@ -160,6 +155,35 @@ class TestRouting(object):
         # name has a number appended to the end of it.
         route, handler = actual[2]
         assert 'FooHandler2' == handler.__name__
+
+    def test_create_routes_reuse_logic_different_title(self):
+        """
+        This tests that if we want to reuse a logic function with a different
+        route, and give it a unique title that it persists.  Previously if you
+        defined a title for 2 different routes using the same logic function,
+        it would use the last defined title on both routes.
+        """
+        routes = (
+            Route('^/foo/?$', methods=(
+                get(get_foos, title='Retrieve List'),),
+                    heading='Foo'
+            ),
+            Route('^/bar/?$', methods=(
+                get(get_foos, title='Retrieve Other List'),),
+                    heading='Foo'
+            ),
+        )
+        actual = create_routes(routes, handle_http, Resource)
+
+        # verify the first route
+        route, handler = actual[0]
+        assert r'^/foo/?$' == route
+        assert 'Retrieve List' == handler.get._doctor_title
+
+        # verify the second route
+        route, handler = actual[1]
+        assert r'^/bar/?$' == route
+        assert 'Retrieve Other List' == handler.get._doctor_title
 
     def test_get_handler_name_route_has_handler_name(self):
         """Tests handler name comes from one defined on Route"""

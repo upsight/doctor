@@ -203,7 +203,7 @@ def test_handle_http_invalid_param(mock_request, mock_get_logic):
     mock_request.values = {'item_id': 'string'}
     mock_handler = mock.Mock()
 
-    expected_msg = 'item_id - value must be a valid type \(integer\)'
+    expected_msg = 'item_id - value must be a valid type \(integer, null\)'
     with pytest.raises(HTTP400Exception, match=expected_msg):
         handle_http(mock_handler, (), {}, mock_get_logic)
 

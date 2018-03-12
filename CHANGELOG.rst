@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0-beta.7 (2018-03-12)
+--------------------------
+
+- Updates parsing of query/form params to parse null values properly.
+- Makes a copy of the logic function to preserve doctor attributes if
+  the logic function is shared between routes.
+
 v3.0.0-beta.6 (2018-03-08)
 --------------------------
 

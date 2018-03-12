@@ -1,8 +1,10 @@
+import functools
 import inspect
 import logging
 import os
 import re
 import sys
+import types
 from copy import copy
 from inspect import Parameter, Signature
 from typing import Callable, List
@@ -18,6 +20,20 @@ from doctor.types import SuperType
 #: parameters. This assumes that the parameters and such will always occur at
 #: the end of the docstring.
 DESCRIPTION_END_RE = re.compile(':(arg|param|returns|throws)', re.I)
+
+
+def copy_func(func: Callable) -> Callable:
+    """Returns a copy of a function.
+
+    :param func: The function to copy.
+    :returns: The copied function.
+    """
+    copied = types.FunctionType(
+        func.__code__, func.__globals__, name=func.__name__,
+        argdefs=func.__defaults__, closure=func.__closure__)
+    copied = functools.update_wrapper(copied, func)
+    copied.__kwdefaults__ = func.__kwdefaults__
+    return copied
 
 
 class RequestParamAnnotation(object):

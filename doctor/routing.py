@@ -1,23 +1,8 @@
 import functools
 import inspect
-import types
 from typing import Any, Callable, List, Tuple
 
-from doctor.utils import get_params_from_func, get_valid_class_name
-
-
-def copy_func(func: Callable) -> Callable:
-    """Returns a copy of a function.
-
-    :param func: The function to copy.
-    :returns: The copied function.
-    """
-    copied = types.FunctionType(
-        func.__code__, func.__globals__, name=func.__name__,
-        argdefs=func.__defaults__, closure=func.__closure__)
-    copied = functools.update_wrapper(copied, func)
-    copied.__kwdefaults__ = func.__kwdefaults__
-    return copied
+from doctor.utils import copy_func, get_params_from_func, get_valid_class_name
 
 
 class HTTPMethod(object):

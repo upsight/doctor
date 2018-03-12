@@ -187,9 +187,12 @@ def parse_form_and_query_params(req_params, sig_params):
         if param not in sig_params:
             continue
         native_type = sig_params[param].annotation.native_type
-        json_type = _native_type_to_json[native_type]
+        json_type = [_native_type_to_json[native_type]]
+        # If the type is nullable, also add null as an allowed type.
+        if sig_params[param].annotation.nullable:
+            json_type.append('null')
         try:
-            _, parsed_params[param] = parse_value(value, [json_type])
+            _, parsed_params[param] = parse_value(value, json_type)
         except ParseError as e:
             errors[param] = str(e)
 

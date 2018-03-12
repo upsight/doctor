@@ -1,8 +1,23 @@
 import functools
 import inspect
+import types
 from typing import Any, Callable, List, Tuple
 
 from doctor.utils import get_params_from_func, get_valid_class_name
+
+
+def copy_func(func: Callable) -> Callable:
+    """Returns a copy of a function.
+
+    :param func: The function to copy.
+    :returns: The copied function.
+    """
+    copied = types.FunctionType(
+        func.__code__, func.__globals__, name=func.__name__,
+        argdefs=func.__defaults__, closure=func.__closure__)
+    copied = functools.update_wrapper(copied, func)
+    copied.__kwdefaults__ = func.__kwdefaults__
+    return copied
 
 
 class HTTPMethod(object):
@@ -25,6 +40,7 @@ class HTTPMethod(object):
     def __init__(self, method: str, logic: Callable,
                  allowed_exceptions: List=None, title: str=None):
         self.method = method
+        logic = copy_func(logic)
 
         # Add doctor attributes to logic.  We do a check to ensure some
         # attributes aren't already set in the event that

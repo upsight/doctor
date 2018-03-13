@@ -8,8 +8,10 @@ class Response(object):
 
     :param content: The data to be returned with the response.
     :param dict headers: A dict of response headers to include with the response
+    :param int status_code: The status code for the response.
     """
 
-    def __init__(self, content, headers=None):
+    def __init__(self, content, headers=None, status_code=None):
         self.content = content
         self.headers = headers
+        self.status_code = status_code

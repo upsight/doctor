@@ -228,11 +228,12 @@ def test_handle_http_response_instance_return_value(
     mock_request.content_type = 'application/json; charset=UTF8'
     mock_request.mimetype = 'application/json'
     mock_request.values = {'item_id': '3'}
-    mock_get_logic.return_value = Response({'item_id': 3}, {'X-Header': 'Foo'})
+    mock_get_logic.return_value = Response({'item_id': 3}, {'X-Header': 'Foo'},
+                                           status_code=202)
     mock_handler = mock.Mock()
 
     actual = handle_http(mock_handler, (), {}, mock_get_logic)
-    assert actual == ({'item_id': 3}, 200, {'X-Header': 'Foo'})
+    assert actual == ({'item_id': 3}, 202, {'X-Header': 'Foo'})
 
 
 def test_should_raise_response_validation_errors():

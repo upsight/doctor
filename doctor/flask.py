@@ -176,8 +176,10 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                     raise TypeSystemError(error)
 
         if isinstance(response, Response):
-            return (response.content, STATUS_CODE_MAP.get(request.method, 200),
-                    response.headers)
+            status_code = response.status_code
+            if status_code is None:
+                status_code = STATUS_CODE_MAP.get(request.method, 200)
+            return (response.content, status_code, response.headers)
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, TypeSystemError) as e:
         errors = getattr(e, 'errors', None)

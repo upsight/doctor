@@ -67,6 +67,12 @@ V3.0.0-beta (2018-02-27)
   of doctor to generate new doctor types using doctor.types.json_schema_type.
   See the documentation for more information.
 
+
+v1.4.0 (2018-03-13)
+-------------------
+
+- Added status_code to Response class.
+
 v1.3.5 (2018-01-23)
 -------------------
 

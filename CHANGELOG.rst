@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v1.4.0 (2018-03-13)
+-------------------
+
+- Added status_code to Response class.
+
 v1.3.5 (2018-01-23)
 -------------------
 

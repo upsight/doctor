@@ -138,8 +138,10 @@ def handle_http(schema, handler, args, kwargs, logic, request_schema,
                     raise
 
         if isinstance(response, Response):
-            return (response.content, STATUS_CODE_MAP.get(request.method, 200),
-                    response.headers)
+            status_code = response.status_code
+            if status_code is None:
+                status_code = STATUS_CODE_MAP.get(request.method, 200)
+            return (response.content, status_code, response.headers)
         return response, STATUS_CODE_MAP.get(request.method, 200)
     except (InvalidValueError, ParseError, SchemaValidationError) as e:
         errors = getattr(e, 'errors', None)

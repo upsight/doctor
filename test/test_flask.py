@@ -28,7 +28,7 @@ class TestFlask(TestCase):
         }
         self.mock_flask_response_logic = mock.Mock(spec=['_autospec'])
         self.mock_flask_response_logic.return_value = Response(
-            '1,2\n3,4', self.response_headers)
+            '1,2\n3,4', self.response_headers, status_code=202)
 
         self.mock_request_patch = mock.patch('doctor.flask.request')
         self.mock_request = self.mock_request_patch.start()
@@ -244,7 +244,7 @@ class TestFlask(TestCase):
         result = handle_http(self.schema, self.mock_handler, (1, 2),
                              {'a': 3, 'b': 4}, self.mock_flask_response_logic,
                              None, None, None, None)
-        expected = ('1,2\n3,4', 200, self.response_headers)
+        expected = ('1,2\n3,4', 202, self.response_headers)
         self.assertEqual(expected, result)
 
     def test_http_error(self):

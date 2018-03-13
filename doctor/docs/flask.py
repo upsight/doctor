@@ -9,11 +9,9 @@ from __future__ import absolute_import
 
 import json
 from collections import defaultdict
+from urllib import parse
 
-import six
-from six.moves.urllib import parse
-
-from ..resource import ResourceSchemaAnnotation
+from ..resource import ResourceAnnotation
 from ..utils import get_module_attr
 from .base import BaseDirective, BaseHarness, HTTP_METHODS
 
@@ -63,15 +61,17 @@ class AutoFlaskHarness(BaseHarness):
             view_class = getattr(view_function, 'view_class', None)
             if view_class is None:
                 continue
+
             annotations = []
             for method_name in HTTP_METHODS:
                 method = getattr(view_class, method_name, None)
-                annotation = ResourceSchemaAnnotation.get_annotation(method)
-                if annotation is not None:
-                    annotations.append(annotation)
+                if not method:
+                    continue
+                annotation = ResourceAnnotation(
+                    method, method_name, method._doctor_title)
+                annotations.append(annotation)
             if annotations:
-                heading = self._get_annotation_heading(view_class,
-                                                       six.text_type(rule))
+                heading = self._get_annotation_heading(view_class, str(rule))
                 section_map[heading].append((rule, view_class, annotations))
 
         # Loop through each heading and it's items and yield the values.
@@ -99,8 +99,8 @@ class AutoFlaskHarness(BaseHarness):
 
         :param route: Werkzeug Route object.
         :param view_class: View class for the annotated method.
-        :param annotation: Schema annotation for the method to be requested.
-        :type annotation: doctor.resource.ResourceSchemaAnnotation
+        :param annotation: Annotation for the method to be requested.
+        :type annotation: doctor.resource.ResourceAnnotation
         :returns: dict
         """
         headers = self._get_headers(rule, annotation)
@@ -109,12 +109,12 @@ class AutoFlaskHarness(BaseHarness):
         # or lists, we will need to json dump them before building the rule,
         # otherwise the query string parameter won't get parsed correctly
         # by doctor.
-        if annotation.http_method in ('DELETE', 'GET'):
+        if annotation.http_method.upper() in ('DELETE', 'GET'):
             for key, value in list(example_values.items()):
                 if isinstance(value, (dict, list)):
                     example_values[key] = json.dumps(value)
         _, path = rule.build(example_values, append_unknown=True)
-        if annotation.http_method not in ('DELETE', 'GET'):
+        if annotation.http_method.upper() not in ('DELETE', 'GET'):
             parsed_path = parse.urlparse(path)
             path = parsed_path.path
             params = example_values
@@ -129,7 +129,7 @@ class AutoFlaskHarness(BaseHarness):
             response = method(path, data=params, headers=headers)
         return {
             'url': '/'.join([self.url_prefix, path.lstrip('/')]),
-            'method': annotation.http_method,
+            'method': annotation.http_method.upper(),
             'params': params,
             'response': response.data,
         }

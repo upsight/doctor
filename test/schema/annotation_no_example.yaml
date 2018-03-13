@@ -15,9 +15,7 @@ definitions:
     $ref: 'subdir/more.yaml#/definitions/more_id'
   name:
     description: Human readable name.
-    type:
-      - 'null'
-      - string
+    type: string
     example: Annotation
   url:
     description: The URL to the detail page for the annotation.
@@ -29,8 +27,6 @@ definitions:
     type: array
     items:
       '$ref': '#/definitions/url'
-    example:
-      - https://upsight.com
   annotation:
     $ref: '#'
   annotations:
@@ -38,13 +34,6 @@ definitions:
     type: array
     items:
       $ref: '#'
-    example:
-      -
-        annotation_id: 1
-        auth: token
-        more_id: 1
-        name: Annotation
-        url: https://upsight.com
 description: An annotation object.
 type: object
 properties:
@@ -58,6 +47,8 @@ properties:
     $ref: '#/definitions/name'
   url:
     $ref: '#/definitions/url'
+  urls:
+    $ref: '#/definitions/urls'
 test_ref:
   $ref: '#/another_test_ref'
 another_test_ref:
@@ -73,12 +64,6 @@ invalid_ref_chain_1:
 invalid_ref_chain_2:
   $ref: '#/invalid_ref_chain_3'
 additionalProperties: no
-example:
-  annotation_id: 1
-  auth: token
-  more_id: 1
-  name: Annotation
-  url: https://upsight.com
 allOf:
   - $ref: "common.yaml"
   - $ref: "subdir/more.yaml"

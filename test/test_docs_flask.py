@@ -1,21 +1,19 @@
-import copy
 import json
 import os
 
 import mock
 
 from doctor.docs.flask import AutoFlaskHarness
-from doctor.resource import ResourceSchemaAnnotation
+
 from .base import TestCase
 
 
 class TestDocsFlask(TestCase):
 
     def setUp(self):
-        flask_folder = os.path.join(os.path.dirname(__file__), '..',
-                                    'examples', 'flask')
-        self.harness = AutoFlaskHarness(os.path.join(flask_folder, 'app.py'),
-                                        'http://127.0.0.1/')
+        flask_folder = os.path.join(os.path.dirname(__file__))
+        self.harness = AutoFlaskHarness(
+            os.path.join(flask_folder, 'flask_app.py'), 'http://127.0.0.1/')
         self.harness.setup_app(mock.sentinel.sphinx_app)
         self.annotations = list(self.harness.iter_annotations())
 
@@ -23,7 +21,7 @@ class TestDocsFlask(TestCase):
         self.harness.teardown_app(mock.sentinel.sphinx_app)
 
     def test_harness_iter_annotations(self):
-        self.assertEqual(len(self.annotations), 3)
+        self.assertEqual(len(self.annotations), 4)
 
         heading, rule, view_class, annotations = self.annotations[0]
         self.assertEqual(heading, 'API Status')
@@ -43,87 +41,41 @@ class TestDocsFlask(TestCase):
         self.assertEqual([annotation.http_method for annotation in annotations],
                          ['GET', 'PUT', 'DELETE'])
 
-    def test_harness_request_get(self):
-        _, rule, view_class, annotations = self.annotations[2]
-        annotation = annotations[0]
-        result = self.harness.request(rule, view_class, annotation)
-        result['response'] = json.loads(result['response'])
-        self.assertEqual(result, {
-            'method': 'GET',
-            'params': {},
-            'response': {'body': 'Example body',
-                         'done': False,
-                         'note_id': 1},
-            'url': 'http://127.0.0.1/note/1/'})
+        heading, rule, view_class, annotations = self.annotations[3]
+        assert 'Z' == heading
+        assert '/example/list-obj/' == rule.rule
+        assert ['GET'] == [annotation.http_method for annotation in annotations]
 
     def test_harness_request_get_query_string(self):
         _, rule, view_class, annotations = self.annotations[2]
         annotation = annotations[0]
-        request_schema = copy.deepcopy(annotation.request_schema.copy())
-        request_schema['properties']['fake_param'] = {
-            'type': 'string',
-            'description': 'This is a fake param',
-            'example': 'fake value',
-        }
-        annotation = ResourceSchemaAnnotation(
-            annotation.logic, annotation.http_method, annotation.schema,
-            request_schema, annotation.response_schema)
         result = self.harness.request(rule, view_class, annotation)
         result['response'] = json.loads(result['response'])
         self.assertEqual(result, {
             'method': 'GET',
             'params': {},
             'response': {'body': 'Example body',
-                         'done': False,
+                         'done': True,
                          'note_id': 1},
-            'url': 'http://127.0.0.1/note/1/?fake_param=fake+value'})
+            'url': 'http://127.0.0.1/note/1/?note_type=quick'})
 
     def test_harness_request_get_list_and_dict_params(self):
         """
         This test verifies that we json dumps object and array types when
         building the url's query string parameters if this is a GET request.
         """
-        _, rule, view_class, annotations = self.annotations[2]
+        _, rule, view_class, annotations = self.annotations[3]
         annotation = annotations[0]
-        request_schema = copy.deepcopy(annotation.request_schema.copy())
-        request_schema['properties']['array_param'] = {
-            'items': {
-                'type': 'string',
-            },
-            'type': 'array',
-            'description': 'This is a list',
-            'example': [1],
-        }
-        request_schema['properties']['object_param'] = {
-            'properties': {
-                'foo': {
-                    'type': 'string',
-                    'description': 'A string',
-                    'example': 'bar',
-                },
-            },
-            'type': 'object',
-            'description': 'This is a dict',
-            'example': {
-                'foo': 'bar'
-            },
-        }
-        annotation = ResourceSchemaAnnotation(
-            annotation.logic, annotation.http_method, annotation.schema,
-            request_schema, annotation.response_schema)
         result = self.harness.request(rule, view_class, annotation)
         result['response'] = json.loads(result['response'])
         expected = {
 
             'method': 'GET',
             'params': {},
-            'response': {
-                'body': 'Example body',
-                'done': False,
-                'note_id': 1
-            },
-            'url': ('http://127.0.0.1/note/1/?array_param=%5B1%5D&'
-                    'object_param=%7B%22foo%22%3A+%22bar%22%7D')
+            'response': {},
+            'url': ('http://127.0.0.1/example/list-obj/?note_types=%5B%22quick'
+                    '%22%5D&a_note=%7B%22body%22%3A+%22Example+Body%22%2C+%22'
+                    'done%22%3A+true%2C+%22note_id%22%3A+1%7D')
         }
         self.assertEqual(expected, result)
 
@@ -134,10 +86,10 @@ class TestDocsFlask(TestCase):
         result['response'] = json.loads(result['response'])
         self.assertEqual(result, {
             'method': 'POST',
-            'params': {'body': 'This is an example note.',
-                       'done': True},
-            'response': {'body': 'This is an example note.',
-                         'done': True,
+            'params': {'body': 'body',
+                       'done': False},
+            'response': {'body': 'body',
+                         'done': False,
                          'note_id': 2},
             'url': 'http://127.0.0.1/note/'})
 
@@ -166,10 +118,10 @@ class TestDocsFlask(TestCase):
         result['response'] = json.loads(result['response'])
         self.assertEqual(result, {
             'method': 'POST',
-            'params': {'body': 'This is an example note.',
-                       'done': True},
-            'response': {'body': 'This is an example note.',
-                         'done': True,
+            'params': {'body': 'body',
+                       'done': False},
+            'response': {'body': 'body',
+                         'done': False,
                          'note_id': 2},
             'url': 'http://127.0.0.1/note/'})
 
@@ -188,4 +140,4 @@ class TestDocsFlask(TestCase):
         result = self.harness.request(rule, view_class, annotation)
         result['response'] = json.loads(result['response'])
         self.assertEqual(result['params'], {'body': 'This is an updated body.',
-                                            'done': True})
+                                            'done': False})

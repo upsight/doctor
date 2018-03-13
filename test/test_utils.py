@@ -1,21 +1,17 @@
 import inspect
 import os
 from functools import wraps
+from inspect import Parameter
 
 import mock
-import six
+
+from doctor.routing import get_params_from_func
+from doctor.utils import (
+    add_param_annotations, get_description_lines, get_module_attr,
+    get_valid_class_name, Params, RequestParamAnnotation)
 
 from .base import TestCase
-
-from doctor.utils import (
-    exec_params, get_description_lines, get_module_attr, nested_set,
-    undecorate_func)
-
-
-if six.PY2:
-    getargspec_func = inspect.getargspec
-else:
-    getargspec_func = inspect.getfullargspec
+from .types import Age, Auth, Foo, IsAlive, IsDeleted, Name
 
 
 def does_nothing(func):
@@ -51,76 +47,123 @@ def dec_with_args_one_of_which_allows_a_func(foo, bar=None):
     return decorator
 
 
+def no_params() -> Foo:
+    return ''
+
+
+def get_foo(name: Name, age: Age, is_alive: IsAlive=True) -> Foo:
+    return ''
+
+
+def pass_pos_param(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func('extra!', *args, **kwargs)
+    return wrapper
+
+
+@pass_pos_param
+def decorated_func(extra: str, name: Name, is_alive: IsAlive=True) -> Foo:
+    return ''
+
+
 class TestUtils(TestCase):
 
-    def test_exec_params_function(self):
-        def logic(a, b, c=None):
-            return a+1, b+1, c
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'c': 1, 'd': 'a'}
-        args = (1, 2)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, kwargs['c'])
+    def test_add_param_annotations(self):
+        new_params = [
+            RequestParamAnnotation('auth', Auth, required=True),
+            RequestParamAnnotation('is_deleted', IsDeleted)
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+        # auth and is_deleted should be added to `all`.
+        # auth should be added to `required`.
+        # is_deleted should be added to `optional`.
+        # `logic` should be unmodified.
+        expected_params = Params(
+            all=['name', 'age', 'is_alive', 'auth', 'is_deleted'],
+            logic=['name', 'age', 'is_alive'],
+            required=['name', 'age', 'auth'],
+            optional=['is_alive', 'is_deleted']
+        )
+        assert expected_params == actual._doctor_params
 
-    def test_exec_params_callable(self):
-        kwargs = {'c': 1, 'd': 'a'}
-        args = (1, 2)
+        # verify `auth` added to the doctor_signature.
+        expected = Parameter('auth', Parameter.KEYWORD_ONLY,
+                             default=Parameter.empty, annotation=Auth)
+        auth = actual._doctor_signature.parameters['auth']
+        assert expected == auth
 
-        class Foo(object):
-            def __call__(self, a, b, c=None):
-                return a+1, b+1, c
-        logic = Foo()
-        logic._argspec = getargspec_func(logic.__call__)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, kwargs['c'])
+        # verify `is_deleted` added to the doctor signature.
+        expected = Parameter('is_deleted', Parameter.KEYWORD_ONLY,
+                             default=None, annotation=IsDeleted)
+        is_deleted = actual._doctor_signature.parameters['is_deleted']
+        assert expected == is_deleted
 
-    def test_exec_params_args_only(self):
-        def logic(a, b, c):
-            return a+1, b+1, c
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'d': 1, 'e': 2}
-        args = (1, 2, 3)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, 3)
-
-    def test_exec_params_kwargs_only(self):
-        def logic(a=1, b=2, c=3):
-            return a+1, b+1, c
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'d': 1, 'e': 2}
-        args = (1, 2, 3)
-        a, b, c = exec_params(logic, *args, **kwargs)
-        self.assertEqual(a, args[0]+1)
-        self.assertEqual(b, args[1]+1)
-        self.assertEqual(c, 3)
-
-    def test_exec_params_with_magic_kwargs(self):
+    def test_add_param_annotations_mutliple_calls(self):
         """
-        This test replicates a bug where if a logic function were decorated
-        and we sendt a json body request that contained parameters not in
-        the logic function's signature it would cause a TypeError similar to
-        the following for the logic function defined in this test:
-
-        TypeError: logic() got an unexpected keyword argument 'e'
-
-        This test verifies if a logic function uses the **kwargs functionality
-        that we pass along those to the logic function in addition to any
-        other positional or keyword arguments.
+        This test verifies if we call this function multiple times with
+        the same logic function that it doesn't squash parameters added
+        from the previous call.  This is a regression test.
         """
-        def logic(a, b=2, c=3, **kwargs):
-            return (a, b, c, kwargs)
+        delattr(get_foo, '_doctor_signature')
+        new_params = [
+            RequestParamAnnotation('auth', Auth, required=True),
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+        expected_params = Params(
+            all=['name', 'age', 'is_alive', 'auth'],
+            logic=['name', 'age', 'is_alive'],
+            required=['name', 'age', 'auth'],
+            optional=['is_alive']
+        )
+        assert expected_params == actual._doctor_params
 
-        logic._argspec = getargspec_func(logic)
-        kwargs = {'c': 3, 'e': 2}
-        args = (1, 2)
-        actual = exec_params(logic, *args, **kwargs)
-        self.assertEqual((1, 2, 3, {'e': 2}), actual)
+        # verify `auth` added to the doctor_signature.
+        expected = Parameter('auth', Parameter.KEYWORD_ONLY,
+                             default=Parameter.empty, annotation=Auth)
+        auth = actual._doctor_signature.parameters['auth']
+        assert expected == auth
+
+        # Now call again adding the is_deleted param.  It should add to and
+        # not replace the auth param we added previously.
+        new_params = [
+            RequestParamAnnotation('is_deleted', IsDeleted)
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+        expected_params = Params(
+            all=['name', 'age', 'is_alive', 'auth', 'is_deleted'],
+            logic=['name', 'age', 'is_alive'],
+            required=['name', 'age', 'auth'],
+            optional=['is_alive', 'is_deleted']
+        )
+        assert expected_params == actual._doctor_params
+        # verify `is_deleted` added to the doctor signature.
+        expected = Parameter('is_deleted', Parameter.KEYWORD_ONLY,
+                             default=None, annotation=IsDeleted)
+        is_deleted = actual._doctor_signature.parameters['is_deleted']
+        assert expected == is_deleted
+
+    @mock.patch('doctor.utils.logging')
+    def test_add_param_annotations_duplicate_param(self, mock_logging):
+        delattr(get_foo, '_doctor_signature')
+        new_params = [
+            # name param is already in `get_foo` signature
+            RequestParamAnnotation('name', Name, required=True),
+            RequestParamAnnotation('is_deleted', IsDeleted)
+        ]
+        actual = add_param_annotations(get_foo, new_params)
+
+        # verify `is_deleted` added to the doctor signature.
+        expected = Parameter('is_deleted', Parameter.KEYWORD_ONLY,
+                             default=None, annotation=IsDeleted)
+        is_deleted = actual._doctor_signature.parameters['is_deleted']
+        assert expected == is_deleted
+
+        # verify a warning was logged.
+        expected_call = mock.call(
+            'Not adding %s to signature of %s, function already has that '
+            'parameter in its signature.', 'name', 'get_foo')
+        assert expected_call == mock_logging.warning.call_args
 
     @mock.patch('doctor.utils.open',
                 new_callable=mock.mock_open,
@@ -185,47 +228,51 @@ class TestUtils(TestCase):
         """It should add a trailing line if necessary."""
         self.assertEqual(get_description_lines('foo\n:arg'), ['foo', ''])
 
-    def test_nested_set(self):
-        data_dict = {}
-        nested_set(data_dict, ["b", "v", "new"], {})
-        self.assertEqual(data_dict['b']['v']['new'], {})
+    def test_get_params_from_func(self):
+        get_foo._doctor_signature = inspect.signature(get_foo)
+        expected = Params(
+            all=['name', 'age', 'is_alive'],
+            optional=['is_alive'],
+            required=['name', 'age'],
+            logic=['name', 'age', 'is_alive'])
+        assert expected == get_params_from_func(get_foo)
 
-        nested_set(data_dict, ["b", "v", "new"], '4')
-        self.assertEqual(data_dict['b']['v']['new'], '4')
+    def test_get_params_from_func_no_params(self):
+        # no signature passed or defined on the function
+        expected = Params([], [], [], [])
+        assert expected == get_params_from_func(no_params)
 
-        nested_set(data_dict, ["a", "v", "new"], '1')
-        self.assertEqual(data_dict['a']['v']['new'], '1')
+        # signature passed in
+        signature = inspect.signature(no_params)
+        assert expected == get_params_from_func(no_params, signature)
 
-        nested_set(data_dict, ["a", "new"], 'new')
-        self.assertEqual(data_dict['a']['new'], 'new')
+        # signature attached to logic function
+        no_params._doctor_signature = inspect.signature(no_params)
+        assert expected == get_params_from_func(no_params)
 
-    def test_undecorate_func(self):
-        def foobar(a, b=False):
-            pass
+    def test_get_params_from_func_decorated_func(self):
+        """
+        Verifies that we don't include the `extra` param as required since
+        it's not a sublcass of `SuperType` and is passed to the function
+        by a decorator.
+        """
+        decorated_func._doctor_signature = inspect.signature(decorated_func)
+        expected = Params(
+            all=['extra', 'name', 'is_alive'],
+            required=['name'],
+            optional=['is_alive'],
+            logic=['extra', 'name', 'is_alive'])
+        assert expected == get_params_from_func(decorated_func)
 
-        # No decorator just returns the function
-        actual = undecorate_func(foobar)
-        self.assertEqual(foobar, actual)
-
-        # Normal decorator with no args
-        decorated = does_nothing(foobar)
-        actual = undecorate_func(decorated)
-        self.assertEqual(foobar, actual)
-
-        # Ensure it can handle multiple decorators
-        double_decorated = does_nothing(does_nothing(foobar))
-        actual = undecorate_func(double_decorated)
-        self.assertEqual(foobar, actual)
-
-        # Ensure it works with decorators that take arguments
-        decorated_with_args = dec_with_args('foo1')(foobar)
-        actual = undecorate_func(decorated_with_args)
-        self.assertEqual(foobar, actual)
-
-        def bar(foo):
-            return 'foo ' + foo
-
-        decorated_with_arg_takes_func = (
-            dec_with_args_one_of_which_allows_a_func('foo', bar)(foobar))
-        actual = undecorate_func(decorated_with_arg_takes_func)
-        self.assertEqual(foobar, actual)
+    def test_get_valid_class_name(self):
+        tests = (
+            # (input, expected)
+            ('Notes', 'Notes'),
+            ('Notes (v1)', 'NotesV1'),
+            ('Notes - "v1"', 'NotesV1'),
+            ('note_book.', 'NoteBook'),
+            ('notes', 'Notes'),
+            ('note-book_v1 .', 'NoteBookV1'),
+        )
+        for s, expected in tests:
+            assert expected == get_valid_class_name(s)

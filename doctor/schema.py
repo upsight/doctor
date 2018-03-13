@@ -45,6 +45,7 @@ class SchemaRefResolver(jsonschema.RefResolver):
         :param dict document: Optional schema in which to resolve the URI.
         :returns: a tuple of the final, resolved URI (after any recursion) and
             resolved value in the schema that the URI references.
+        :raises SchemaError:
         """
         try:
             # This logic is basically the RefResolver's resolve function, but
@@ -123,13 +124,15 @@ class Schema(object):
         self._resolver = None
         self._schema_path = schema_path
 
-    def get_validator(self):
+    def get_validator(self, schema=None):
         """Get a jsonschema validator.
 
+        :param dict schema: A custom schema to validate against.
         :returns: an instance of jsonschema Draft4Validator.
         """
+        schema = schema if schema is not None else self.schema
         return jsonschema.Draft4Validator(
-            self.schema, resolver=self.resolver,
+            schema, resolver=self.resolver,
             format_checker=jsonschema.draft4_format_checker)
 
     def resolve(self, ref, document=None):

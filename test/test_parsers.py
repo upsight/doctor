@@ -1,8 +1,18 @@
 # encoding: utf-8
 
-from doctor.errors import ParseError
-from doctor.parsers import parse_json, parse_value
+import inspect
+
+import pytest
+
+from doctor.errors import ParseError, TypeSystemError
+from doctor.parsers import parse_form_and_query_params, parse_json, parse_value
+
 from .base import TestCase
+from .types import Age, Color, IsDeleted
+
+
+def logic(age: Age, color: Color, is_deleted: IsDeleted=False):
+    return '{} {} {}'.format(age, color, is_deleted)
 
 
 class TestParsers(TestCase):
@@ -71,3 +81,32 @@ class TestParsers(TestCase):
         with self.assertRaisesRegexp(
                 ValueError, r"value for 'foo' must be a string"):
             parse_value(1337, [], 'foo')
+
+    def test_parse_form_and_query_params_no_errors(self):
+        sig = inspect.signature(logic)
+        query_params = {
+            'age': '22',
+            'color': 'blue',
+            'is_deleted': 'true',
+        }
+        actual = parse_form_and_query_params(query_params, sig.parameters)
+        assert {
+            'age': 22,
+            'color': 'blue',
+            'is_deleted': True,
+        } == actual
+
+    def test_parse_form_and_query_params_with_errors(self):
+        sig = inspect.signature(logic)
+        query_params = {
+            'age': 'not an int',
+            'color': 'blue',
+            'is_deleted': 'not a boolean',
+        }
+        with pytest.raises(TypeSystemError) as exc:
+            parse_form_and_query_params(query_params, sig.parameters)
+
+        assert {
+            'age': 'value must be a valid type (integer)',
+            'is_deleted': 'value must be a valid type (boolean)',
+        } == exc.value.errors

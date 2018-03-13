@@ -1,324 +1,265 @@
+import inspect
 import os
+from functools import wraps
 
-import jsonschema
 import mock
+import pytest
 
-from doctor.errors import (
-    ForbiddenError, ImmutableError, InvalidValueError, ParseError,
-    NotFoundError, SchemaValidationError, UnauthorizedError)
 from doctor.flask import (
-    FlaskResourceSchema, SchematicHTTPException, handle_http,
-    HTTP400Exception, HTTP401Exception, HTTP403Exception, HTTP404Exception,
-    HTTP409Exception, HTTP500Exception)
+    handle_http, HTTP400Exception, should_raise_response_validation_errors)
 from doctor.response import Response
-from .base import TestCase
+from doctor.utils import (
+    add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
+
+from .types import Auth, Colors, Item, ItemId, IncludeDeleted
 
 
-class TestFlask(TestCase):
+def check_auth(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    params = [
+        RequestParamAnnotation('auth', Auth, True),
+    ]
+    _wrapper = add_param_annotations(wrapper, params)
+    return _wrapper
 
-    def setUp(self):
-        self.mock_handler = mock.Mock()
 
-        self.mock_logic = mock.Mock(spec=['_autospec'])
-        self.mock_logic.return_value = {'foo': 1}
-        self.response_headers = {
-            'Content-Type': 'text/csv',
-            'Content-Disposition': 'attachement; filename=data.csv',
-            'X-Custom-Response-Header': '12345',
-        }
-        self.mock_flask_response_logic = mock.Mock(spec=['_autospec'])
-        self.mock_flask_response_logic.return_value = Response(
-            '1,2\n3,4', self.response_headers, status_code=202)
+def get_item(item_id: ItemId, include_deleted: IncludeDeleted=False) -> Item:
+    return {'item_id': 1}
 
-        self.mock_request_patch = mock.patch('doctor.flask.request')
-        self.mock_request = self.mock_request_patch.start()
 
-        self.schema = FlaskResourceSchema({
-            'definitions': {
-                'a': {'type': 'string'},
-                'b': {'type': 'integer'},
-                'c': {'type': 'integer'},
-                'response': {
-                    'type': 'object',
-                    'properties': {
-                        'foo': {'type': 'integer'},
-                    },
-                    'additionalProperties': False
-                }
-            }
-        })
-        self.request_schema = self.schema._create_request_schema(
-            params=('a', 'b', 'c'), required=('a', 'b'))
-        self.request_validator = jsonschema.Draft4Validator(
-            self.request_schema, resolver=self.schema.resolver)
-        self.response_schema = self.schema.resolve('#/definitions/response')
-        self.response_validator = jsonschema.Draft4Validator(
-            self.response_schema, resolver=self.schema.resolver)
-        self.allowed_exceptions = None
+def create_item(item: Item, colors: Colors, optional_id: ItemId=None) -> Item:
+    return {'item_id': 1}
 
-    def tearDown(self):
-        self.mock_request_patch.stop()
 
-    def call_handle_http(self, args=None, kwargs=None):
-        if args is None:
-            args = ()
-        if kwargs is None:
-            kwargs = {}
-        return handle_http(self.schema, self.mock_handler, args, kwargs,
-                           self.mock_logic, self.request_schema,
-                           self.request_validator, self.response_validator,
-                           self.allowed_exceptions)
+@pytest.fixture
+def mock_request():
+    mock_request_patch = mock.patch('doctor.flask.request')
+    yield mock_request_patch.start()
+    mock_request_patch.stop()
 
-    def mock_logic_exception(self, exception):
-        self.mock_request.method = 'POST'
-        self.mock_request.content_type = 'application/json; charset=UTF8'
-        self.mock_request.mimetype = 'application/json'
-        self.mock_request.json = {'a': 'foo', 'b': 1}
-        self.mock_logic.side_effect = exception
 
-    def test_from_file(self):
-        schema_filepath = os.path.abspath(os.path.join(
-            os.path.dirname(__file__), 'schema', 'annotation.yaml'))
-        schema_path = os.path.dirname(schema_filepath)
-        schema = FlaskResourceSchema.from_file(schema_filepath)
-        self.assertIsInstance(schema, FlaskResourceSchema)
-        self.assertEqual(schema._schema_path, schema_path)
-        self.assertEqual(schema.handle_http, handle_http)
-        # Should be able to resolve a ref to another file
-        self.assertEqual(schema.resolve('#/properties/auth'), {
-            'description': 'auth token',
-            'example': 'eb25f25becca416092752b0f457f1271',
-            'type': ['string']
-        })
+@pytest.fixture
+def mock_get_logic():
+    mock_logic = mock.MagicMock(spec=get_item, return_value={'item_id': 1})
+    mock_logic._doctor_signature = inspect.signature(get_item)
+    mock_logic._doctor_params = get_params_from_func(mock_logic)
+    mock_logic._doctor_allowed_exceptions = None
+    return mock_logic
 
-    def test_handle_http_with_json(self):
-        self.mock_request.method = 'POST'
-        self.mock_request.content_type = 'application/json; charset=UTF8'
-        self.mock_request.mimetype = 'application/json'
-        self.mock_request.json = {'a': 'foo', 'b': 1}
-        result = self.call_handle_http((10,), {'b': 2, 'x': 20, 'y': 30})
-        self.assertEqual(result, ({'foo': 1}, 201))
-        self.assertEqual(self.mock_logic.call_args_list,
-                         [mock.call(10, x=20, y=30, a='foo', b=2)])
 
-    def test_handle_http_unsupported_http_method_with_body(self):
-        self.mock_request.method = 'GET'
-        self.mock_request.content_type = 'application/json; charset=UTF8'
-        self.mock_request.mimetype = 'application/json'
-        self.mock_request.json = None
-        self.mock_request.values = {'a': 'foo', 'b': '1'}
-        result = self.call_handle_http((10,))
-        expected = ({'foo': 1}, 200)
-        self.assertEqual(expected, result)
+@pytest.fixture
+def mock_post_logic():
+    mock_logic = mock.MagicMock(spec=create_item, return_value={'item_id': 1})
+    mock_logic._doctor_signature = inspect.signature(create_item)
+    mock_logic._doctor_params = get_params_from_func(mock_logic)
+    mock_logic._doctor_allowed_exceptions = None
+    return mock_logic
 
-    def test_handle_http_with_params(self):
-        self.mock_request.method = 'DELETE'
-        self.mock_request.content_type = 'application/x-www-form-urlencoded'
-        self.mock_request.values = {'a': 'foo', 'b': '1'}
-        result = self.call_handle_http((10,), {'b': 2, 'x': 20, 'y': 30})
-        self.assertEqual(result, ({'foo': 1}, 204))
-        self.assertEqual(self.mock_logic.call_args_list,
-                         [mock.call(10, x=20, y=30, a='foo', b=2)])
 
-    @mock.patch('doctor.flask.MAX_RESPONSE_LENGTH', 10)
-    @mock.patch('doctor.flask.logging')
-    def test_handle_http_catch_and_log_response_validaiton_errors(
-            self, logging_mock):
-        """
-        This test verifies that if the schema attribute
-        `raise_response_validation_errors` is False we simply log
-        the error as a warning and return the result, instead of
-        raising the exception.
-        """
-        self.schema = FlaskResourceSchema({
-            'definitions': {
-                'a': {'type': 'string'},
-                'b': {'type': 'integer'},
-                'c': {'type': 'integer'},
-                'response': {
-                    'type': 'object',
-                    'properties': {
-                        'foo': {'type': 'integer'},
-                    },
-                    'additionalProperties': False
-                }
-            }
-        }, raise_response_validation_errors=False)
-        self.mock_logic = mock.Mock(spec=['_autospec'])
-        self.mock_logic.return_value = {'dinosaurs': 'are extinct'}
-        self.mock_request.method = 'GET'
-        self.mock_request.path = '/foo'
-        self.mock_request.content_type = 'application/x-www-form-urlencoded'
-        self.mock_request.values = {'a': 'foo', 'b': '1'}
-        result = self.call_handle_http((10,), {'b': 2, 'x': 20, 'y': 30})
+def test_handle_http_with_json(mock_request, mock_post_logic):
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.json = {
+        'item': {
+            'item_id': 1,
+        },
+        'colors': ['blue'],
+        'optional_id': None,
+    }
+    mock_handler = mock.Mock()
 
-        expected = ({'dinosaurs': 'are extinct'}, 200)
-        self.assertEqual(expected, result)
-        expected_call = mock.call(
-            'Response to %s %s does not validate: %s.', 'GET', '/foo',
-            "{'dinosaur...", exc_info=mock.ANY)
-        self.assertEqual(expected_call, logging_mock.warning.call_args)
+    actual = handle_http(mock_handler, (), {}, mock_post_logic)
+    assert actual == ({'item_id': 1}, 201)
 
-    def test_handle_http_raise_response_validaiton_errors(self):
-        """
-        This test verifies that if the schema attribute
-        `raise_response_validation_errors` is True we raise the
-        exception.
-        """
-        self.schema = FlaskResourceSchema({
-            'definitions': {
-                'a': {'type': 'string'},
-                'b': {'type': 'integer'},
-                'c': {'type': 'integer'},
-                'response': {
-                    'type': 'object',
-                    'properties': {
-                        'foo': {'type': 'integer'},
-                    },
-                    'additionalProperties': False
-                }
-            }
-        }, raise_response_validation_errors=True)
-        self.mock_logic = mock.Mock(spec=['_autospec'])
-        self.mock_logic.return_value = {'dinosaurs': 'are extinct'}
-        self.mock_request.method = 'GET'
-        self.mock_request.content_type = 'application/x-www-form-urlencoded'
-        self.mock_request.values = {'a': 'foo', 'b': '1'}
-        with self.assertRaises(HTTP400Exception) as context:
-            self.call_handle_http((10,), {'b': 2, 'x': 20, 'y': 30})
-        errors = context.exception.errobj
-        expected = {
-            '_other': ("Additional properties are not allowed ('dinosaurs' was "
-                       "unexpected)"),
-        }
-        self.assertEqual(expected, errors)
+    expected_call = mock.call(
+        item={'item_id': 1}, colors=['blue'], optional_id=None)
+    assert expected_call == mock_post_logic.call_args
 
-    def test_handle_http_raise_response_validaiton_errors_response_class(self):
-        """
-        This test verifies that if the schema attribute
-        `raise_response_validation_errors` is True we raise the
-        exception.  This specifically tests when the response is an instance
-        of ~doctor.response.Response
-        """
-        self.schema = FlaskResourceSchema({
-            'definitions': {
-                'a': {'type': 'string'},
-                'b': {'type': 'integer'},
-                'c': {'type': 'integer'},
-                'response': {
-                    'type': 'object',
-                    'properties': {
-                        'foo': {'type': 'integer'},
-                    },
-                    'additionalProperties': False
-                }
-            }
-        }, raise_response_validation_errors=True)
-        self.mock_logic = mock.Mock(spec=['_autospec'])
-        self.mock_logic.return_value = Response({'dinosaurs': 'are extinct'})
-        self.mock_request.method = 'GET'
-        self.mock_request.content_type = 'application/x-www-form-urlencoded'
-        self.mock_request.values = {'a': 'foo', 'b': '1'}
-        with self.assertRaises(HTTP400Exception) as context:
-            self.call_handle_http((10,), {'b': 2, 'x': 20, 'y': 30})
-        errors = context.exception.errobj
-        expected = {
-            '_other': ("Additional properties are not allowed ('dinosaurs' was "
-                       "unexpected)"),
-        }
-        self.assertEqual(expected, errors)
 
-    def test_handle_http_no_schemas(self):
-        result = handle_http(self.schema, self.mock_handler, (1, 2),
-                             {'a': 3, 'b': 4}, self.mock_logic, None, None,
-                             None, None)
-        self.assertEqual(result, ({'foo': 1}, 200))
-        self.assertEqual(self.mock_logic.call_args_list,
-                         [mock.call(1, 2, a=3, b=4)])
+def test_handle_http_object_array_types(mock_request, mock_post_logic):
+    """
+    This test verifies that we pass native types to the logic function rather
+    than the doctor types that annotate the parameters of the logic function.
+    This is done to prevent downstream issues from happening by passing say
+    an Integer instance instead of an int to pymysql.  pymysql doesn't know
+    about this type and tries to escape it like a string which causes an
+    AttributeError.
+    """
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.json = {'item': {'item_id': 1}, 'colors': ['blue', 'green']}
 
-    def test_handle_http_response(self):
-        """
-        Verifies we return the correct tuple from handle_http if the result
-        of the logic function is a `Response` instance.
-        """
-        result = handle_http(self.schema, self.mock_handler, (1, 2),
-                             {'a': 3, 'b': 4}, self.mock_flask_response_logic,
-                             None, None, None, None)
-        expected = ('1,2\n3,4', 202, self.response_headers)
-        self.assertEqual(expected, result)
+    mock_handler = mock.Mock()
+    actual = handle_http(mock_handler, (), {}, mock_post_logic)
+    assert actual == ({'item_id': 1}, 201)
 
-    def test_http_error(self):
-        """Schematic errors should be re-raised as a SchematicHTTPException."""
-        self.mock_request.content_type = 'application/x-www-form-urlencoded'
-        self.mock_request.values = {'b': 'bad integer'}
-        with self.assertRaisesRegexp(
-                SchematicHTTPException, r'b must be a valid type \(integer\)'):
-            self.call_handle_http()
+    expected_call = mock.call(item={'item_id': 1}, colors=['blue', 'green'])
+    assert expected_call == mock_post_logic.call_args
 
-    def test_handle_invalid_value_error(self):
-        self.mock_logic_exception(InvalidValueError('400'))
-        with self.assertRaisesRegexp(HTTP400Exception, r'400'):
-            self.call_handle_http()
+    # Verify we're passing native types and not doctor types to logic functions
+    kwargs = mock_post_logic.call_args[1]
+    assert type(kwargs['item']) is dict
+    assert type(kwargs['colors']) is list
 
-    def test_handle_immutable_error(self):
-        self.mock_logic_exception(ImmutableError('409'))
-        with self.assertRaisesRegexp(HTTP409Exception, r'409'):
-            self.call_handle_http()
 
-    def test_handle_parse_error(self):
-        self.mock_logic_exception(ParseError('400'))
-        with self.assertRaisesRegexp(HTTP400Exception, r'400'):
-            self.call_handle_http()
+def test_handle_http_non_json(mock_request, mock_get_logic):
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': '3'}
+    mock_handler = mock.Mock()
 
-    def test_handle_schema_validation_error(self):
-        self.mock_logic_exception(SchemaValidationError('400'))
-        with self.assertRaisesRegexp(HTTP400Exception, r'400'):
-            self.call_handle_http()
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
+    assert actual == ({'item_id': 1}, 200)
 
-    def test_handle_unauthorized_error(self):
-        self.mock_logic_exception(UnauthorizedError('401'))
-        with self.assertRaisesRegexp(HTTP401Exception, r'401'):
-            self.call_handle_http()
+    expected_call = mock.call(item_id=3)
+    assert expected_call == mock_get_logic.call_args
 
-    def test_handle_forbidden_error(self):
-        self.mock_logic_exception(ForbiddenError('403'))
-        with self.assertRaisesRegexp(HTTP403Exception, r'403'):
-            self.call_handle_http()
 
-    def test_handle_not_found_error(self):
-        self.mock_logic_exception(NotFoundError('404'))
-        with self.assertRaisesRegexp(HTTP404Exception, r'404'):
-            self.call_handle_http()
+def test_handle_http_unsupported_http_method_with_body(
+        mock_request, mock_get_logic):
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.values = {'item_id': '3'}
+    mock_handler = mock.Mock()
 
-    @mock.patch('doctor.flask.current_app')
-    def test_handle_unexpected_error(self, mock_current_app):
-        mock_current_app.config = {'DEBUG': False}
-        self.mock_logic_exception(TypeError('bad type'))
-        with self.assertRaisesRegexp(
-                HTTP500Exception, r'Uncaught error in logic function'):
-            self.call_handle_http()
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
+    assert actual == ({'item_id': 1}, 200)
 
-        # When DEBUG is True, it should reraise the original exception
-        mock_current_app.config = {'DEBUG': True}
-        with self.assertRaisesRegexp(TypeError, 'bad type'):
-            self.call_handle_http()
+    expected_call = mock.call(item_id=3)
+    assert expected_call == mock_get_logic.call_args
 
-    @mock.patch('doctor.flask.current_app')
-    def test_handle_unexpected_error_allowed_exceptions(self, mock_current_app):
-        mock_current_app.config = {'DEBUG': False}
 
-        class ExceptionalException(Exception):
-            pass
-        self.allowed_exceptions = [ExceptionalException]
+def test_handle_http_missing_required_arg(mock_request, mock_get_logic):
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {}
+    mock_handler = mock.Mock()
 
-        # allowed exceptions should be re-raised
-        self.mock_logic_exception(ExceptionalException('should be re-raised'))
-        with self.assertRaisesRegexp(
-                ExceptionalException, r'should be re-raised'):
-            self.call_handle_http()
+    with pytest.raises(HTTP400Exception, match='item_id is required'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
 
-        # but other exceptions should still be caught
-        self.mock_logic_exception(TypeError('bad type'))
-        with self.assertRaisesRegexp(
-                HTTP500Exception, r'Uncaught error in logic function'):
-            self.call_handle_http()
+
+def test_handle_http_missing_multiple_required_args(
+        mock_request, mock_post_logic):
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.json = {}
+
+    mock_handler = mock.Mock()
+    with pytest.raises(HTTP400Exception,
+                       match="\['item', 'colors'\] are required."):
+        handle_http(mock_handler, (), {}, mock_post_logic)
+
+
+def test_handle_http_multiple_invalid_args(mock_request, mock_post_logic):
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.json = {'item': 1, 'colors': 'blue'}
+
+    mock_handler = mock.Mock()
+    expected_msg = ("{'item': 'Must be an object.', "
+                    "'colors': 'Must be a list.'}")
+    with pytest.raises(HTTP400Exception, match=expected_msg):
+        handle_http(mock_handler, (), {}, mock_post_logic)
+
+
+def test_handle_http_decorator_adds_param_annotations(
+        mock_request, mock_get_logic):
+    """
+    This test verifies if a decorator uses doctor.utils.add_param_annotations
+    to add params to the logic function that we fail to validate if the added
+    params are missing or invalid.
+    """
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': '1'}
+    mock_handler = mock.Mock()
+    logic = check_auth(get_item)
+
+    expected_params = Params(all=['item_id', 'include_deleted', 'auth'],
+                             optional=['include_deleted'],
+                             required=['item_id', 'auth'],
+                             logic=['item_id', 'include_deleted'])
+    assert expected_params == logic._doctor_params
+    with pytest.raises(HTTP400Exception, match='auth is required'):
+        handle_http(mock_handler, (), {}, logic)
+
+    # Add auth and it should validate
+    mock_request.values = {'item_id': '1', 'auth': 'auth'}
+    actual = handle_http(mock_handler, (), {}, logic)
+    assert actual == ({'item_id': 1}, 200)
+
+
+def test_handle_http_invalid_param(mock_request, mock_get_logic):
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': 'string'}
+    mock_handler = mock.Mock()
+
+    expected_msg = 'item_id - value must be a valid type \(integer, null\)'
+    with pytest.raises(HTTP400Exception, match=expected_msg):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+
+@mock.patch('doctor.flask.current_app')
+def test_handle_http_allowed_exception(mock_app, mock_request, mock_get_logic):
+    mock_app.config = {'DEBUG': False}
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': '1'}
+    mock_handler = mock.Mock()
+    mock_get_logic.side_effect = ValueError('Allowed')
+    mock_get_logic._doctor_allowed_exceptions = [ValueError]
+
+    with pytest.raises(ValueError, match='Allowed'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+
+def test_handle_http_response_instance_return_value(
+        mock_request, mock_get_logic):
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.values = {'item_id': '3'}
+    mock_get_logic.return_value = Response({'item_id': 3}, {'X-Header': 'Foo'},
+                                           status_code=202)
+    mock_handler = mock.Mock()
+
+    actual = handle_http(mock_handler, (), {}, mock_get_logic)
+    assert actual == ({'item_id': 3}, 202, {'X-Header': 'Foo'})
+
+
+def test_should_raise_response_validation_errors():
+    assert should_raise_response_validation_errors() is False
+
+    os.environ['RAISE_RESPONSE_VALIDATION_ERRORS'] = '1'
+    assert should_raise_response_validation_errors() is True
+
+
+@mock.patch('doctor.flask.current_app')
+def test_handle_http_response_validation(
+        mock_app, mock_request, mock_get_logic):
+    mock_app.config = {'DEBUG': False}
+
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': '3'}
+    mock_handler = mock.Mock()
+    mock_get_logic.return_value = {'foo': 'bar'}
+
+    expected = ("{'item_id': 'This field is required.', "
+                "'foo': 'Additional properties are not allowed.'}")
+    with pytest.raises(HTTP400Exception, match=expected):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # Should also work with the response is an instance of Response
+    mock_get_logic.return_value = Response({'foo': 'bar'})
+    with pytest.raises(HTTP400Exception, match=expected):
+        handle_http(mock_handler, (), {}, mock_get_logic)

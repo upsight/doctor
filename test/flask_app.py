@@ -18,6 +18,7 @@ NoteId = types.integer('Note ID', example=1)
 Status = types.string('API status')
 NoteType = types.enum('The type of note', enum=['quick', 'detailed'],
                       example='quick')
+NoteTypes = types.array('An array of note types', items=NoteType)
 
 
 # You can also inherit from type classes to create more complex types.
@@ -42,6 +43,11 @@ Notes = types.array('Array of notes', items=Note, example=[Note.example])
 # -- mark-logic
 
 note = {'note_id': 1, 'body': 'Example body', 'done': True}
+
+
+def example_array_and_object(note_types: NoteTypes, a_note: Note):
+    """Example signature that contains an object and an array."""
+    return {}
 
 
 # Note the type annotations on this function definition. This tells Doctor how
@@ -103,6 +109,9 @@ routes = (
         delete(delete_note),
         get(get_note),
         put(update_note)), heading='Notes (v1)'
+    ),
+    Route('/example/list-obj/', methods=(
+        get(example_array_and_object),), heading='Z'
     ),
 )
 

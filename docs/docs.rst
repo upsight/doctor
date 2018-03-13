@@ -65,34 +65,63 @@ When you run Sphinx, it will render documentation like this:
 
 .. autoflask::
 
+Grouping Related API Endpoints Under A Heading
+----------------------------------------------
+
+You can specify a heading to group together related api routes when generating
+api documentation.  To do this, simply pass a value to the `heading` kwarg
+when defining your Route.
+
+.. code-block:: python
+
+    from doctor.routing import delete, get, put, post, Route
+
+    routes = (
+        Route('/', methods=(
+            get(status, title='Show API Version'),), heading='API Status'),
+        Route('/note/', methods=(
+            get(get_notes, title='Get Notes'),
+            post(create_note, title='Create Note'), heading='Notes')
+        ),
+        Route('/note/<int:note_id>/', methods=(
+            delete(delete_note, title='Delete Note'),
+            get(get_note, title='Get Note'),
+            put(update_note, title='Update Note'), heading='Notes')
+        ),
+    )
+
 Customizing API Endpoint Headings
 ---------------------------------
 
 You can specify a short title when creating the routes which will show up as a
-sub link below the group heading.  To do this, pass a value to the key `title`
-when defining your routes.  If a title is not provided, one will be generated
-based on the http method. The automatic title will be one of `Retrieve`,
-`Delete`, `Create`, or `Update`.
+sub link below the group heading.  To do this, pass a value to `title` kwarg
+when defining your http methods for a route.  If a title is not provided, one 
+will be generated based on the http method. The automatic title will be one of 
+`Retrieve`, `Delete`, `Create`, or `Update`.
 
 .. code-block:: python
 
-    routes.extend(router.create_routes('Notes (v1)', 'notes.yaml', {
-        '/note/': {
-            'get': {
-                'logic': get_notes,
-                'response': 'notes',
-                'title': 'Retrieve All Notes',
-            },
-            'post': {
-                'logic': create_note,
-                'response': 'note',
-            },
-        },
-    }))
+    from doctor.routing import delete, get, put, post, Route
+
+    routes = (
+        Route('/', methods=(
+            get(status, title='Show API Version'),)),
+        Route('/note/', methods=(
+            get(get_notes, title='Get Notes'),
+            post(create_note, title='Create Note'))
+        ),
+        Route('/note/<int:note_id>/', methods=(
+            delete(delete_note, title='Delete Note'),
+            get(get_note, title='Get Note'),
+            put(update_note, title='Update Note'))
+        ),
+    )
 
 Overriding Example Values For Specific Endpoints
 ------------------------------------------------
 
+By default doctor will use the example value you specified on your custom type
+or if one wasn't given, the default example for the subclass of your type.
 Sometimes you need to set a very specific value for a parameter in a request
 when generating documentation.  doctor supports this behavior by
 using :func:`~doctor.docs.base.BaseHarness.define_example_values`.

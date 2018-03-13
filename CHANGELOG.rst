@@ -4,6 +4,70 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0-beta.7 (2018-03-12)
+--------------------------
+
+- Updates parsing of query/form params to parse null values properly.
+- Makes a copy of the logic function to preserve doctor attributes if
+  the logic function is shared between routes.
+
+v3.0.0-beta.6 (2018-03-08)
+--------------------------
+
+- Updated handle_http to parse query and form parameters from strings to
+  their expected type before we do validation on them.
+- Fixed issue where if multiple decorators were used on a logic function
+  and each one added param annotations the outer most decorator would
+  erase any param annotations added from the previous decorator.
+- Added a nullable attribute to all types to signify that None is a valid value
+  for the type, in addition to it's native type.
+
+
+v3.0.0-beta.5 (2018-03-05)
+--------------------------
+
+- Fixed doctor attempting to document non doctor type params (#70)
+- String with format of date now returns datetime.date (#69)
+- Fixed swallowing of TypeError from SuperType class in Object init (#68)
+- Changed the flask code to only raise response validation errors if an
+  environment variable is set. Before it also raised them when DEBUG
+  was True in the config. In practice this was incredibly annoying and
+  slowed down development. Especially in the case where a datetime
+  string was returned that didn't include timezone information. Updated
+  the docs to reflect this too.
+- Fixed issue that could create duplicate handler names which would
+  cause an exception in flask restful (#67 )
+- Made the `JsonSchema` doctor type work in validating/coercing params
+  in the api and for generating api documentation.
+
+v3.0.0-beta.4 (2018-03-02)
+--------------------------
+
+- Made validation errors better when raising http 400 exceptions.  They now
+  will display all missing required fields and all validation errors along with
+  have the param in the error message.
+- Fixed issue with doctor types being passed to logic functions.  Instead the
+  native types are now passed to prevent downstream issues from other code
+  encountering unexpected/unknown types.
+
+v3.0.0-beta.3 (2018-02-28)
+--------------------------
+
+- Added default example values for all doctor types.
+- Documentation updates
+- Updated doctor code to work agnostic of the framework so eventually
+  other backends than flask could be used.
+
+V3.0.0-beta (2018-02-27)
+------------------------
+
+- First beta release of 3.0. This is a backwards incompatible change.  It drops
+  support for python 2 and defining request parameters through the usage of json 
+  schemas. It's still possible to use the json schemas from previous versions
+  of doctor to generate new doctor types using doctor.types.json_schema_type.
+  See the documentation for more information.
+
+
 v1.4.0 (2018-03-13)
 -------------------
 
@@ -13,7 +77,7 @@ v1.3.5 (2018-01-23)
 -------------------
 
 - Fixed a few deprecation warnings about inspect.getargspec when running
-  doctor using python 3.  It will now use inspect.getfullargspec.  This 
+  doctor using python 3.  It will now use inspect.getfullargspec.  This
   also fixes the issue of not being able to use type hints on logic functions
   in python 3.
 

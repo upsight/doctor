@@ -1,9 +1,9 @@
 Doctor
 ======
 
-This module assists in using JSON schemas to validate data in our Python APIs.
-It provides helpers for parsing and validating requests and responses in both
-Flask apps, and also supports generic schema validation for plain
+This module uses python types to validate request and response data in
+Flask Python APIs and generate API documentation.  It uses `python 3 type hints <https://docs.python.org/3/library/typing.html>`_
+to validate request parameters. It also supports generic schema validation for plain
 dictionaries.
 
 
@@ -18,9 +18,11 @@ Usage
    schemas
    resource_schemas
    response
-   router
+   routing
    parsing
    errors
+   types
+   utils
 
 .. include:: ../CHANGELOG.rst
 

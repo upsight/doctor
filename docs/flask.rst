@@ -13,7 +13,7 @@ run:
 
 The application will be running on http://127.0.0.1:5000.
 
-.. include:: _schema.rst
+.. include:: _doctor_types.rst
 
 .. include:: _logic_functions.rst
 
@@ -23,11 +23,13 @@ The application will be running on http://127.0.0.1:5000.
 
 .. include:: _routes.rst
 
-Finally, we specify the routes and create the application. The first step is
-initializing the :class:`~doctor.flask.FlaskRouter` class.
-We must pass the absolute path to the directory where all of our schema
-files reside.
+.. literalinclude:: examples/flask/app.py
+    :start-after: mark-routes
+    :end-before: # --
 
+We then create our Flask app and add our created resources to it.  These
+resources are created by calling :func:`~doctor.routing.create_routes` with
+our routes we defined above.
 
 .. literalinclude:: examples/flask/app.py
     :start-after: mark-app
@@ -55,6 +57,46 @@ The :class:`~doctor.response.Response` class takes the response data as the
 first parameter and a dict of HTTP response headers as the second parameter.
 The response headers can contain standard and any custom values.
 
+Response Validation
+-------------------
+
+doctor can also validate your responses.
+
+Enabling
+########
+
+By default doctor will only raise exceptions for invalid response when there is a
+truthy value for the environment variable `RAISE_RESPONSE_VALIDATION_ERRORS`.
+This will cause a HTTP 400 error which wil give details on why the response is
+not valid.  If either of those conditions are not true only a warning will be
+logged.
+
+Usage
+#####
+
+To tell doctor to validate a response you must define a return annotation on
+your logic function.  Simply use doctor types to define a valid response and
+annotate it on your logic function.
+
+.. code-block:: python
+
+    from doctor import types
+
+    Color = types.enum('A color', enum=['blue', 'green'])
+    Colors = types.array('Array of colors', items=Color)
+
+    def get_colors() -> Colors:
+        # ... logic to fetch colors
+        return colors
+
+The return value of `get_colors` will be validated against the type that we
+created. If we have enabled raising response validation errors  and our
+response does not validate, we will get a 400 response.  If the above example
+returned an array with an integer like `[1]` our response would look like:
+
+```
+Response to GET /colors `[1]` does not validate: {0: 'Must be a valid choice.'}
+```
 
 Example API Documentation
 -------------------------

@@ -6,9 +6,8 @@ their appropriate JSON schema types.
 import logging
 
 import simplejson as json
-import six
 
-from doctor.errors import ParseError
+from doctor.errors import ParseError, TypeSystemError
 
 
 _bracket_strings = ('[', ord('['))
@@ -69,8 +68,7 @@ def _parse_string(value):
     :param str value: Value to parse.
     :returns: str
     """
-    if (not isinstance(value, six.string_types) and
-            isinstance(value, six.binary_type)):
+    if not isinstance(value, str):
         return value.decode('utf-8')
     return value
 
@@ -113,15 +111,15 @@ def parse_value(value, allowed_types, name='value'):
     :returns: a tuple of a type string and coerced value
     :raises: ParseError if the value cannot be coerced to any of the types
     """
-    if not isinstance(value, six.string_types):
+    if not isinstance(value, str):
         raise ValueError('value for %r must be a string' % name)
-    if isinstance(allowed_types, six.string_types):
+    if isinstance(allowed_types, str):
         allowed_types = [allowed_types]
 
     # Note that the order of these type considerations is important. Because we
-    # an untyped value that may be one of any given number of types, we need
-    # a consistent order of evaluation cases when there is ambiguity between
-    # types.
+    # have an untyped value that may be one of any given number of types, we
+    # need a consistent order of evaluation in cases when there is ambiguity
+    # between types.
 
     if 'null' in allowed_types and value == '':
         return 'null', None
@@ -159,3 +157,46 @@ def parse_json(value):
         message = 'Error parsing JSON: %s' % e
         logging.debug(message, exc_info=e)
         raise ParseError(message)
+
+
+_native_type_to_json = {
+    list: 'array',
+    bool: 'boolean',
+    int: 'integer',
+    dict: 'object',
+    float: 'number',
+    str: 'string'
+}
+
+
+def parse_form_and_query_params(req_params, sig_params):
+    """Uses the parameter annotations to coerce string params.
+
+    This is used for HTTP requests, in which the form parameters are all
+    strings, but need to be converted to the appropriate types before
+    validating them.
+
+    :param dict req_params: The parameters specified in the request.
+    :param dict sig_params: The logic function's signature parameters.
+    :returns: a dict of params parsed from the input dict.
+    :raises TypeSystemError: If there are errors parsing values.
+    """
+    errors = {}
+    parsed_params = {}
+    for param, value in req_params.items():
+        if param not in sig_params:
+            continue
+        native_type = sig_params[param].annotation.native_type
+        json_type = [_native_type_to_json[native_type]]
+        # If the type is nullable, also add null as an allowed type.
+        if sig_params[param].annotation.nullable:
+            json_type.append('null')
+        try:
+            _, parsed_params[param] = parse_value(value, json_type)
+        except ParseError as e:
+            errors[param] = str(e)
+
+    if errors:
+        raise TypeSystemError(errors, errors=errors)
+
+    return parsed_params

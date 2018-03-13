@@ -2,11 +2,12 @@ doctor
 ======
 |docs| |build| |pypi|
 
-This module allows you to use JSON schemas to validate data in Flask Python APIs 
-and auto generate documentation.  An example of the generated API documentation can 
+This module uses python types to validate request and response data in
+Flask Python APIs.  It uses `python 3 type hints <https://docs.python.org/3/library/typing.html>`_
+to validate request paramters and generate API documentation. It also supports
+generic schema validation for plain dictionaries. An example of the generated
+API documentation can
 be `found in the docs <http://doctor.readthedocs.io/en/latest/flask.html#example-api-documentation>`_.
-It also provides helpers for parsing and validating requests and responses in 
-Flask apps, and supports generic schema validation for plain dictionaries.
 
 Install
 -------
@@ -18,57 +19,71 @@ doctor can easily be installed using pip:
 Quick Start
 -----------
 
-Create a json schema with a few definitions to describe our request parameters.
+Define some types that will be used to validate your request parameters.
 
-.. code-block:: yaml
+.. code-block:: python
 
-    ---
-    $schema: 'http://json-schema.org/draft-04/schema#'
-    definitions:
-      foo_id:
-        description: The ID of the foo.
-        type: integer
-        example: 1
-      fetch_bars:
-        description: Fetches bars associated with a Foo.
-        type: boolean
-        example: true
-        
+    # mytypes.py
+    from doctor import types
+
+    # doctor provides helper functions to easily define simple types.
+    FooId = types.integer('The foo ID.')
+    FetchBars = types.boolean('A flag that indicates if we should fetch bars')
+
+    # You can also inherit from type classes to create more complex types.
+    class Foo(types.Object):
+        description = 'A Foo object'
+        example = {'foo_id': 1}
+        properties = {'foo_id': FooId}
+        required = ['foo_id']
+        additional_properties = False
+
 Define the logic function that our endpoint will route to:
 
 .. code-block:: python
 
-    def get_foo(foo_id, fetch_bars=False):
+    # foo.py
+    from mytypes import Foo, FooId, FetchBars
+
+    # Note the type annotations on this function definition. This tells Doctor how
+    # to parse and validate parameters for routes attached to this logic function.
+    # The return type annotation will validate the response conforms to an
+    # expected definition in development environments.  In non-development
+    # environments a warning will be logged.
+    def get_foo(foo_id: FooId, fetch_bars: FetchBars=False) -> Foo:
         """Fetches the Foo object and optionally related bars."""
         return Foo.get_by_id(foo_id, fetch_bars=fetch_bars)
         
-Now tie the endpoint to the logic function with a router.
+Now tie the endpoint to the logic function with a route:
 
 .. code-block:: python
 
     from flask import Flask
     from flask_restful import Api
-    from doctor.flask import FlaskRouter
-    
-    all_routes = []
-    router = FlaskRouter('/path/to/schema/dir')
-    all_routes.extend(router.create_routes('Foo (v1)', 'foo.yaml', {
-        '/foo/<int:foo_id>/': {
-            'get': {
-                'logic': get_foo,
-            },
-        },
-    }))
+    from doctor.routing import create_routes, get, Route
+
+    from foo import get_foo
+   
+    routes = (
+        Route('/foo/<int:foo_id>/', methods=(
+            get(get_foo),)
+        ),
+    )
     
     app = Flask(__name__)
     api = Api(app)
-    for route, resource in routes:
+    for route, resource in create_routes(routes):
         api.add_resource(resource, route)
     
 That's it, you now have a functioning API endpoint you can curl and the request is automatically validated for you based on your
 schema.  Positional arguments in your logic function are considered required request parameters and keyword arguments are considered
 optional.  As a bonus, using the `autoflask <http://doctor.readthedocs.io/en/latest/docs.html>`_ sphinx directive, you will also get
 automatically generated API documentation.
+
+.. image:: example_api_docs.png
+    :alt: Generated API documentation
+    :align: left
+    :target: http://doctor.readthedocs.io/en/latest/docs.html
    
 Documentation
 -------------
@@ -79,7 +94,7 @@ Running Tests
 -------------
 
 Tests can be run with tox_. It will handle installing dependencies into a
-virtualenv, running nosetests, and rebuilding documentation.
+virtualenv, running tests, and rebuilding documentation.
 
 Then run Tox:
 
@@ -89,7 +104,7 @@ Then run Tox:
     tox
 
 
-You can pass arguments to nosetests directly:
+You can pass arguments to pytest directly:
 
 .. code-block:: bash
 

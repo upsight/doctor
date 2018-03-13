@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.0 (2018-03-13)
+-------------------
+
+- First public release of v3.0.0
+
 v3.0.0-beta.7 (2018-03-12)
 --------------------------
 

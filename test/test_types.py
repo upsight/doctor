@@ -277,7 +277,7 @@ class TestEnum(object):
         E('foo')
         E('bar')
         # not in choices
-        expected_msg = "Must be a valid choice. \['foo', 'bar'\]"
+        expected_msg = "Must be one of: \['foo', 'bar'\]"
         with pytest.raises(TypeSystemError, match=expected_msg):
             E('dog')
 

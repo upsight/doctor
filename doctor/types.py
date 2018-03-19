@@ -290,7 +290,7 @@ class Enum(SuperType, str):
     """
     native_type = str
     errors = {
-        'invalid': 'Must be a valid choice.',
+        'invalid': 'Must be a valid choice. {enum}',
     }
     #: A list of valid values.
     enum = []  # type: typing.List[str]

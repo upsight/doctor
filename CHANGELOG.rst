@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.0.1 (2018-03-19)
+-------------------
+
+- Fixed the enum type to include possible choices in error message.
+
 v3.0.0 (2018-03-13)
 -------------------
 

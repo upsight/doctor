@@ -4,6 +4,12 @@ Release History
 Next release (in development)
 -----------------------------
 
+- Renamed base error class to DoctorError and made TypeSystemError also
+  inherit from DoctorError. DoctorError is still aliased as SchematicError
+  for backwards compatibility.
+- Added errors property to base DoctorError, so all Doctor errors can include
+  additional details in a standard way.
+
 v3.0.1 (2018-03-19)
 -------------------
 
@@ -72,7 +78,7 @@ V3.0.0-beta (2018-02-27)
 ------------------------
 
 - First beta release of 3.0. This is a backwards incompatible change.  It drops
-  support for python 2 and defining request parameters through the usage of json 
+  support for python 2 and defining request parameters through the usage of json
   schemas. It's still possible to use the json schemas from previous versions
   of doctor to generate new doctor types using doctor.types.json_schema_type.
   See the documentation for more information.

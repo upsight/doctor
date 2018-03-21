@@ -6,7 +6,7 @@ import yaml
 from jsonschema.compat import urldefrag
 
 from .errors import (
-    SchemaError, SchemaLoadingError, SchematicError, SchemaValidationError)
+    DoctorError, SchemaError, SchemaLoadingError, SchemaValidationError)
 from .parsers import parse_json
 
 
@@ -181,7 +181,7 @@ class Schema(object):
             validator.validate(value)
         except Exception as e:
             logging.debug(e, exc_info=e)
-            if isinstance(e, SchematicError):
+            if isinstance(e, DoctorError):
                 raise
             else:
                 # Gather all the validation errors

@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.1.0 (2018-03-21)
+-------------------
+
 - Renamed base error class to DoctorError and made TypeSystemError also
   inherit from DoctorError. DoctorError is still aliased as SchematicError
   for backwards compatibility.

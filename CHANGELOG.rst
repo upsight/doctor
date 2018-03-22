@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.2.0 (2018-03-22)
+-------------------
+
 - Added ability to validate/document content of Response instances.
 
 v3.1.0 (2018-03-21)

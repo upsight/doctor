@@ -24,6 +24,7 @@ except ImportError:  # pragma: no cover
 from doctor.docs.httpdomain import setup as setup_httpdomain
 from doctor.errors import SchemaError
 from doctor.resource import ResourceAnnotation
+from doctor.response import Response
 from doctor.types import Array, Enum, Object
 from doctor.utils import get_description_lines
 
@@ -227,6 +228,12 @@ def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
     url_params = URL_PARAMS_RE.findall(route)
     if not request:
         return_type = annotation.logic._doctor_signature.return_annotation
+        # Check if our return annotation is a Response that supplied a
+        # type we can use to document.  If so, use that type for api docs.
+        # e.g. def logic() -> Response[MyType]
+        if issubclass(return_type, Response):
+            if return_type.__args__ is not None:
+                return_type = return_type.__args__[0]
         if issubclass(return_type, Array):
             if issubclass(return_type.items, Object):
                 properties = return_type.items.properties

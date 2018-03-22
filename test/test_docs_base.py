@@ -5,6 +5,7 @@ from werkzeug.routing import Rule
 
 from doctor.docs import base
 from doctor.resource import ResourceAnnotation
+from doctor.response import Response
 
 from .base import TestCase
 from .types import (
@@ -138,6 +139,24 @@ class TestDocsBase(TestCase):
         result = base.get_json_lines(
             annotation, field='<json', route='/foo')
         self.assertEqual(result, [':<jsonarr str str: auth token'])
+
+    def test_get_json_lines_response_response(self):
+        """
+        Verifies when our response is a doctor.response.Response instance
+        and it has a type associated with it that we use that type to
+        document it.
+        """
+        def mock_logic() -> Response[ExampleObject]:
+            pass
+
+        mock_logic = add_doctor_attrs(mock_logic)
+        annotation = ResourceAnnotation(mock_logic, 'GET')
+        result = base.get_json_lines(
+            annotation, field='>json', route='/foo', request=False)
+        expected = [
+            ':>json str str: auth token'
+        ]
+        assert expected == result
 
     def test_get_name(self):
         mock_class = mock.Mock()

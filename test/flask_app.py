@@ -6,6 +6,7 @@ from flask import Flask
 from flask_restful import Api
 from doctor.errors import NotFoundError
 from doctor.flask import create_routes
+from doctor.response import Response
 from doctor.routing import Route, get, post, put, delete
 # -- mark-types
 from doctor import types
@@ -67,11 +68,13 @@ def get_notes() -> Notes:
     return [note]
 
 
-def create_note(body: Body, done: Done=False) -> Note:
+def create_note(body: Body, done: Done=False) -> Response[Note]:
     """Create a new note."""
-    return {'note_id': 2,
-            'body': body,
-            'done': done}
+    return Response({
+        'note_id': 2,
+        'body': body,
+        'done': done,
+    }, headers={'X-Foo': 'Bar'})
 
 
 def update_note(note_id: NoteId, body: Body=None, done: Done=None) -> Note:

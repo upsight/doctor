@@ -158,11 +158,18 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
 
         # response validation
         if sig.return_annotation != sig.empty:
+            return_annotation = sig.return_annotation
             _response = response
             if isinstance(response, Response):
                 _response = response.content
+                # Check if our return annotation is a Response that supplied a
+                # type to validate against.  If so, use that type for validation
+                # e.g. def logic() -> Response[MyType]
+                if (issubclass(return_annotation, Response) and
+                        return_annotation.__args__ is not None):
+                    return_annotation = return_annotation.__args__[0]
             try:
-                sig.return_annotation(_response)
+                return_annotation(_response)
             except TypeSystemError as e:
                 response_str = str(_response)
                 logging.warning('Response to %s %s does not validate: %s.',

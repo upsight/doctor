@@ -5,13 +5,19 @@ from functools import wraps
 import mock
 import pytest
 
+from doctor.errors import (
+    ForbiddenError, ImmutableError, InvalidValueError, NotFoundError,
+    UnauthorizedError)
 from doctor.flask import (
-    handle_http, HTTP400Exception, should_raise_response_validation_errors)
+    handle_http, HTTP400Exception, HTTP401Exception, HTTP403Exception,
+    HTTP404Exception, HTTP409Exception, HTTP500Exception,
+    should_raise_response_validation_errors)
 from doctor.response import Response
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
 from .types import Auth, Colors, Item, ItemId, IncludeDeleted
+from .utils import add_doctor_attrs
 
 
 def check_auth(func):
@@ -262,4 +268,85 @@ def test_handle_http_response_validation(
     # Should also work with the response is an instance of Response
     mock_get_logic.return_value = Response({'foo': 'bar'})
     with pytest.raises(HTTP400Exception, match=expected):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+
+@mock.patch('doctor.flask.should_raise_response_validation_errors')
+@mock.patch('doctor.flask.current_app')
+def test_handle_http_response_type_validation(
+        mock_app, mock_should, mock_request):
+    """
+    This tests that if we provide a type to our response that it validates
+    the content of the response against that type.
+    """
+    def get_logic() -> Response[Item]:
+        return Response({'foo': 'bar'})
+
+    get_logic = add_doctor_attrs(get_logic)
+    mock_should.return_value = True
+    mock_app.config = {'DEBUG': False}
+
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': '3'}
+    mock_handler = mock.Mock()
+
+    expected = ("{'item_id': 'This field is required.', "
+                "'foo': 'Additional properties are not allowed.'}")
+    with pytest.raises(HTTP400Exception, match=expected):
+        handle_http(mock_handler, (), {}, get_logic)
+
+    # Change the return value and validate it passes response validation.
+    def get_logic() -> Response[Item]:
+        return Response({'item_id': 1})
+
+    get_logic = add_doctor_attrs(get_logic)
+    actual = handle_http(mock_handler, (), {}, get_logic)
+    assert ({'item_id': 1}, 200, None) == actual
+
+
+@mock.patch('doctor.flask.should_raise_response_validation_errors')
+@mock.patch('doctor.flask.current_app')
+def test_handle_http_http_errors(
+        mock_app, mock_should, mock_request, mock_get_logic):
+    mock_app.config = {'DEBUG': False}
+
+    mock_request.method = 'GET'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'item_id': '3'}
+    mock_handler = mock.Mock()
+
+    # 400
+    mock_get_logic.side_effect = InvalidValueError('invalid')
+    with pytest.raises(HTTP400Exception, match='invalid'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # 401
+    mock_get_logic.side_effect = UnauthorizedError('unauth')
+    with pytest.raises(HTTP401Exception, match='unauth'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # 403
+    mock_get_logic.side_effect = ForbiddenError('forbidden')
+    with pytest.raises(HTTP403Exception, match='forbidden'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # 404
+    mock_get_logic.side_effect = NotFoundError('not found')
+    with pytest.raises(HTTP404Exception, match='not found'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # 409
+    mock_get_logic.side_effect = ImmutableError('immutable')
+    with pytest.raises(HTTP409Exception, match='immutable'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # 500
+    mock_get_logic.side_effect = Exception('internal error')
+    with pytest.raises(HTTP500Exception, match='Uncaught error in logic func'):
+        handle_http(mock_handler, (), {}, mock_get_logic)
+
+    # 500 in debug mode
+    mock_app.config = {'DEBUG': True}
+    with pytest.raises(Exception, match='internal error'):
         handle_http(mock_handler, (), {}, mock_get_logic)

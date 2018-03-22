@@ -1,4 +1,11 @@
-class Response(object):
+from typing import Generic, TypeVar
+
+
+#: A type variable to represent the type of content of a `Response`.
+CT = TypeVar('CT')
+
+
+class Response(Generic[CT]):
     """Represents a response.
 
     This object contains the response itself along with any additional headers
@@ -11,7 +18,8 @@ class Response(object):
     :param int status_code: The status code for the response.
     """
 
-    def __init__(self, content, headers=None, status_code=None):
+    def __init__(self, content: CT, headers: dict = None,
+                 status_code: int = None):
         self.content = content
         self.headers = headers
         self.status_code = status_code

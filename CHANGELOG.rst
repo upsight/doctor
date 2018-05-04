@@ -4,6 +4,12 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.3.0 (2018-05-04)
+-------------------
+
+- Updated API documentation to also include a link to the logic function
+  associated with the endpoint being documented.
+
 v3.2.0 (2018-03-22)
 -------------------
 

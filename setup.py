@@ -7,12 +7,19 @@ version_filename = os.path.abspath(os.path.join(
 with open(version_filename, 'r') as vf:
     exec(compile(vf.read(), version_filename, 'exec'), globals(), locals())
 
+readme_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), 'README.rst'))
+with open(readme_path, 'r') as fp:
+    long_description = fp.read()
+
 setup(
     name='doctor',
     version=__version__,  # noqa -- flake8 should ignore this line
     description=('This module uses python 3 type hints to validate request and '
                  'response data in Flask Python APIs and generate API '
                  'documentation.'),
+    long_description=long_description,
+    long_description_content_type='text/x-rst',
     url='https://github.com/upsight/doctor',
     license='MIT',
     classifiers=[

@@ -392,6 +392,11 @@ class BaseDirective(Directive):
                     yield '#' * len(annotation.title)
                 docstring = get_description_lines(getattr(annotation.logic,
                                                           '__doc__', None))
+
+                # Documents the logic function associated with the annotation.
+                docstring.append(':Logic Func: :func:`~{}.{}`'.format(
+                    annotation.logic.__module__, annotation.logic.__name__))
+
                 field = '<json'
                 if annotation.http_method in ('DELETE', 'GET'):
                     field = 'query'

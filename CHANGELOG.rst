@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.4.0 (2018-05-04)
+-------------------
+
+* Added long description to setup.py for pypi rendering.
+
 v3.3.0 (2018-05-04)
 -------------------
 

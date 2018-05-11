@@ -3,7 +3,9 @@ This is a collection of functions used to convert untyped param strings into
 their appropriate JSON schema types.
 """
 
+import inspect
 import logging
+from typing import List
 
 import simplejson as json
 
@@ -142,21 +144,26 @@ def parse_value(value, allowed_types, name='value'):
                      (name, ', '.join(allowed_types)))
 
 
-def parse_json(value):
+def parse_json(value: str, sig_params: List[inspect.Parameter] = None) -> dict:
     """Parse a value as JSON.
 
     This is just a wrapper around json.loads which re-raises any errors as a
     ParseError instead.
 
     :param str value: JSON string.
+    :param dict sig_params: The logic function's signature parameters.
     :returns: the parsed JSON value
     """
     try:
-        return json.loads(value)
+        loaded = json.loads(value)
     except Exception as e:
         message = 'Error parsing JSON: %s' % e
         logging.debug(message, exc_info=e)
         raise ParseError(message)
+
+    if sig_params is not None:
+        return map_param_names(loaded, sig_params)
+    return loaded
 
 
 _native_type_to_json = {
@@ -167,6 +174,39 @@ _native_type_to_json = {
     float: 'number',
     str: 'string'
 }
+
+
+def map_param_names(
+        req_params: dict, sig_params: List[inspect.Parameter]) -> dict:
+    """Maps request param names to match logic function param names.
+
+    If a doctor type defined a `param_name` attribute for the name of the
+    parameter in the request, we should use that as the key when looking up
+    the value for the request parameter.
+
+    When we declare a type we can specify what the parameter name
+    should be in the request that the annotated type should get mapped to.
+
+    >>> from doctor.types import number
+    >>> Latitude = number('The latitude', param_name='location.lat')
+    >>> def my_logic(lat: Latitude): pass
+    >>> request_params = {'location.lat': 45.2342343}
+
+    In the above example doctor knows to pass the value at key `location.lat`
+    to the logic function variable named `lat` since it's annotated by the
+    `Latitude` type which specifies what the param_name is on the request.
+
+    :param dict req_params: The parameters specified in the request.
+    :param dict sig_params: The logic function's signature parameters.
+    :returns: A dict of re-mapped params.
+    """
+    new_request_params = {}
+    for k, param in sig_params.items():
+        param_name = getattr(param.annotation, 'param_name', None)
+        key = k if param_name is None else param_name
+        if key in req_params:
+            new_request_params[k] = req_params[key]
+    return new_request_params
 
 
 def parse_form_and_query_params(req_params, sig_params):

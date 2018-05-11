@@ -1,7 +1,8 @@
 """
 This module contains custom types used by tests.
 """
-from doctor.types import array, boolean, enum, integer, new_type, string, Object
+from doctor.types import (
+    array, boolean, enum, integer, new_type, number, string, Object)
 
 
 Age = integer('age', minimum=1, maximum=120, example=34)
@@ -26,4 +27,10 @@ IncludeDeleted = boolean('indicates if deleted items should be included.',
                          example=False)
 IsDeleted = boolean('Indicates if the item should be marked as deleted',
                     example=False)
+Latitude = number('The latitude.', example=44.322804,
+                  param_name='location.lat', nullable=True)
+Longitude = number('the longitude.', example=-122.34232,
+                   param_name='locationLon', nullable=True)
 Name = string('name', min_length=1, example='John')
+OptIn = boolean('If the user has opted in to gps tracking.',
+                param_name='opt-in')

@@ -5,10 +5,11 @@ import inspect
 import pytest
 
 from doctor.errors import ParseError, TypeSystemError
-from doctor.parsers import parse_form_and_query_params, parse_json, parse_value
+from doctor.parsers import (
+    map_param_names, parse_form_and_query_params, parse_json, parse_value)
 
 from .base import TestCase
-from .types import Age, Color, IsDeleted
+from .types import Age, Auth, Color, IsDeleted, Latitude, Longitude, OptIn
 
 
 def logic(age: Age, color: Color, is_deleted: IsDeleted=False):
@@ -110,3 +111,24 @@ class TestParsers(TestCase):
             'age': 'value must be a valid type (integer)',
             'is_deleted': 'value must be a valid type (boolean)',
         } == exc.value.errors
+
+    def test_map_param_names(seilf):
+        def foo(lat: Latitude, lon: Longitude, opt_in: OptIn, auth: Auth):
+            pass
+
+        sig = inspect.signature(foo)
+        request_params = {
+            'auth': 'auth',
+            'location.lat': 45.12345,
+            'locationLon': -122.12345,
+            'opt-in': True,
+        }
+        actual = map_param_names(request_params, sig.parameters)
+
+        expected = {
+            'auth': 'auth',
+            'lat': 45.12345,
+            'lon': -122.12345,
+            'opt_in': True,
+        }
+        assert expected == actual

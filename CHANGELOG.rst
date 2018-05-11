@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.5.0 (2018-05-11)
+-------------------
+
+* Added ability to specify which request parameter a type should map to it's
+  annotated logic function variable.  See `param_name` in the types 
+  documentation for more information.
+
 v3.4.0 (2018-05-04)
 -------------------
 

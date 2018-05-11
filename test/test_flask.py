@@ -16,7 +16,7 @@ from doctor.response import Response
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
-from .types import Auth, Colors, Item, ItemId, IncludeDeleted
+from .types import Auth, Colors, Item, ItemId, IncludeDeleted, Latitude
 from .utils import add_doctor_attrs
 
 
@@ -31,11 +31,12 @@ def check_auth(func):
     return _wrapper
 
 
-def get_item(item_id: ItemId, include_deleted: IncludeDeleted=False) -> Item:
+def get_item(item_id: ItemId, include_deleted: IncludeDeleted = False) -> Item:
     return {'item_id': 1}
 
 
-def create_item(item: Item, colors: Colors, optional_id: ItemId=None) -> Item:
+def create_item(item: Item, colors: Colors, optional_id: ItemId = None,
+                lat: Latitude = None) -> Item:
     return {'item_id': 1}
 
 
@@ -74,6 +75,7 @@ def test_handle_http_with_json(mock_request, mock_post_logic):
         },
         'colors': ['blue'],
         'optional_id': None,
+        'location.lat': 45.2342343,
     }
     mock_handler = mock.Mock()
 

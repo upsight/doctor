@@ -65,6 +65,10 @@ class SuperType(object):
     #: Indicates if the value of this type is allowed to be None.
     nullable = False  # type: bool
 
+    #: An optional name of where to find the request parameter if it does not
+    #: match the variable name in your logic function.
+    param_name = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.description is None:

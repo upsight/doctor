@@ -18,7 +18,7 @@ except ImportError:  # pragma: no cover
 from .constants import HTTP_METHODS_WITH_JSON_BODY
 from .errors import (ForbiddenError, ImmutableError, InvalidValueError,
                      NotFoundError, TypeSystemError, UnauthorizedError)
-from .parsers import parse_form_and_query_params
+from .parsers import map_param_names, parse_form_and_query_params
 from .response import Response
 from .routing import create_routes as doctor_create_routes
 from .routing import Route
@@ -113,7 +113,8 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                 request.method in HTTP_METHODS_WITH_JSON_BODY):
             # This is a proper typed JSON request. The parameters will be
             # encoded into the request body as a JSON blob.
-            request_params = request.json
+            request_params = map_param_names(
+                request.json, logic._doctor_signature.parameters)
         else:
             # Try to parse things from normal HTTP parameters
             request_params = parse_form_and_query_params(

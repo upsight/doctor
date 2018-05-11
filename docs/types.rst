@@ -41,6 +41,10 @@ Attributes
 * :attr:`~doctor.types.String.min_length` - The minimum length of the string.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 * :attr:`~doctor.types.String.pattern` - A regex pattern the string should
   match anywhere whitin it.  Uses `re.search`.
 * :attr:`~doctor.types.String.trim_whitespace` - If `True` the string will be
@@ -85,6 +89,10 @@ Attributes
   a multiple of this value.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 
 Example
 #######
@@ -126,6 +134,10 @@ Attributes
   a multiple of this value.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 
 Example
 #######
@@ -165,6 +177,10 @@ Attributes
   example value will be generated for you.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 
 Example
 #######
@@ -193,6 +209,10 @@ Attributes
   example value will be generated for you.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 
 Example
 #######
@@ -225,6 +245,10 @@ Attributes
   example value will be generated for you.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
 * :attr:`~doctor.types.Object.required` - A list of required properties.
@@ -271,6 +295,10 @@ Attributes
   in the list.
 * :attr:`~doctor.types.SuperType.nullable` - Indicates if the value of this type
   is allowed to be None.
+* :attr:`~doctor.types.SuperType.param_name` - The name of the request parameter
+  that should map to your logic function annotated parameter.  If not specified
+  it expects the request parameter will be named the same as the logic function
+  parameter name.
 * :attr:`~doctor.types.Array.unique_items` - If `True`, items in the array
   should be unique from one another.
 

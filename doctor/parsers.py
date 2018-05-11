@@ -144,7 +144,7 @@ def parse_value(value, allowed_types, name='value'):
                      (name, ', '.join(allowed_types)))
 
 
-def parse_json(value, sig_params=None):
+def parse_json(value: str, sig_params: List[inspect.Parameter] = None) -> dict:
     """Parse a value as JSON.
 
     This is just a wrapper around json.loads which re-raises any errors as a
@@ -176,7 +176,8 @@ _native_type_to_json = {
 }
 
 
-def map_param_names(req_params: dict, sig_params: List[inspect.Parameter]):
+def map_param_names(
+        req_params: dict, sig_params: List[inspect.Parameter]) -> dict:
     """Maps request param names to match logic function param names.
 
     If a doctor type defined a `param_name` attribute for the name of the

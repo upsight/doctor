@@ -83,7 +83,8 @@ def test_handle_http_with_json(mock_request, mock_post_logic):
     assert actual == ({'item_id': 1}, 201)
 
     expected_call = mock.call(
-        item={'item_id': 1}, colors=['blue'], optional_id=None)
+        item={'item_id': 1}, colors=['blue'], optional_id=None,
+        lat=45.2342343)
     assert expected_call == mock_post_logic.call_args
 
 

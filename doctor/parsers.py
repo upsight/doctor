@@ -203,7 +203,8 @@ def map_param_names(req_params: dict, sig_params: List[inspect.Parameter]):
     for k, param in sig_params.items():
         param_name = getattr(param.annotation, 'param_name', None)
         key = k if param_name is None else param_name
-        new_request_params[k] = req_params.get(key)
+        if key in req_params:
+            new_request_params[k] = req_params[key]
     return new_request_params
 
 

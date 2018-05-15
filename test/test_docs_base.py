@@ -310,9 +310,6 @@ class TestDocsBaseHarness(TestCase):
         for arg, expected in tests:
             assert expected == base.class_name_to_resource_name(arg)
 
-    def test_get_class_name(self):
-        assert 'ExampleObject' == base.get_class_name(ExampleObject)
-
     @mock.patch.dict('doctor.docs.base.ALL_RESOURCES',
                      {'An Object': ExampleObject})
     def test_get_resource_object_doc_lines(self):

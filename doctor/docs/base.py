@@ -159,7 +159,7 @@ def get_json_object_lines(annotation: ResourceAnnotation,
             is_object = True
             resource_name = annotated_type.title
             if resource_name is None:
-                class_name = get_class_name(annotated_type)
+                class_name = annotated_type.__name__
                 resource_name = class_name_to_resource_name(class_name)
             ALL_RESOURCES[resource_name] = annotated_type
             obj_ref = ' See :ref:`resource-{}`.'.format(
@@ -170,7 +170,7 @@ def get_json_object_lines(annotation: ResourceAnnotation,
             # collect the object as a resource we can document later.
             resource_name = annotated_type.items.title
             if resource_name is None:
-                class_name = get_class_name(annotated_type.items)
+                class_name = annotated_type.items.__name__
                 resource_name = class_name_to_resource_name(class_name)
             ALL_RESOURCES[resource_name] = annotated_type.items
             obj_ref = ' See :ref:`resource-{}`.'.format(
@@ -330,17 +330,6 @@ def get_name(value) -> str:
         return value.__name__
     else:
         return '.'.join((value.__module__, value.__name__))
-
-
-def get_class_name(klass) -> str:
-    """Gets the name of the class from a doctor type.
-
-    "<class 'app_api.types.app.Rating'>" becomes 'Rating'
-
-    :param klass: A python class (not an instance) to get the name from.
-    :returns: The name of the class.
-    """
-    return str(klass).split('.')[-1][:-2]
 
 
 def normalize_route(route: str) -> str:

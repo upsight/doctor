@@ -252,6 +252,9 @@ Attributes
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
 * :attr:`~doctor.types.Object.required` - A list of required properties.
+* :attr:`~doctor.types.Object.title` - An optional title for your object. This
+  value will be used when generating documentation about objects in requests
+  and responses.
 
 Example
 #######

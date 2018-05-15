@@ -330,6 +330,8 @@ class Object(SuperType, dict):
     required = []  # type: typing.List[str]
     #: If True additional properties will be allowed, otherwise they will not.
     additional_properties = True  # type: bool
+    #: A human readable title for the object.
+    title = None
 
     def __init__(self, *args, **kwargs):
         if self.nullable and args[0] is None:

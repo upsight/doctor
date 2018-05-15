@@ -10,9 +10,15 @@ Auth = string('auth token', example='testtoken')
 Color = enum('Color', enum=['blue', 'green'], example='blue')
 Colors = array('colors', items=Color, example=['green'])
 ExampleArray = array('ex description e', items=Auth, example=['ex', 'array'])
-ExampleObject = new_type(Object, description='ex description f',
-                         properties={'str': Auth},
-                         additional_properties=False, example={'str': 'ex str'})
+
+
+class ExampleObject(Object):
+    description = 'ex description f'
+    properties = {'str': Auth}
+    additional_properties = False
+    example = {'str': 'ex str'}
+
+
 ExampleObjects = array(
     'ex objects', items=ExampleObject, example=[{'str': 'e'}])
 Foo = string('foo', example='foo')

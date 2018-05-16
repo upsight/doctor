@@ -306,6 +306,7 @@ class TestDocsBaseHarness(TestCase):
             ('FooBar', 'Foo Bar'),
             ('FooV1Bar', 'Foo V1 Bar'),
             ('Reallylongnamewithnoothercase', 'Reallylongnamewithnoothercase'),
+            ('HTTPResponse', 'HTTP Response'),
         )
         for arg, expected in tests:
             assert expected == base.class_name_to_resource_name(arg)

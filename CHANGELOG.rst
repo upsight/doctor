@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.6.0 (2018-05-16)
+-------------------
+
+* Added the ability to document object resources in the api documentation.
+  Any api endpoints that have an object or an array of objects in it's request
+  parameters will include a link to the documentation about the object.
+
 v3.5.0 (2018-05-11)
 -------------------
 

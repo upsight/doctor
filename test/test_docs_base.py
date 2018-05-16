@@ -337,3 +337,12 @@ class TestDocsBaseHarness(TestCase):
             '   }'
         ]
         assert expected == actual
+
+    @mock.patch.dict('doctor.docs.base.ALL_RESOURCES', {})
+    def test_get_resource_object_doc_lines_no_resources(self):
+        """
+        This test verifies if we have no resources to document, we don't
+        attempt to do it anyway which would result in a header w/ no content
+        below it.
+        """
+        assert [] == base.get_resource_object_doc_lines()

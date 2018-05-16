@@ -269,6 +269,10 @@ def get_resource_object_doc_lines() -> List[str]:
                     resource_name = class_name_to_resource_name(class_name)
                 ALL_RESOURCES[resource_name] = prop_a_type.items
 
+    # If we don't have any resources to document, just return.
+    if not ALL_RESOURCES:
+        return []
+
     lines = ['Resource Objects', '----------------']
     for resource_name in sorted(ALL_RESOURCES.keys()):
         a_type = ALL_RESOURCES[resource_name]

@@ -248,6 +248,27 @@ def get_resource_object_doc_lines() -> List[str]:
 
     :returns: A list of lines required to generate the documentation.
     """
+    # First loop through  all resources and make sure to add any properties that
+    # are objects and not already in `ALL_RESOURCES`.  We iterate over a copy
+    # since we will be modifying the dict during the loop.
+    for resource_name, a_type in ALL_RESOURCES.copy().items():
+        for prop_a_type in a_type.properties.values():
+            if issubclass(prop_a_type, Object):
+                resource_name = prop_a_type.title
+                if resource_name is None:
+                    class_name = prop_a_type.__name__
+                    resource_name = class_name_to_resource_name(class_name)
+                ALL_RESOURCES[resource_name] = prop_a_type
+            elif (hasattr(prop_a_type, 'items') and
+                    issubclass(prop_a_type.items, Object)):
+                # This means the type is an array of objects, so we want to
+                # collect the object as a resource we can document later.
+                resource_name = prop_a_type.items.title
+                if resource_name is None:
+                    class_name = prop_a_type.items.__name__
+                    resource_name = class_name_to_resource_name(class_name)
+                ALL_RESOURCES[resource_name] = prop_a_type.items
+
     lines = ['Resource Objects', '----------------']
     for resource_name in sorted(ALL_RESOURCES.keys()):
         a_type = ALL_RESOURCES[resource_name]
@@ -264,12 +285,33 @@ def get_resource_object_doc_lines() -> List[str]:
             # Add attributes documentation.
             lines.extend(['Attributes', '**********'])
             for prop in a_type.properties:
+                prop_a_type = a_type.properties[prop]
                 description = a_type.properties[prop].description.strip()
+                # Add any object reference if the property is an object or
+                # an array of objects.
+                obj_ref = ''
+                if issubclass(prop_a_type, Object):
+                    resource_name = prop_a_type.title
+                    if resource_name is None:
+                        class_name = prop_a_type.__name__
+                        resource_name = class_name_to_resource_name(class_name)
+                    obj_ref = ' See :ref:`resource-{}`.'.format(
+                        '-'.join(resource_name.split(' ')).lower().strip())
+                elif (hasattr(prop_a_type, 'items') and
+                        issubclass(prop_a_type.items, Object)):
+                    # This means the type is an array of objects, so we want to
+                    # collect the object as a resource we can document later.
+                    resource_name = prop_a_type.items.title
+                    if resource_name is None:
+                        class_name = prop_a_type.items.__name__
+                        resource_name = class_name_to_resource_name(class_name)
+                    obj_ref = ' See :ref:`resource-{}`.'.format(
+                        '-'.join(resource_name.split(' ')).lower().strip())
                 native_type = a_type.properties[prop].native_type.__name__
                 if prop in a_type.required:
                     description = '**Required**.  ' + description
-                lines.append('* **{}** (*{}*) - {}'.format(
-                    prop, native_type, description).strip())
+                lines.append('* **{}** (*{}*) - {}{}'.format(
+                    prop, native_type, description, obj_ref).strip())
             lines.append('')
         # Add example of object.
         lines.extend(['Example', '*******'])

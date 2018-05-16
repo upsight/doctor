@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import json
-import logging
 import pipes
 import re
 from collections import defaultdict
@@ -17,12 +16,11 @@ try:
     from sphinx.errors import SphinxError
     from sphinx.util.nodes import nested_parse_with_titles
     from sphinxcontrib.autohttp.common import http_directive
+    from sphinxcontrib.httpdomain import setup as setup_httpdomain
 except ImportError:  # pragma: no cover
     raise ImportError('You must install sphinx and sphinxcontrib-httpdomain to '
                       'use the doctor.docs module.')
 
-from doctor.docs.httpdomain import setup as setup_httpdomain
-from doctor.errors import SchemaError
 from doctor.resource import ResourceAnnotation
 from doctor.response import Response
 from doctor.types import Array, Enum, Object
@@ -153,10 +151,8 @@ def get_json_object_lines(annotation: ResourceAnnotation,
 
         types = [str(annotated_type.native_type.__name__)]
         description = annotated_type.description
-        is_object = False
         obj_ref = ''
         if issubclass(annotated_type, Object):
-            is_object = True
             resource_name = annotated_type.title
             if resource_name is None:
                 class_name = annotated_type.__name__
@@ -182,53 +178,21 @@ def get_json_object_lines(annotation: ResourceAnnotation,
             enum = ' Must be one of: `{}`.'.format(annotated_type.enum)
 
         field_prop = prop
-        if is_object:
-            field_prop = '{}|object'.format(prop)
-        elif object_property:
-            field_prop = '{}|objectproperty'.format(prop)
         # If this is a request param and the property is required
         # add required text and append lines to required_lines.  This
         # will make the required properties appear in alphabetical order
         # before the optional.
-        required_arg = False
         if request and prop in annotation.params.required:
             description = '**Required**.  ' + description
             required_lines.append(
                 ':{field} {types} {prop}: {description}{enum}{obj_ref}'.format(
                     field=field, types=','.join(types), prop=field_prop,
                     description=description, enum=enum, obj_ref=obj_ref))
-            required_arg = True
         else:
             lines.append(
                 ':{field} {types} {prop}: {description}{enum}{obj_ref}'.format(
                     field=field, types=','.join(types), prop=field_prop,
                     description=description, enum=enum, obj_ref=obj_ref))
-
-        # If the property is of type object we want to recursively document
-        # all of it's properties.
-        if is_object:
-            try:
-                object_properties = get_json_object_lines(
-                    annotation, annotated_type.properties, field, {}, request,
-                    object_property=True)
-                if required_arg:
-                    required_lines.extend(object_properties)
-                else:
-                    lines.extend(object_properties)
-            except SchemaError as e:
-                logging.warning('Not documenting object properties for property'
-                                ' %s. Reason: %s', prop, e)
-                # If we encountered a schema error trying to document an
-                # object's properties we need to remove the `|object[property]`
-                # from the line as we are skipping documenting it's properties.
-                # This could happen if the property is a reference or is in
-                # an external file.  At some point we may want to figure out
-                # how to get the value, but for now just skip it.
-                if required_arg:
-                    required_lines[-1] = required_lines[-1].replace(
-                        field_prop, prop)
-                else:
-                    lines[-1] = lines[-1].replace(field_prop, prop)
 
     return required_lines + lines
 

@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 import json
-import logging
 import pipes
 import re
 from collections import defaultdict
@@ -17,12 +16,11 @@ try:
     from sphinx.errors import SphinxError
     from sphinx.util.nodes import nested_parse_with_titles
     from sphinxcontrib.autohttp.common import http_directive
+    from sphinxcontrib.httpdomain import setup as setup_httpdomain
 except ImportError:  # pragma: no cover
     raise ImportError('You must install sphinx and sphinxcontrib-httpdomain to '
                       'use the doctor.docs module.')
 
-from doctor.docs.httpdomain import setup as setup_httpdomain
-from doctor.errors import SchemaError
 from doctor.resource import ResourceAnnotation
 from doctor.response import Response
 from doctor.types import Array, Enum, Object
@@ -56,6 +54,9 @@ OF_TYPES = {'anyOf', 'oneOf'}
 # Any line that begins with this text will be transofrmed into a sphinx heading
 HEADING_TOKEN = '!!HEADING!!'
 HEADING_TOKEN_LENGTH = len(HEADING_TOKEN)
+
+#: Stores a mapping of resource names to their annotated type.
+ALL_RESOURCES = {}
 
 
 def get_example_curl_lines(method: str, url: str, params: dict,
@@ -150,9 +151,26 @@ def get_json_object_lines(annotation: ResourceAnnotation,
 
         types = [str(annotated_type.native_type.__name__)]
         description = annotated_type.description
-        is_object = False
+        obj_ref = ''
         if issubclass(annotated_type, Object):
-            is_object = True
+            resource_name = annotated_type.title
+            if resource_name is None:
+                class_name = annotated_type.__name__
+                resource_name = class_name_to_resource_name(class_name)
+            ALL_RESOURCES[resource_name] = annotated_type
+            obj_ref = ' See :ref:`resource-{}`.'.format(
+                '-'.join(resource_name.split(' ')).lower().strip())
+        elif (hasattr(annotated_type, 'items') and
+                issubclass(annotated_type.items, Object)):
+            # This means the type is an array of objects, so we want to
+            # collect the object as a resource we can document later.
+            resource_name = annotated_type.items.title
+            if resource_name is None:
+                class_name = annotated_type.items.__name__
+                resource_name = class_name_to_resource_name(class_name)
+            ALL_RESOURCES[resource_name] = annotated_type.items
+            obj_ref = ' See :ref:`resource-{}`.'.format(
+                '-'.join(resource_name.split(' ')).lower().strip())
 
         # Document any enum.
         enum = ''
@@ -160,52 +178,21 @@ def get_json_object_lines(annotation: ResourceAnnotation,
             enum = ' Must be one of: `{}`.'.format(annotated_type.enum)
 
         field_prop = prop
-        if is_object:
-            field_prop = '{}|object'.format(prop)
-        elif object_property:
-            field_prop = '{}|objectproperty'.format(prop)
         # If this is a request param and the property is required
         # add required text and append lines to required_lines.  This
         # will make the required properties appear in alphabetical order
         # before the optional.
-        required_arg = False
         if request and prop in annotation.params.required:
             description = '**Required**.  ' + description
             required_lines.append(
-                ':{field} {types} {prop}: {description}{enum}'.format(
+                ':{field} {types} {prop}: {description}{enum}{obj_ref}'.format(
                     field=field, types=','.join(types), prop=field_prop,
-                    description=description, enum=enum))
-            required_arg = True
+                    description=description, enum=enum, obj_ref=obj_ref))
         else:
-            lines.append(':{field} {types} {prop}: {description}{enum}'.format(
-                field=field, types=','.join(types), prop=field_prop,
-                description=description, enum=enum))
-
-        # If the property is of type object we want to recursively document
-        # all of it's properties.
-        if is_object:
-            try:
-                object_properties = get_json_object_lines(
-                    annotation, annotated_type.properties, field, {}, request,
-                    object_property=True)
-                if required_arg:
-                    required_lines.extend(object_properties)
-                else:
-                    lines.extend(object_properties)
-            except SchemaError as e:
-                logging.warning('Not documenting object properties for property'
-                                ' %s. Reason: %s', prop, e)
-                # If we encountered a schema error trying to document an
-                # object's properties we need to remove the `|object[property]`
-                # from the line as we are skipping documenting it's properties.
-                # This could happen if the property is a reference or is in
-                # an external file.  At some point we may want to figure out
-                # how to get the value, but for now just skip it.
-                if required_arg:
-                    required_lines[-1] = required_lines[-1].replace(
-                        field_prop, prop)
-                else:
-                    lines[-1] = lines[-1].replace(field_prop, prop)
+            lines.append(
+                ':{field} {types} {prop}: {description}{enum}{obj_ref}'.format(
+                    field=field, types=','.join(types), prop=field_prop,
+                    description=description, enum=enum, obj_ref=obj_ref))
 
     return required_lines + lines
 
@@ -251,6 +238,97 @@ def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
                                  request)
 
 
+def get_resource_object_doc_lines() -> List[str]:
+    """Generate documentation lines for all collected resource objects.
+
+    As API documentation is generated we keep a running list of objects used
+    in request parameters and responses.  This section will generate
+    documentation for each object and provide an inline reference in the API
+    documentation.
+
+    :returns: A list of lines required to generate the documentation.
+    """
+    # First loop through  all resources and make sure to add any properties that
+    # are objects and not already in `ALL_RESOURCES`.  We iterate over a copy
+    # since we will be modifying the dict during the loop.
+    for resource_name, a_type in ALL_RESOURCES.copy().items():
+        for prop_a_type in a_type.properties.values():
+            if issubclass(prop_a_type, Object):
+                resource_name = prop_a_type.title
+                if resource_name is None:
+                    class_name = prop_a_type.__name__
+                    resource_name = class_name_to_resource_name(class_name)
+                ALL_RESOURCES[resource_name] = prop_a_type
+            elif (hasattr(prop_a_type, 'items') and
+                    issubclass(prop_a_type.items, Object)):
+                # This means the type is an array of objects, so we want to
+                # collect the object as a resource we can document later.
+                resource_name = prop_a_type.items.title
+                if resource_name is None:
+                    class_name = prop_a_type.items.__name__
+                    resource_name = class_name_to_resource_name(class_name)
+                ALL_RESOURCES[resource_name] = prop_a_type.items
+
+    # If we don't have any resources to document, just return.
+    if not ALL_RESOURCES:
+        return []
+
+    lines = ['Resource Objects', '----------------']
+    for resource_name in sorted(ALL_RESOURCES.keys()):
+        a_type = ALL_RESOURCES[resource_name]
+        # First add a reference to the resource
+        resource_ref = '_resource-{}'.format(
+            '-'.join(resource_name.lower().split(' ')))
+        lines.extend(['.. {}:'.format(resource_ref), ''])
+        # Add resource name heading
+        lines.extend([resource_name, '#' * len(resource_name)])
+        # Add resource description
+        lines.extend([a_type.description, ''])
+        # Only document attributes if it has properties defined.
+        if a_type.properties:
+            # Add attributes documentation.
+            lines.extend(['Attributes', '**********'])
+            for prop in a_type.properties:
+                prop_a_type = a_type.properties[prop]
+                description = a_type.properties[prop].description.strip()
+                # Add any object reference if the property is an object or
+                # an array of objects.
+                obj_ref = ''
+                if issubclass(prop_a_type, Object):
+                    resource_name = prop_a_type.title
+                    if resource_name is None:
+                        class_name = prop_a_type.__name__
+                        resource_name = class_name_to_resource_name(class_name)
+                    obj_ref = ' See :ref:`resource-{}`.'.format(
+                        '-'.join(resource_name.split(' ')).lower().strip())
+                elif (hasattr(prop_a_type, 'items') and
+                        issubclass(prop_a_type.items, Object)):
+                    # This means the type is an array of objects, so we want to
+                    # collect the object as a resource we can document later.
+                    resource_name = prop_a_type.items.title
+                    if resource_name is None:
+                        class_name = prop_a_type.items.__name__
+                        resource_name = class_name_to_resource_name(class_name)
+                    obj_ref = ' See :ref:`resource-{}`.'.format(
+                        '-'.join(resource_name.split(' ')).lower().strip())
+                native_type = a_type.properties[prop].native_type.__name__
+                if prop in a_type.required:
+                    description = '**Required**.  ' + description
+                lines.append('* **{}** (*{}*) - {}{}'.format(
+                    prop, native_type, description, obj_ref).strip())
+            lines.append('')
+        # Add example of object.
+        lines.extend(['Example', '*******'])
+        example = {
+            p: b_type.get_example() for p, b_type in a_type.properties.items()}
+        pretty_json = json.dumps(example, separators=(',', ': '), indent=4,
+                                 sort_keys=True)
+        pretty_json_lines = prefix_lines(pretty_json, '   ')
+        lines.extend(['.. code-block:: json', ''])
+        lines.extend(pretty_json_lines)
+    return lines
+
+
 def get_name(value) -> str:
     """Return a best guess at the qualified name for a class or function.
 
@@ -293,6 +371,19 @@ def prefix_lines(lines, prefix):
     if isinstance(lines, str):
         lines = lines.splitlines()
     return [prefix + line for line in lines]
+
+
+def class_name_to_resource_name(class_name: str) -> str:
+    """Converts a camel case class name to a resource name with spaces.
+
+    >>> class_name_to_resource_name('FooBarObject')
+    'Foo Bar Object'
+
+    :param class_name: The name to convert.
+    :returns: The resource name.
+    """
+    s = re.sub('(.)([A-Z][a-z]+)', r'\1 \2', class_name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1 \2', s)
 
 
 class BaseDirective(Directive):
@@ -411,7 +502,7 @@ class BaseDirective(Directive):
                 defined_headers.sort()
                 for header in defined_headers:
                     definition = self.harness.header_definitions.get(
-                        header, '')
+                        header, '').strip()
                     docstring.append(':reqheader {}: {}'.format(
                         header, definition))
 
@@ -424,6 +515,10 @@ class BaseDirective(Directive):
                 for line in http_directive(annotation.http_method,
                                            normalized_route, docstring):
                     yield line
+
+        # Document resource objects.
+        for line in get_resource_object_doc_lines():
+            yield line
 
     def run(self):  # pragma: no cover
         """Called by Sphinx to generate documentation for this directive."""

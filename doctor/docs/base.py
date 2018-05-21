@@ -319,8 +319,7 @@ def get_resource_object_doc_lines() -> List[str]:
             lines.append('')
         # Add example of object.
         lines.extend(['Example', '*******'])
-        example = {
-            p: b_type.get_example() for p, b_type in a_type.properties.items()}
+        example = a_type.get_example()
         pretty_json = json.dumps(example, separators=(',', ': '), indent=4,
                                  sort_keys=True)
         pretty_json_lines = prefix_lines(pretty_json, '   ')

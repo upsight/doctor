@@ -333,7 +333,7 @@ class TestDocsBaseHarness(TestCase):
             '.. code-block:: json',
             '',
             '   {',
-            '       "str": "testtoken"',
+            '       "str": "ex str"',
             '   }'
         ]
         assert expected == actual

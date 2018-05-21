@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Fixed bug when documenting resource objects where we should have been
+  calling Object.get_example() instead of constructing it ourselves from
+  the object's properties.  That is what `get_example` does behind the scenes,
+  but it will also use a user defined example if one is available. This is
+  especially useful for Object's without any properties that you still want to
+  document an example for.
+
 v3.6.0 (2018-05-16)
 -------------------
 

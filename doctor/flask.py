@@ -113,8 +113,11 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                 request.method in HTTP_METHODS_WITH_JSON_BODY):
             # This is a proper typed JSON request. The parameters will be
             # encoded into the request body as a JSON blob.
-            request_params = map_param_names(
-                request.json, logic._doctor_signature.parameters)
+            if not logic._doctor_req_obj_type:
+                request_params = map_param_names(
+                    request.json, logic._doctor_signature.parameters)
+            else:
+                request_params = request.json
         else:
             # Try to parse things from normal HTTP parameters
             request_params = parse_form_and_query_params(
@@ -141,21 +144,40 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
         # Validate and coerce parameters to the appropriate types.
         errors = {}
         sig = logic._doctor_signature
-        for name, value in params.items():
-            annotation = sig.parameters[name].annotation
-            if annotation.nullable and value is None:
-                continue
+        # If a `req_obj_type` was defined for the route, pass all request
+        # params to that type for validation/coercion
+        if logic._doctor_req_obj_type:
+            annotation = logic._doctor_req_obj_type
             try:
-                params[name] = annotation.native_type(annotation(value))
+                params = annotation.native_type(annotation(params))
+            except TypeError:
+                logging.exception(
+                    'Error casting and validating params with value `%s`.',
+                    params)
+                raise
             except TypeSystemError as e:
-                errors[name] = e.detail
+                errors['__all__'] = e.detail
+        else:
+            for name, value in params.items():
+                annotation = sig.parameters[name].annotation
+                if annotation.nullable and value is None:
+                    continue
+                try:
+                    params[name] = annotation.native_type(annotation(value))
+                except TypeSystemError as e:
+                    errors[name] = e.detail
         if errors:
             raise TypeSystemError(errors, errors=errors)
 
-        # Only pass request parameters defined by the logic signature.
-        logic_params = {k: v for k, v in params.items()
-                        if k in logic._doctor_params.logic}
-        response = logic(*args, **logic_params)
+        if logic._doctor_req_obj_type:
+            # Pass any positional arguments followed by the coerced request
+            # parameters to the logic function.
+            response = logic(*args, params)
+        else:
+            # Only pass request parameters defined by the logic signature.
+            logic_params = {k: v for k, v in params.items()
+                            if k in logic._doctor_params.logic}
+            response = logic(*args, **logic_params)
 
         # response validation
         if sig.return_annotation != sig.empty:

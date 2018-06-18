@@ -7,7 +7,7 @@ from doctor.routing import (
     create_routes, delete, get, get_handler_name, post, put, HTTPMethod, Route)
 from doctor.utils import Params
 
-from .types import Age, Foo, FooId, Foos, IsAlive, Name
+from .types import Age, Foo, FooId, FooInstance, Foos, IsAlive, Name
 
 
 def delete_foo(foo_id: FooId):
@@ -45,6 +45,22 @@ class TestRouting(object):
         assert expected == m.logic._doctor_params
         assert [ValueError] == m.logic._doctor_allowed_exceptions
         assert 'Retrieve' == m.logic._doctor_title
+        assert m.logic._doctor_req_obj_type is None
+
+    def test_httpmethod_with_req_obj_type(self):
+        m = HTTPMethod('get', get_foo, allowed_exceptions=[ValueError],
+                       title='Retrieve', req_obj_type=FooInstance)
+        assert 'get' == m.method
+        assert inspect.signature(get_foo) == m.logic._doctor_signature
+        expected = Params(
+            all=['foo', 'foo_id'],
+            optional=['foo'],
+            required=['foo_id'],
+            logic=['foo', 'foo_id'])
+        assert expected == m.logic._doctor_params
+        assert [ValueError] == m.logic._doctor_allowed_exceptions
+        assert 'Retrieve' == m.logic._doctor_title
+        assert FooInstance == m.logic._doctor_req_obj_type
 
     def test_delete(self):
         expected = HTTPMethod('delete', get_foo,

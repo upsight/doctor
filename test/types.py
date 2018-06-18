@@ -40,3 +40,12 @@ Longitude = number('the longitude.', example=-122.34232,
 Name = string('name', min_length=1, example='John')
 OptIn = boolean('If the user has opted in to gps tracking.',
                 param_name='opt-in')
+
+
+class FooInstance(Object):
+    description = 'An instance of foo.'
+    properties = {
+        'foo': Foo,
+        'foo_id': FooId,
+    }
+    required = ['foo_id']

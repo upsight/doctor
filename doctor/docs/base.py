@@ -232,8 +232,13 @@ def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
         else:
             return []
     else:
-        parameters = annotation.annotated_parameters
-        properties = {k: p.annotation for k, p in parameters.items()}
+        # If we defined a req_obj_type for the logic, use that type's
+        # properties instead of the function signature.
+        if annotation.logic._doctor_req_obj_type:
+            properties = annotation.logic._doctor_req_obj_type.properties
+        else:
+            parameters = annotation.annotated_parameters
+            properties = {k: p.annotation for k, p in parameters.items()}
     return get_json_object_lines(annotation, properties, field, url_params,
                                  request)
 
@@ -826,10 +831,16 @@ class BaseHarness(object):
             (annotation.http_method.lower(), str(route)))
         if defined_values and not defined_values['update']:
             return defined_values['values']
-        values = {
-            k: v.annotation.get_example()
-            for k, v in annotation.annotated_parameters.items()
-        }
+
+        # If we defined a req_obj_type for the logic, use that type's
+        # example values instead of the annotated parameters.
+        if annotation.logic._doctor_req_obj_type:
+            values = annotation.logic._doctor_req_obj_type.get_example()
+        else:
+            values = {
+                k: v.annotation.get_example()
+                for k, v in annotation.annotated_parameters.items()
+            }
         if defined_values:
             values.update(defined_values['values'])
 

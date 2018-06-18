@@ -100,15 +100,25 @@ def get_params_from_func(func: Callable, signature: Signature=None) -> Params:
         if signature is None:
             signature = inspect.signature(func)
 
-    # Required is a positional argument with no defualt value and it's
-    # annotation must sub class SuperType.  This is so we don't try to
-    # require parameters passed to a logic function by a decorator that are
-    # not part of a request.
-    required = [key for key, p in signature.parameters.items()
-                if p.default == p.empty and issubclass(p.annotation, SuperType)]
-    optional = [key for key, p in signature.parameters.items()
-                if p.default != p.empty]
-    all_params = [key for key in signature.parameters.keys()]
+    # Check if a `req_obj_type` was provided for the function.  If so we should
+    # derrive the parameters from that defined type instead of the signature.
+    if getattr(func, '_doctor_req_obj_type', None):
+        annotation = func._doctor_req_obj_type
+        all_params = list(annotation.properties.keys())
+        required = annotation.required
+        optional = list(set(all_params) - set(required))
+    else:
+        # Required is a positional argument with no defualt value and it's
+        # annotation must sub class SuperType.  This is so we don't try to
+        # require parameters passed to a logic function by a decorator that are
+        # not part of a request.
+        required = [key for key, p in signature.parameters.items()
+                    if p.default == p.empty and
+                    issubclass(p.annotation, SuperType)]
+        optional = [key for key, p in signature.parameters.items()
+                    if p.default != p.empty]
+        all_params = [key for key in signature.parameters.keys()]
+
     # Logic params are all parameters that are part of the logic signature.
     logic_params = copy(all_params)
     return Params(all_params, required, optional, logic_params)

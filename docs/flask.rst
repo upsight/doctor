@@ -57,7 +57,7 @@ type the body should conform to when defining your route.
 
     # Define your logic function as normal.
     def update_foo(foo: FooObject):
-        print(foo.name, foo.id)
+        print(foo['name'], foo['id'])
         # ...
 
     # Defining the route, use `req_obj_type` kwarg to specify the type.

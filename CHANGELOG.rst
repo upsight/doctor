@@ -4,6 +4,15 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.7.0 (2018-06-19)
+-------------------
+
+* Added ability to specify for a particular route a request Object type that
+  a json body should be validated against and passed to the logic function.
+  This allows the base json body to be passed as a parameter without having
+  to have the logic function variable match a request parameter.  The full
+  json body will simply be passed as the first parameter to the logic function.
+
 v3.6.1 (2018-05-21)
 -------------------
 

@@ -16,7 +16,8 @@ from doctor.response import Response
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
-from .types import Auth, Colors, Item, ItemId, IncludeDeleted, Latitude
+from .types import (
+    Auth, Colors, FooInstance, Item, ItemId, IncludeDeleted, Latitude)
 from .utils import add_doctor_attrs
 
 
@@ -53,6 +54,7 @@ def mock_get_logic():
     mock_logic._doctor_signature = inspect.signature(get_item)
     mock_logic._doctor_params = get_params_from_func(mock_logic)
     mock_logic._doctor_allowed_exceptions = None
+    mock_logic._doctor_req_obj_type = None
     return mock_logic
 
 
@@ -62,6 +64,7 @@ def mock_post_logic():
     mock_logic._doctor_signature = inspect.signature(create_item)
     mock_logic._doctor_params = get_params_from_func(mock_logic)
     mock_logic._doctor_allowed_exceptions = None
+    mock_logic._doctor_req_obj_type = None
     return mock_logic
 
 
@@ -86,6 +89,24 @@ def test_handle_http_with_json(mock_request, mock_post_logic):
         item={'item_id': 1}, colors=['blue'], optional_id=None,
         lat=45.2342343)
     assert expected_call == mock_post_logic.call_args
+
+
+def test_handle_http_with_route_that_defines_req_obj_type(mock_request):
+    def logic(foo: FooInstance):
+        return foo
+
+    logic = add_doctor_attrs(logic, req_obj_type=FooInstance)
+
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/json; charset=UTF8'
+    mock_request.mimetype = 'application/json'
+    mock_request.json = {
+        'foo': 'A foo',
+        'foo_id': 1,
+    }
+    mock_handler = mock.Mock()
+    actual = handle_http(mock_handler, (), {}, logic)
+    assert actual == ({'foo_id': 1, 'foo': 'A foo'}, 201)
 
 
 def test_handle_http_object_array_types(mock_request, mock_post_logic):
@@ -190,7 +211,7 @@ def test_handle_http_decorator_adds_param_annotations(
     mock_request.content_type = 'application/x-www-form-urlencoded'
     mock_request.values = {'item_id': '1'}
     mock_handler = mock.Mock()
-    logic = check_auth(get_item)
+    logic = check_auth(add_doctor_attrs(get_item))
 
     expected_params = Params(all=['item_id', 'include_deleted', 'auth'],
                              optional=['include_deleted'],

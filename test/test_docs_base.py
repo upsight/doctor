@@ -9,8 +9,8 @@ from doctor.response import Response
 
 from .base import TestCase
 from .types import (
-    Age, Auth, Color, ExampleArray, ExampleObject, ExampleObjects, IsAlive,
-    IsDeleted, Name)
+    Age, Auth, Color, ExampleArray, ExampleObject, ExampleObjects, FooInstance,
+    IsAlive, IsDeleted, Name)
 from .utils import add_doctor_attrs
 
 
@@ -126,6 +126,24 @@ class TestDocsBase(TestCase):
             ':>json str str: auth token'
         ]
         self.assertEqual(expected, result)
+
+    def test_get_json_lines_logic_defines_req_obj_type(self):
+        """
+        This tests that we properly generate the json params for a request
+        when the logic function defines a `req_obj_type`.
+        """
+        def mock_logic(foo: FooInstance):
+            pass
+
+        mock_logic = add_doctor_attrs(mock_logic, req_obj_type=FooInstance)
+        annotation = ResourceAnnotation(mock_logic, 'POST')
+        result = base.get_json_lines(
+            annotation, field='<json', route='/foo', request=True)
+        expected = [
+            ':<json int foo_id: **Required**.  foo id',
+            ':<json str foo: foo'
+        ]
+        assert expected == result
 
     def test_get_json_lines_array_response(self):
         """
@@ -298,6 +316,40 @@ class TestDocsBaseHarness(TestCase):
             'f': {'str': 'ex str'},
         }
         self.assertEqual(expected, example_values)
+
+    def test_get_example_values_when_logic_defines_req_obj_type(self):
+        """
+        This tests that we generate example values appropriately when the
+        route defineds a req_obj_type which will pass all request params as
+        that object instance to the logic function.
+
+        If a req_obj_type was not defined for the logic, it would expect
+        the json body to look like:
+
+        {
+            "foo": {
+                "foo": "foo",
+                "foo_id": 1
+            }
+        }
+
+        Defining a req_obj_type tells the code that the request body should
+        contain those attributes rather than a sub-key within the request.
+        """
+        def mock_logic(foo: FooInstance):
+            pass
+
+        mock_logic = add_doctor_attrs(mock_logic, req_obj_type=FooInstance)
+        route = Rule('/foo/bar/')
+
+        annotation = ResourceAnnotation(mock_logic, 'POST')
+        harness = base.BaseHarness('http://foo/bar/')
+        example_values = harness._get_example_values(route, annotation)
+        expected = {
+            'foo': 'foo',
+            'foo_id': 1,
+        }
+        assert expected == example_values
 
     def test_class_name_to_resource_name(self):
         tests = (

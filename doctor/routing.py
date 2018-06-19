@@ -21,9 +21,12 @@ class HTTPMethod(object):
         re-raised instead of turning them into 500 errors.
     :param title: An optional title for the http method.  This will be used
         when generating api documentation.
+    :param req_obj_type: A doctor :class:`~doctor.types.Object` type that the
+        request body should be converted to.
     """
     def __init__(self, method: str, logic: Callable,
-                 allowed_exceptions: List=None, title: str=None):
+                 allowed_exceptions: List = None, title: str = None,
+                 req_obj_type: Callable = None):
         self.method = method
         logic = copy_func(logic)
 
@@ -32,6 +35,7 @@ class HTTPMethod(object):
         # doctor.utils.add_param_annotations was used to add additional
         # request parameters to the logic function that aren't part of it's
         # signature.
+        logic._doctor_req_obj_type = req_obj_type
         if not hasattr(logic, '_doctor_signature'):
             logic._doctor_signature = inspect.signature(logic)
         if not hasattr(logic, '_doctor_params'):
@@ -41,44 +45,44 @@ class HTTPMethod(object):
         self.logic = logic
 
 
-def delete(func: Callable, allowed_exceptions: List=None,
-           title: str=None) -> HTTPMethod:
+def delete(func: Callable, allowed_exceptions: List = None,
+           title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a DELETE route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
     return HTTPMethod('delete', func, allowed_exceptions=allowed_exceptions,
-                      title=title)
+                      title=title, req_obj_type=req_obj_type)
 
 
 def get(func: Callable, allowed_exceptions: List=None,
-        title: str=None) -> HTTPMethod:
+        title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a GET route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
     return HTTPMethod('get', func, allowed_exceptions=allowed_exceptions,
-                      title=title)
+                      title=title, req_obj_type=req_obj_type)
 
 
 def post(func: Callable, allowed_exceptions: List=None,
-         title: str=None) -> HTTPMethod:
+         title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a POST route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
     return HTTPMethod('post', func, allowed_exceptions=allowed_exceptions,
-                      title=title)
+                      title=title, req_obj_type=req_obj_type)
 
 
 def put(func: Callable, allowed_exceptions: List=None,
-        title: str=None) -> HTTPMethod:
+        title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a PUT route.
 
     :see: :class:`~doctor.routing.HTTPMethod`
     """
     return HTTPMethod('put', func, allowed_exceptions=allowed_exceptions,
-                      title=title)
+                      title=title, req_obj_type=req_obj_type)
 
 
 def create_http_method(logic: Callable, http_method: str,

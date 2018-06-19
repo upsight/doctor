@@ -35,6 +35,63 @@ our routes we defined above.
     :start-after: mark-app
     :end-before: # --
 
+Passing Request Body as an Object to a Logic Function
+-----------------------------------------------------
+
+If you need to pass the entire request body as an object like parameter instead
+of specifying each individual key in the logic function, you can specify which
+type the body should conform to when defining your route.
+
+.. code-block:: python
+
+    # Define the type the request body should conform to.
+    from doctor.types import integer, Object, string
+
+    class FooObject(Object):
+        description = 'A foo.'
+        properties = {
+            'name': string('The name of the foo.'),
+            'id': integer('The ID of the foo.'),
+        }
+        required = ['id']
+
+    # Define your logic function as normal.
+    def update_foo(foo: FooObject):
+        print(foo.name, foo.id)
+        # ...
+
+    # Defining the route, use `req_obj_type` kwarg to specify the type.
+    from doctor import create_routes, put, Route
+
+    create_routes((
+        Route('/foo/', methods=[
+            put(update_foo, req_obj_type=FooObject)]
+        )
+    ))
+
+This allows you to simply send the following json body:
+
+.. code-block:: json
+
+    {
+      "name": "a name",
+      "id": 1
+    }
+
+Without specifying a value for `req_obj_type` when defining the route, you would
+have to send a `foo` key in your json body for it to validate and properly
+send the request data to your logic function:
+
+.. code-block:: json
+
+    {
+      "foo": {
+        "name": "a name",
+        "id": 1
+      }
+    }
+
+
 Adding Response Headers
 -----------------------
 

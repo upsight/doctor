@@ -201,8 +201,8 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                 if should_raise_response_validation_errors():
                     error = ('Response to {method} {path} `{response}` does not'
                              ' validate: {error}'.format(
-                                method=request.method, path=request.path,
-                                response=response, error=e.detail))
+                                 method=request.method, path=request.path,
+                                 response=response, error=e.detail))
                     raise TypeSystemError(error)
 
         if isinstance(response, Response):

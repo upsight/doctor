@@ -91,6 +91,47 @@ send the request data to your logic function:
       }
     }
 
+Running Code Before or After the Logic Function
+-----------------------------------------------
+
+Sometimes you may want to run some code before the logic function gets called
+to perform some logging or inspect the request.  Likwise you may also want run
+some extra code after a logic function returns its results but before an HTTP
+response is returned.
+
+You can optionally do either of these actions by passing a callable when
+defining a :class:`~doctor.routing.Route` to either the `before` or `after` kwargs.
+
+.. note:: The callable passed to the `after` kwarg must accept a single
+          parameter which is the result of your logic function.
+
+.. code-block:: python
+
+    import logging
+
+    def log_before_logic():
+        logging.debug('Before logic gets called')
+
+
+    def log_after_logic(result):
+        logging.debug('After logic function result is %s', result)
+
+
+    def logic():
+        return "result"
+
+.. code-block:: python
+
+    from doctor import create_routes, get, Route
+
+    create_routes((
+        Route('/foo/', methods=[
+            get(logic)],
+            before=log_before_logic,
+            after=log_after_logic
+        )
+    ))
+
 
 Adding Response Headers
 -----------------------

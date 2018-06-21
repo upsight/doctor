@@ -163,8 +163,8 @@ def add_param_annotations(
         else:
             doctor_params.optional.append(param.name)
         new_params.append(
-                Parameter(param.name, Parameter.KEYWORD_ONLY, default=default,
-                          annotation=param.annotation))
+            Parameter(param.name, Parameter.KEYWORD_ONLY, default=default,
+                      annotation=param.annotation))
 
     new_sig = sig.replace(
         parameters=list(prev_parameters.values()) + new_params)

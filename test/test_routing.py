@@ -180,13 +180,13 @@ class TestRouting(object):
         it would use the last defined title on both routes.
         """
         routes = (
-            Route('^/foo/?$', methods=(
-                get(get_foos, title='Retrieve List'),),
-                    heading='Foo'
+            Route('^/foo/?$', methods=[
+                get(get_foos, title='Retrieve List')],
+                heading='Foo'
             ),
-            Route('^/bar/?$', methods=(
-                get(get_foos, title='Retrieve Other List'),),
-                    heading='Foo'
+            Route('^/bar/?$', methods=[
+                get(get_foos, title='Retrieve Other List')],
+                heading='Foo'
             ),
         )
         actual = create_routes(routes, handle_http, Resource)

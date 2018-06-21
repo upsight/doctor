@@ -54,6 +54,6 @@ class RouterIntegrationTestCase(FlaskTestCase):
             'name': None,
             'pos_arg': 55,
         }
-        self.assertEqual(expected, response.json)
+        assert expected == response.json
         assert self.before.called
         assert self.after.called

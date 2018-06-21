@@ -55,7 +55,7 @@ def delete(func: Callable, allowed_exceptions: List = None,
                       title=title, req_obj_type=req_obj_type)
 
 
-def get(func: Callable, allowed_exceptions: List=None,
+def get(func: Callable, allowed_exceptions: List = None,
         title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a GET route.
 
@@ -65,7 +65,7 @@ def get(func: Callable, allowed_exceptions: List=None,
                       title=title, req_obj_type=req_obj_type)
 
 
-def post(func: Callable, allowed_exceptions: List=None,
+def post(func: Callable, allowed_exceptions: List = None,
          title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a POST route.
 
@@ -75,7 +75,7 @@ def post(func: Callable, allowed_exceptions: List=None,
                       title=title, req_obj_type=req_obj_type)
 
 
-def put(func: Callable, allowed_exceptions: List=None,
+def put(func: Callable, allowed_exceptions: List = None,
         title: str = None, req_obj_type: Callable = None) -> HTTPMethod:
     """Returns a HTTPMethod instance to create a PUT route.
 
@@ -86,7 +86,8 @@ def put(func: Callable, allowed_exceptions: List=None,
 
 
 def create_http_method(logic: Callable, http_method: str,
-                       handle_http: Callable) -> Callable:
+                       handle_http: Callable, before: Callable = None,
+                       after: Callable = None) -> Callable:
     """Create a handler method to be used in a handler class.
 
     :param callable logic: The underlying function to execute with the
@@ -94,11 +95,20 @@ def create_http_method(logic: Callable, http_method: str,
     :param str http_method: HTTP method this will handle.
     :param handle_http: The HTTP handler function that should be
         used to wrap the logic functions.
+    :param before: A function to be called before the logic function associated
+        with the route.
+    :param after: A function to be called after the logic function associated
+        with the route.
     :returns: A handler function.
     """
     @functools.wraps(logic)
     def fn(handler, *args, **kwargs):
-        return handle_http(handler, args, kwargs, logic)
+        if before is not None and callable(before):
+            before()
+        result = handle_http(handler, args, kwargs, logic)
+        if after is not None and callable(after):
+            after(result)
+        return result
     return fn
 
 
@@ -112,11 +122,18 @@ class Route(object):
         under in the api documentation.
     :param base_handler_class: The base handler class to use.
     :param handler_name: The name that should be given to the handler class.
+    :param before: A function to be called before the logic function associated
+        with the route.
+    :param after: A function to be called after the logic function associated
+        with the route.
     """
     def __init__(self, route: str, methods: Tuple[HTTPMethod],
-                 heading: str='API', base_handler_class=None,
-                 handler_name: str=None):
+                 heading: str = 'API', base_handler_class = None,
+                 handler_name: str = None, before: Callable = None,
+                 after: Callable = None):
+        self.after = after
         self.base_handler_class = base_handler_class
+        self.before = before
         self.handler_name = handler_name
         self.heading = heading
         self.methods = methods
@@ -175,7 +192,8 @@ def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
         for method in r.methods:
             logic = method.logic
             http_method = method.method
-            http_func = create_http_method(logic, http_method, handle_http)
+            http_func = create_http_method(logic, http_method, handle_http,
+                                           before=r.before, after=r.after)
 
             handler_methods_and_properties = {
                 '__name__': handler_name,

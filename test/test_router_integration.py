@@ -1,5 +1,6 @@
 from functools import wraps
 
+import mock
 from doctor.flask import create_routes
 from doctor.routing import get, Route
 
@@ -27,10 +28,14 @@ def logic_func(pos_arg, item_id: ItemId, name: Name=None):
 
 class RouterIntegrationTestCase(FlaskTestCase):
 
+    before = mock.Mock()
+    after = mock.Mock()
+
     def get_routes(self):
         routes = (
-            Route('/test/', methods=(
-                get(logic_func),), heading='Test'),
+            Route('/test/', methods=[
+                get(logic_func)], heading='Test', before=self.before,
+                after=self.after),
         )
         return create_routes(routes)
 
@@ -49,4 +54,6 @@ class RouterIntegrationTestCase(FlaskTestCase):
             'name': None,
             'pos_arg': 55,
         }
-        self.assertEqual(expected, response.json)
+        assert expected == response.json
+        assert self.before.called
+        assert self.after.called

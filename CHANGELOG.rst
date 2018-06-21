@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.8.0 (2018-06-21)
+-------------------
+
+* Added ability to specify a callable that can be run before and/or after
+  a logic function is called when defining a route.  See documentation for
+  an example.
+
 v3.7.0 (2018-06-19)
 -------------------
 

@@ -221,10 +221,16 @@ def parse_form_and_query_params(req_params, sig_params):
     :returns: a dict of params parsed from the input dict.
     :raises TypeSystemError: If there are errors parsing values.
     """
+    # Importing here to prevent circular dependencies.
+    from doctor.types import SuperType
     errors = {}
     parsed_params = {}
     for param, value in req_params.items():
+        # Skip request variables not in the function signature.
         if param not in sig_params:
+            continue
+        # Skip coercing parameters not annotated by a doctor type.
+        if not issubclass(sig_params[param].annotation, SuperType):
             continue
         native_type = sig_params[param].annotation.native_type
         json_type = [_native_type_to_json[native_type]]

@@ -112,6 +112,25 @@ class TestParsers(TestCase):
             'is_deleted': 'value must be a valid type (boolean)',
         } == exc.value.errors
 
+    def test_parse_form_and_query_params_no_doctor_type_param_in_sig(self):
+        """
+        This is a regression test for when a logic function has a parameter
+        in it's signature that is not annotated by a doctor type and the name
+        of the parameter matches a parameter in the request variables.
+        Previously this would cause an AttributeError.
+        """
+        def logic(age: Age, use_cache: bool = False):
+            pass
+
+        sig = inspect.signature(logic)
+        params = {
+            'age': '22',
+            'use_cache': '1',
+        }
+        actual = parse_form_and_query_params(params, sig.parameters)
+        expected = {'age': 22}
+        assert expected == actual
+
     def test_map_param_names(seilf):
         def foo(lat: Latitude, lon: Longitude, opt_in: OptIn, auth: Auth):
             pass

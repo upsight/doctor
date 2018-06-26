@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.8.1 (2018-06-26)
+-------------------
+
 * Fixed an `AttributeError` when a logic function contained a parameter in it's
   signature that was not annotated by a doctor type and a request parameter
   in a form or query request also contained a variable that matched it's name.

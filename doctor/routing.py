@@ -198,6 +198,7 @@ def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
             handler_methods_and_properties = {
                 '__name__': handler_name,
                 '_doctor_heading': r.heading,
+                'methods': set([http_method.upper()]),
                 http_method: http_func,
             }
             if handler is None:
@@ -211,6 +212,6 @@ def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
                 # need to add all the other http methods we are defining
                 # on the handler after it gets created by type.
                 if hasattr(handler, 'methods'):
-                    handler.methods.append(http_method.upper())
+                    handler.methods.add(http_method.upper())
         created_routes.append((r.route, handler))
     return created_routes

@@ -63,7 +63,7 @@ class TestParsers(TestCase):
         ]
         for value, allowed_types, expected_value in tests:
             expected = (allowed_types[-1], expected_value)
-            self.assertEqual(parse_value(value, allowed_types), expected)
+            assert parse_value(value, allowed_types) == expected
 
     def test_parse_value_errors(self):
         """These cases should raise an error when parsing."""
@@ -74,13 +74,13 @@ class TestParsers(TestCase):
                  'object': ['[]', '{']}
         for allowed_type, bad_values in list(tests.items()):
             for bad_value in bad_values:
-                with self.assertRaises(ParseError):
+                with pytest.raises(ParseError):
                     parse_value(bad_value, [allowed_type])
 
     def test_parse_value_error_not_string(self):
         """Should raise an error if the value isn't a string."""
-        with self.assertRaisesRegexp(
-                ValueError, r"value for 'foo' must be a string"):
+        with pytest.raises(
+                ValueError, match=r"value for 'foo' must be a string"):
             parse_value(1337, [], 'foo')
 
     def test_parse_form_and_query_params_no_errors(self):

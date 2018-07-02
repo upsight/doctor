@@ -173,7 +173,7 @@ class TestUtils(TestCase):
     @mock.patch('doctor.utils.sys', autospec=True)
     def test_get_module_attr(self, mock_sys, mock_os, mock_compile, m):
         def side_effect(source, filename, mode, flags=0, dont_inherit=False):
-            self.assertEqual(mock_sys.path, ['foo', 'bar', '/foo/bar'])
+            assert mock_sys.path == ['foo', 'bar', '/foo/bar']
             return compile(source, filename, mode, flags=flags,
                            dont_inherit=dont_inherit)
         mock_compile.side_effect = side_effect
@@ -186,12 +186,13 @@ class TestUtils(TestCase):
         m.assert_called_once_with('/foo/bar/baz', 'r')
         mock_compile.assert_called_once_with('mock_attr = "something"',
                                              '/foo/bar/baz', 'exec')
-        self.assertEqual(result, 'something')
-        self.assertEqual(namespace['__file__'], '/foo/bar/baz')
-        self.assertEqual(mock_os.chdir.call_args_list,
-                         [mock.call('/foo/bar'),
-                          mock.call(mock.sentinel.old_cwd)])
-        self.assertEqual(mock_sys.path, ['foo', 'bar'])
+        assert result == 'something'
+        assert namespace['__file__'] == '/foo/bar/baz'
+        assert mock_os.chdir.call_args_list == [
+            mock.call('/foo/bar'),
+            mock.call(mock.sentinel.old_cwd),
+        ]
+        assert mock_sys.path == ['foo', 'bar']
 
     def test_get_description_lines(self):
         """
@@ -209,7 +210,7 @@ class TestUtils(TestCase):
                        :param str c: example param
                        :returns: d
                        """
-        self.assertEqual(get_description_lines(docstring), [
+        assert get_description_lines(docstring) == [
             'line one',
             '',
             'line two',
@@ -218,15 +219,15 @@ class TestUtils(TestCase):
             '',
             'line four',
             '',
-        ])
+        ]
 
     def test_get_description_lines_none(self):
         """It should just return an empty list for None."""
-        self.assertEqual(get_description_lines(None), [])
+        assert get_description_lines(None) == []
 
     def test_get_description_lines_trailing_newline(self):
         """It should add a trailing line if necessary."""
-        self.assertEqual(get_description_lines('foo\n:arg'), ['foo', ''])
+        assert get_description_lines('foo\n:arg') == ['foo', '']
 
     def test_get_params_from_func(self):
         get_foo._doctor_signature = inspect.signature(get_foo)

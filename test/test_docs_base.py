@@ -30,7 +30,7 @@ class TestDocsBase(TestCase):
         headers = {'GeoIp-Country-Code': 'US'}
         lines = base.get_example_lines(headers, 'GET', 'http://example.com/',
                                        {}, json.dumps({'foo': 1, 'bar': 2}))
-        self.assertEqual(lines, [
+        assert lines == [
             '',
             'Example Request:',
             '',
@@ -46,13 +46,13 @@ class TestDocsBase(TestCase):
             '     "bar": 2,',
             '     "foo": 1',
             '   }',
-        ])
+        ]
 
     def test_get_example_lines_text(self):
         """Tests an example when the response is *not* valid JSON."""
         lines = base.get_example_lines({}, 'GET', 'http://example.com/', {},
                                        'hello, world!')
-        self.assertEqual(lines, [
+        assert lines == [
             '',
             'Example Request:',
             '',
@@ -65,7 +65,7 @@ class TestDocsBase(TestCase):
             '.. code-block:: text',
             '',
             '   hello, world!',
-        ])
+        ]
 
     def test_get_json_object_lines_for_request_with_enum(self):
         def mock_logic(auth: Auth, is_alive: IsAlive, name: Name=None,
@@ -103,12 +103,12 @@ class TestDocsBase(TestCase):
         result = base.get_json_object_lines(
             annotation, properties, field='>json', url_params=url_params,
             request=True)
-        self.assertEqual(result, [
+        assert result == [
             ':param int age: **Required**.  age',
             ':>json str auth: **Required**.  auth token',
             (':>json bool is_deleted: Indicates if the item should be marked '
              'as deleted'),
-        ])
+        ]
 
     def test_get_json_object_lines_object_response(self):
         """
@@ -125,7 +125,7 @@ class TestDocsBase(TestCase):
         expected = [
             ':>json str str: auth token'
         ]
-        self.assertEqual(expected, result)
+        assert expected == result
 
     def test_get_json_lines_logic_defines_req_obj_type(self):
         """
@@ -156,7 +156,7 @@ class TestDocsBase(TestCase):
         annotation = ResourceAnnotation(mock_logic, 'GET')
         result = base.get_json_lines(
             annotation, field='<json', route='/foo')
-        self.assertEqual(result, [':<jsonarr str str: auth token'])
+        assert result == [':<jsonarr str str: auth token']
 
     def test_get_json_lines_response_response(self):
         """
@@ -180,16 +180,16 @@ class TestDocsBase(TestCase):
         mock_class = mock.Mock()
         mock_class.__module__ = 'foo.bar'
         mock_class.__name__ = 'baz'
-        self.assertEqual(base.get_name(mock_class), 'foo.bar.baz')
+        assert base.get_name(mock_class) == 'foo.bar.baz'
         mock_class.__module__ = '__builtin__'
-        self.assertEqual(base.get_name(mock_class), 'baz')
+        assert base.get_name(mock_class) == 'baz'
 
 
 class TestDocsBaseHarness(TestCase):
 
     def test_init(self):
         harness = base.BaseHarness('http://foo/')
-        self.assertEqual(harness.url_prefix, 'http://foo')
+        assert harness.url_prefix == 'http://foo'
 
     def test_get_annotation_heading_doctor_heading(self):
         """
@@ -200,7 +200,7 @@ class TestDocsBaseHarness(TestCase):
         route = '^foo/?$'
         harness = base.BaseHarness('http://foo/')
         actual = harness._get_annotation_heading(handler, route)
-        self.assertEqual('Test Title', actual)
+        assert 'Test Title' == actual
 
     def test_get_annotation_heading_class_path(self):
         """
@@ -216,7 +216,7 @@ class TestDocsBaseHarness(TestCase):
         actual = harness._get_annotation_heading(handler, route)
 
         expected = 'Foo Bar'
-        self.assertEqual(expected, actual)
+        assert expected == actual
 
     def test_get_annotation_heading_generic_handlers(self):
         """
@@ -233,7 +233,7 @@ class TestDocsBaseHarness(TestCase):
         actual = harness._get_annotation_heading(handler, route)
 
         expected = 'Foo Bar'
-        self.assertEqual(expected, actual)
+        assert expected == actual
 
     def test_get_annotation_heading_class_name_only(self):
         """
@@ -250,7 +250,7 @@ class TestDocsBaseHarness(TestCase):
         actual = harness._get_annotation_heading(handler, route)
 
         expected = 'Foo Bar'
-        self.assertEqual(expected, actual)
+        assert expected == actual
 
     def test_get_annotation_heading_class_path_internal(self):
         """
@@ -265,7 +265,7 @@ class TestDocsBaseHarness(TestCase):
         actual = harness._get_annotation_heading(handler, route)
 
         expected = 'Foo Bar (Internal)'
-        self.assertEqual(expected, actual)
+        assert expected == actual
 
     @mock.patch('doctor.docs.base.hasattr')
     def test_get_annotation_heading_class_name_only_internal(self, mock_has):
@@ -283,7 +283,7 @@ class TestDocsBaseHarness(TestCase):
         actual = harness._get_annotation_heading(handler, route)
 
         expected = 'Foo Bar (Internal)'
-        self.assertEqual(expected, actual)
+        assert expected == actual
 
     def test_get_example_values_get_http_method_with_list_and_dict_vals(self):
         """
@@ -305,7 +305,7 @@ class TestDocsBaseHarness(TestCase):
             'e': json.dumps(['ex', 'array']),
             'f': json.dumps({'str': 'ex str'}),
         }
-        self.assertEqual(expected, example_values)
+        assert expected == example_values
 
         # Change the http method to something other than GET, they should
         # not be json dumped.
@@ -315,7 +315,7 @@ class TestDocsBaseHarness(TestCase):
             'e': ['ex', 'array'],
             'f': {'str': 'ex str'},
         }
-        self.assertEqual(expected, example_values)
+        assert expected == example_values
 
     def test_get_example_values_when_logic_defines_req_obj_type(self):
         """

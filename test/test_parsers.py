@@ -19,9 +19,9 @@ def logic(age: Age, color: Color, is_deleted: IsDeleted=False):
 class TestParsers(TestCase):
 
     def test_parse_json(self):
-        self.assertEqual(parse_json('{"foo": 1}'), {'foo': 1})
-        with self.assertRaisesRegexp(
-                ParseError, r'Error parsing JSON: Expecting value'):
+        assert {'foo': 1} == parse_json('{"foo": 1}')
+        message = 'Error parsing JSON: \'bad json\' error: Expecting value'
+        with pytest.raises(ParseError, match=message):
             parse_json('bad json')
 
     def test_parse_value(self):

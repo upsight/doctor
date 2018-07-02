@@ -157,7 +157,7 @@ def parse_json(value: str, sig_params: List[inspect.Parameter] = None) -> dict:
     try:
         loaded = json.loads(value)
     except Exception as e:
-        message = 'Error parsing JSON: %s' % e
+        message = 'Error parsing JSON: %r error: %s' % (value, e)
         logging.debug(message, exc_info=e)
         raise ParseError(message)
 

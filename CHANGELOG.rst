@@ -4,6 +4,12 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.8.2 (2018-07-02)
+-------------------
+
+* Added JSON body to error message when parsing JSON fails.
+* Fixed bug that caused AttributError when creating routes in flask >= 1.0.0
+
 v3.8.1 (2018-06-26)
 -------------------
 

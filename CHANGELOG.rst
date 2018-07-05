@@ -4,6 +4,8 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Added new `UnionType` to types that allows a value to be one of `n` types.
+
 v3.8.2 (2018-07-02)
 -------------------
 

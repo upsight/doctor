@@ -319,6 +319,46 @@ Example
         max_items = 5
         unique_items = True
 
+UnionType
+---------
+
+A :class:`~doctor.types.UnionType` allows you to specify that a type can be
+one of `n` types defined in the :attr:`~doctor.types.UnionType.types` attribute.
+The first type in the list of types that is valid will be used.
+
+Attributes
+##########
+
+* :attr:`~doctor.types.SuperType.description` - A human readable description
+  of what the type represents.  This will be used when generating documentation.
+* :attr:`~doctor.types.SuperType.example` - An example value to send to the
+  endpoint when generating API documentation.  This is optional and a default
+  example value will be generated for you.
+* :attr:`~doctor.types.UnionType.types` - A list of allowed types the value
+  could be.  If the value doesn't match any of the types a
+  :class:`~doctor.errors.TypeSystemError` will be raised.
+
+Example
+#######
+
+.. code-block:: python
+
+    from doctor.types import string, UnionType
+
+    S = string('Starts with S.', pattern=r'^S.*')
+    T = string('Starts with T.', pattern=r'^T.*')
+
+    class SOrT(UnionType):
+        description = 'A string that starts with `S` or `T`.'
+        types = [S, T]
+
+    # Valid values:
+    SOrT('S is the first letter.')
+    SOrT('T is the first letter.')
+
+    # Invalid value:
+    SOrT('Does not start with S or T.')
+
 JsonSchema
 ----------
 

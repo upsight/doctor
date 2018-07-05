@@ -77,6 +77,41 @@ class SuperType(object):
                 '{} did not define a description attribute'.format(cls))
 
 
+class UnionType(object):
+    """A type that can be one of any of the defined `types`.
+
+    The first type that does not raise a :class:`~doctor.errors.TypeSystemError`
+    will be used as the type for the variable.
+    """
+    #: A list of allowed types.
+    types = []
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.types:
+            raise TypeSystemError(
+                'Sub-class must define a `types` list attribute containing at '
+                'least 1 type.', cls=cls)
+
+        valid = False
+        value = None
+        errors = {}
+        for obj_class in cls.types:
+            try:
+                value = obj_class(*args, **kwargs)
+                valid = True
+                break
+            except TypeSystemError as e:
+                errors[obj_class.__name__] = str(e)
+                continue
+
+        if not valid:
+            klasses = [klass.__name__ for klass in cls.types]
+            raise TypeSystemError('Value is not one of {}. {}'.format(
+                klasses, errors))
+
+        return value
+
+
 class String(SuperType, str):
     """Represents a `str` type."""
     native_type = str

@@ -7,7 +7,7 @@ from doctor.errors import TypeSystemError
 from doctor.resource import ResourceSchema
 from doctor.types import (
     array, boolean, enum, integer, json_schema_type, new_type, number, string,
-    Object, MissingDescriptionError, SuperType)
+    Object, MissingDescriptionError, SuperType, UnionType)
 
 
 class TestSuperType(object):
@@ -24,6 +24,38 @@ class TestSuperType(object):
             description = 'My Type'
 
         MyType()
+
+
+class TestUnionType(object):
+
+    def test_missing_types_attr(self):
+        class U(UnionType):
+            description = 'Union missing types attr'
+
+        with pytest.raises(TypeSystemError, match='Sub-class must define'):
+            U('union')
+
+        # Define an empty list and we should still get the same error
+        U.types = []
+        with pytest.raises(TypeSystemError, match='Sub-class must define'):
+            U('union')
+
+    def test_type(self):
+        S = string('Starts with S.', pattern=r'^S.*')
+        T = string('Starts with T.', pattern=r'^T.*')
+
+        class SOrT(UnionType):
+            description = 'S or T.'
+            types = [S, T]
+
+        # No exception, matches `S` type.
+        SOrT('S string')
+        # No exception, matches `T` type.
+        SOrT('T string')
+
+        # Neither `S` or `T` type.
+        with pytest.raises(TypeSystemError, match='Value is not one of'):
+            SOrT('B')
 
 
 class TestString(object):

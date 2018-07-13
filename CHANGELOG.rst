@@ -4,6 +4,7 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Added new `UnionType` to types that allows a value to be one of `n` types.
 * Don't filter out request parameters not defined in the type object for routes
   that specify a `req_obj_type`.
 

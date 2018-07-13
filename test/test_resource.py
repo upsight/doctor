@@ -70,7 +70,7 @@ class TestResourceAnnotation(TestCase):
         )
         for http_method, title, expected in tests:
             annotation = ResourceAnnotation(logic, http_method, title=title)
-            self.assertEqual(expected, annotation.title)
+            assert annotation.title == expected
 
 
 class TestResourceSchemaAnnotation(TestCase):
@@ -80,12 +80,12 @@ class TestResourceSchemaAnnotation(TestCase):
         annotation = ResourceSchemaAnnotation(
             s.logic, 'POST', s.schema, s.request_schema,
             s.response_schema)
-        self.assertEqual(annotation.logic, s.logic)
-        self.assertEqual(annotation.http_method, 'POST')
-        self.assertEqual(annotation.schema, s.schema)
-        self.assertEqual(annotation.request_schema, s.request_schema)
-        self.assertEqual(annotation.response_schema, s.response_schema)
-        self.assertEqual(annotation.title, 'Create')
+        assert annotation.logic == s.logic
+        assert annotation.http_method == 'POST'
+        assert annotation.schema == s.schema
+        assert annotation.request_schema == s.request_schema
+        assert annotation.response_schema == s.response_schema
+        assert annotation.title == 'Create'
 
     def test_init_title(self):
         tests = (
@@ -101,7 +101,7 @@ class TestResourceSchemaAnnotation(TestCase):
             annotation = ResourceSchemaAnnotation(
                 s.logic, http_method, s.schema, s.request_schema,
                 s.response_schema, title=title)
-            self.assertEqual(expected, annotation.title)
+            assert annotation.title == expected
 
     def test_get_annotation(self):
         """Tests that get_annotation works for badly decorated functions."""
@@ -112,13 +112,13 @@ class TestResourceSchemaAnnotation(TestCase):
         mock_logic = mock.Mock()
         mock_logic._schema_annotation = mock.sentinel.logic_annotation
         wrapper = decorator(mock_logic)
-        self.assertEqual(ResourceSchemaAnnotation.get_annotation(mock_logic),
-                         mock.sentinel.logic_annotation)
-        self.assertEqual(ResourceSchemaAnnotation.get_annotation(wrapper),
-                         mock.sentinel.logic_annotation)
+        assert (ResourceSchemaAnnotation.get_annotation(mock_logic) ==
+                mock.sentinel.logic_annotation)
+        assert (ResourceSchemaAnnotation.get_annotation(wrapper) ==
+                mock.sentinel.logic_annotation)
         wrapper._schema_annotation = mock.sentinel.wrapper_annotation
-        self.assertEqual(ResourceSchemaAnnotation.get_annotation(wrapper),
-                         mock.sentinel.wrapper_annotation)
+        assert (ResourceSchemaAnnotation.get_annotation(wrapper) ==
+                mock.sentinel.wrapper_annotation)
         delattr(wrapper, '_schema_annotation')
         delattr(mock_logic, '_schema_annotation')
-        self.assertIsNone(ResourceSchemaAnnotation.get_annotation(wrapper))
+        assert ResourceSchemaAnnotation.get_annotation(wrapper) is None

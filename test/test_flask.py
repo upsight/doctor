@@ -12,6 +12,7 @@ from doctor.flask import (
     handle_http, HTTP400Exception, HTTP401Exception, HTTP403Exception,
     HTTP404Exception, HTTP409Exception, HTTP500Exception,
     should_raise_response_validation_errors)
+from doctor.types import new_type
 from doctor.response import Response
 from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
@@ -103,10 +104,25 @@ def test_handle_http_with_route_that_defines_req_obj_type(mock_request):
     mock_request.json = {
         'foo': 'A foo',
         'foo_id': 1,
+        'bar': False,
     }
     mock_handler = mock.Mock()
     actual = handle_http(mock_handler, (), {}, logic)
-    assert actual == ({'foo_id': 1, 'foo': 'A foo'}, 201)
+    assert actual == ({'foo_id': 1, 'foo': 'A foo', 'bar': False}, 201)
+
+    # Create a new type that doesn't allow additional properties.
+    StrictFooInstance = new_type(FooInstance, additional_properties=False)
+
+    # Redefine the logic using StrictFooInstance which doesn't allow additional
+    # properties. The code shouldn't remove the additional 'bar' key, but it
+    # should raise a 400 error.
+    def logic(foo: StrictFooInstance):
+        return foo
+
+    logic = add_doctor_attrs(logic, req_obj_type=StrictFooInstance)
+    expected = "__all__ - {'bar': 'Additional properties are not allowed.'}"
+    with pytest.raises(HTTP400Exception, match=expected):
+        handle_http(mock_handler, (), {}, logic)
 
 
 def test_handle_http_object_array_types(mock_request, mock_post_logic):

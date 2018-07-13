@@ -123,9 +123,12 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
             request_params = parse_form_and_query_params(
                 request.values, logic._doctor_signature.parameters)
 
-        # Filter out any params not part of the logic signature.
-        all_params = logic._doctor_params.all
-        params = {k: v for k, v in request_params.items() if k in all_params}
+        params = request_params
+        # Only filter out additional params if a req_obj_type was not specified.
+        if not logic._doctor_req_obj_type:
+            # Filter out any params not part of the logic signature.
+            all_params = logic._doctor_params.all
+            params = {k: v for k, v in params.items() if k in all_params}
         params.update(**kwargs)
 
         # Check for required params

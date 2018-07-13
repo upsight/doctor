@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Don't filter out request parameters not defined in the type object for routes
+  that specify a `req_obj_type`.
+
 v3.8.2 (2018-07-02)
 -------------------
 

@@ -516,6 +516,11 @@ Examples
 Custom Type Parser
 ------------------
 
+.. note:: The :attr:`~doctor.types.SuperType.parser` attribute only applies for
+          non-json requests (`application/x-www-form-urlencoded`).  If the
+          request uses a json body, it will be parsed as normal and any callable
+          defined will not be executed.
+
 In some instances you don't have control over what data gets sent to an endpoint
 due to legacy integrations.  If you need the ability to transform a request
 parameter before it gets validated by the type, you can specify a custom

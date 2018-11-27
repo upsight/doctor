@@ -248,5 +248,5 @@ def get_valid_class_name(s: str) -> str:
     :returns: The updated string.
     """
     s = str(s).strip()
-    s = ''.join([w.title() for w in re.split('\W+|_', s)])
+    s = ''.join([w.title() for w in re.split(r'\W+|_', s)])
     return re.sub(r'[^\w|_]', '', s)

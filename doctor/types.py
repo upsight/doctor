@@ -69,6 +69,11 @@ class SuperType(object):
     #: match the variable name in your logic function.
     param_name = None
 
+    #: An optional callable to parse a request paramter before it gets validated
+    #: by a type.  It should accept a single value paramter and return the
+    #: parsed value.
+    parser = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.description is None:

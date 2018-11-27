@@ -45,6 +45,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 * :attr:`~doctor.types.String.pattern` - A regex pattern the string should
   match anywhere whitin it.  Uses `re.search`.
 * :attr:`~doctor.types.String.trim_whitespace` - If `True` the string will be
@@ -93,6 +95,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 
 Example
 #######
@@ -138,6 +142,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 
 Example
 #######
@@ -181,6 +187,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 
 Example
 #######
@@ -213,6 +221,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 
 Example
 #######
@@ -249,6 +259,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
 * :attr:`~doctor.types.Object.required` - A list of required properties.
@@ -302,6 +314,8 @@ Attributes
   that should map to your logic function annotated parameter.  If not specified
   it expects the request parameter will be named the same as the logic function
   parameter name.
+* :attr:`~doctor.types.SuperType.parser` - An optional function to parse the request
+  parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 * :attr:`~doctor.types.Array.unique_items` - If `True`, items in the array
   should be unique from one another.
 
@@ -495,6 +509,55 @@ Examples
 
     # Create a new type based on FirstName, but is allowed to be None
     NullableFirstName = new_type(FirstName, nullable=True)
+
+
+.. _custom-type-parser:
+
+Custom Type Parser
+------------------
+
+In some instances you don't have control over what data gets sent to an endpoint
+due to legacy integrations.  If you need the ability to transform a request
+parameter before it gets validated by the type, you can specify a custom
+:attr:`~doctor.types.SuperType.parser` attribute.  It's value should be a
+callable that accepts a value that is the request parameter and returns the parsed
+value.  The callable should raise a :class:`~doctor.errors.ParserError` if it
+fails to parse the value.
+
+.. code-block:: python
+
+   # types.py
+
+   from typing import List
+
+   from doctor.errors import ParserError
+   from doctor.types import array, string
+
+   def str_to_array(value: str) -> List[str]:
+      """Parses a comma separated value to an array.
+
+      Our request parameter is a str that looks like: `'item1,item2'`
+
+      >>> str_to_array('item1,item2')
+      ['item1', 'item2']
+
+      :param value: The value to parse, e.g. 'item1,item2'
+      :returns: A list of values.
+      """
+      # If your logic is more complex and the value can't be parsed, raise
+      # a `TypeError` in your function.
+      return value.split(',')
+
+   Item = string('An item.')
+   Items = array('An array of items.', items=Item, parser=str_to_array)
+
+   # logic.py
+
+   # HTTP POST /items items=item1%2Citem2
+   def create_items(items: Items):
+      # The comma separated string becomes a list of items when passed to the
+      # logic function.
+      print(items)  # ['item1', 'item2']
 
 .. _types-module-documentation:
 

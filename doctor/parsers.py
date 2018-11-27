@@ -5,6 +5,7 @@ their appropriate JSON schema types.
 
 import inspect
 import logging
+import warnings
 from typing import List
 
 import simplejson as json
@@ -232,13 +233,26 @@ def parse_form_and_query_params(req_params, sig_params):
         # Skip coercing parameters not annotated by a doctor type.
         if not issubclass(sig_params[param].annotation, SuperType):
             continue
+
+        # Check if the type has a custom parser for the parameter.
+        custom_parser = sig_params[param].annotation.parser
+        if custom_parser is not None:
+            if not callable(custom_parser):
+                warnings.warn(
+                    'Parser `{}` is not callable, using default parser.'.format(
+                        custom_parser))
+                custom_parser = None
+
         native_type = sig_params[param].annotation.native_type
         json_type = [_native_type_to_json[native_type]]
         # If the type is nullable, also add null as an allowed type.
         if sig_params[param].annotation.nullable:
             json_type.append('null')
         try:
-            _, parsed_params[param] = parse_value(value, json_type)
+            if custom_parser is not None:
+                parsed_params[param] = custom_parser(value)
+            else:
+                _, parsed_params[param] = parse_value(value, json_type)
         except ParseError as e:
             errors[param] = str(e)
 

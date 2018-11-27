@@ -199,7 +199,7 @@ def test_handle_http_missing_multiple_required_args(
 
     mock_handler = mock.Mock()
     with pytest.raises(HTTP400Exception,
-                       match="\['item', 'colors'\] are required."):
+                       match=r"\['item', 'colors'\] are required."):
         handle_http(mock_handler, (), {}, mock_post_logic)
 
 
@@ -249,7 +249,7 @@ def test_handle_http_invalid_param(mock_request, mock_get_logic):
     mock_request.values = {'item_id': 'string'}
     mock_handler = mock.Mock()
 
-    expected_msg = 'item_id - value must be a valid type \(integer, null\)'
+    expected_msg = r'item_id - value must be a valid type \(integer, null\)'
     with pytest.raises(HTTP400Exception, match=expected_msg):
         handle_http(mock_handler, (), {}, mock_get_logic)
 

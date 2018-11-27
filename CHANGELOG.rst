@@ -4,6 +4,10 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Added optional `parser` attribute to doctor types that allows the ability
+  to specify a callable to parse the request parameter before it gets validated.
+  See the documentation for more information.
+
 v3.9.0 (2018-07-13)
 -------------------
 

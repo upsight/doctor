@@ -5,6 +5,10 @@ from doctor.types import (
     array, boolean, enum, integer, new_type, number, string, Object)
 
 
+def parse_comma_separated_str(value):
+    return value.split(',')
+
+
 Age = integer('age', minimum=1, maximum=120, example=34)
 Auth = string('auth token', example='testtoken')
 Color = enum('Color', enum=['blue', 'green'], example='blue')
@@ -24,6 +28,8 @@ ExampleObjects = array(
 Foo = string('foo', example='foo')
 FooId = integer('foo id', example=1)
 Foos = array('foos', items=Foo, example=['foo'])
+FoosWithParser = array('foos with parser', items=Foo,
+                       parser=parse_comma_separated_str)
 IsAlive = boolean('Is alive?', example=True)
 ItemId = integer('item id', minimum=1, example=1, nullable=True)
 Item = new_type(Object, description='item', properties={'item_id': ItemId},

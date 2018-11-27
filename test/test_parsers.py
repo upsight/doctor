@@ -7,13 +7,19 @@ import pytest
 from doctor.errors import ParseError, TypeSystemError
 from doctor.parsers import (
     map_param_names, parse_form_and_query_params, parse_json, parse_value)
+from doctor.types import string
 
 from .base import TestCase
-from .types import Age, Auth, Color, IsDeleted, Latitude, Longitude, OptIn
+from .types import (
+    Age, Auth, Color, FoosWithParser, IsDeleted, Latitude, Longitude, OptIn)
 
 
 def logic(age: Age, color: Color, is_deleted: IsDeleted=False):
     return '{} {} {}'.format(age, color, is_deleted)
+
+
+def logic2(foos: FoosWithParser):
+    return foos
 
 
 class TestParsers(TestCase):
@@ -82,6 +88,55 @@ class TestParsers(TestCase):
         with pytest.raises(
                 ValueError, match=r"value for 'foo' must be a string"):
             parse_value(1337, [], 'foo')
+
+    def test_parse_form_and_query_params_no_errors_with_custom_parser(self):
+        sig = inspect.signature(logic2)
+        query_params = {
+            'foos': 'one,two,three',
+        }
+        actual = parse_form_and_query_params(query_params, sig.parameters)
+        expected = {
+            'foos': ['one', 'two', 'three'],
+        }
+        assert expected == actual
+
+    def test_parse_form_and_query_params_custom_parser_for_some_params(self):
+        """
+        This test just verifies that we can have types with custom parser mixed
+        with those that use the default parsers.
+        """
+        def f(age: Age, items: FoosWithParser, color: Color):
+            pass
+
+        sig = inspect.signature(f)
+        query_params = {
+            'age': '22',
+            'color': 'green',
+            'items': 'item1,item2',
+        }
+        actual = parse_form_and_query_params(query_params, sig.parameters)
+        expected = {
+            'age': 22,
+            'color': 'green',
+            'items': ['item1', 'item2'],
+        }
+        assert expected == actual
+
+    def test_parse_form_and_query_params_with_custom_parser_not_callable(self):
+        """
+        This test verifies if a parser is provided that isn't callable that
+        we warn the user and fallback to the default parser.
+        """
+        A = string('str', parser='foo')
+
+        def f(a: A):
+            pass
+
+        sig = inspect.signature(f)
+        query_params = {'a': 'a'}
+        with pytest.warns(UserWarning, match='Parser `foo` is not callable'):
+            actual = parse_form_and_query_params(query_params, sig.parameters)
+        assert {'a': 'a'} == actual
 
     def test_parse_form_and_query_params_no_errors(self):
         sig = inspect.signature(logic)

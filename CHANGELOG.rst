@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.10.1 (2018-12-07)
+--------------------
+
 * Fixed bug when using UnionType as it was missing a `native_type` attribute.
 * Fixed bug when using Array where items is a list of types for each index.
   Documentation was generating exceptions when processing an annotation using

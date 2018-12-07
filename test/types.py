@@ -2,7 +2,7 @@
 This module contains custom types used by tests.
 """
 from doctor.types import (
-    array, boolean, enum, integer, new_type, number, string, Object)
+    array, boolean, enum, integer, new_type, number, string, Object, UnionType)
 
 
 def parse_comma_separated_str(value):
@@ -14,6 +14,7 @@ Auth = string('auth token', example='testtoken')
 Color = enum('Color', enum=['blue', 'green'], example='blue')
 Colors = array('colors', items=Color, example=['green'])
 ExampleArray = array('ex description e', items=Auth, example=['ex', 'array'])
+TwoItems = array('two items', items=[Age, Color])
 
 
 class ExampleObject(Object):
@@ -25,6 +26,8 @@ class ExampleObject(Object):
 
 ExampleObjects = array(
     'ex objects', items=ExampleObject, example=[{'str': 'e'}])
+ExampleObjectsAndAge = array(
+    'ex obj and age', items=[Age, ExampleObject])
 Foo = string('foo', example='foo')
 FooId = integer('foo id', example=1)
 Foos = array('foos', items=Foo, example=['foo'])
@@ -55,3 +58,7 @@ class FooInstance(Object):
         'foo_id': FooId,
     }
     required = ['foo_id']
+
+
+class AgeOrColor(UnionType):
+    types = [Age, Color]

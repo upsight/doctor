@@ -23,7 +23,7 @@ except ImportError:  # pragma: no cover
 
 from doctor.resource import ResourceAnnotation
 from doctor.response import Response
-from doctor.types import Array, Enum, Object
+from doctor.types import Array, Enum, Object, SuperType, UnionType
 from doctor.utils import get_description_lines
 
 
@@ -121,10 +121,101 @@ def get_example_lines(headers: Dict[str, str], method: str, url: str,
     return lines
 
 
+def get_object_reference(obj: Object) -> str:
+    """Gets an object reference string from the obj instance.
+
+    This adds the object type to ALL_RESOURCES so that it gets documented and
+    returns a str which contains a sphinx reference to the documented object.
+
+    :param obj: The Object instance.
+    :returns: A sphinx docs reference str.
+    """
+    resource_name = obj.title
+    if resource_name is None:
+        class_name = obj.__name__
+        resource_name = class_name_to_resource_name(class_name)
+    ALL_RESOURCES[resource_name] = obj
+    return ' See :ref:`resource-{}`.'.format(
+        '-'.join(resource_name.split(' ')).lower().strip())
+
+
+def get_array_items_description(item: Array) -> str:
+    """Returns a description for an array's items.
+
+    :param item: The Array type whose items should be documented.
+    :returns: A string documenting what type the array's items should be.
+    """
+    desc = ''
+    if isinstance(item.items, list):
+        # This means the type has a list of types where each position is
+        # mapped to a different type.  Document what each type should be.
+        desc = ''
+        item_pos_template = (
+            ' *Item {pos} must be*: {description}{enum}{ref}')
+        for pos, item in enumerate(item.items):
+            _enum = ''
+            ref = ''
+            if issubclass(item, Enum):
+                _enum = ' Must be one of: `{}`.'.format(item.enum)
+            elif issubclass(item, Object):
+                ref = get_object_reference(item)
+
+            desc += item_pos_template.format(
+                pos=pos, description=item.description, enum=_enum,
+                ref=ref)
+
+    else:
+        # Otherwise just document the type assigned to `items`.
+        desc = item.items.description
+        _enum = ''
+        ref = ''
+        if issubclass(item.items, Enum):
+            _enum = ' Must be one of: `{}`.'.format(
+                item.items.enum)
+        elif issubclass(item.items, Object):
+            ref = get_object_reference(item)
+        desc = '  *Items must be*: {description}{enum}{ref}'.format(
+            description=desc, enum=_enum, ref=ref)
+    return desc
+
+
+def get_json_types(annotated_type: SuperType) -> List[str]:
+    """Returns the json types for the provided annotated type.
+
+    This handles special cases for when we encounter UnionType and an Array.
+    UnionType's will have all valid types returned.  An Array will document
+    what the items type is by placing that value in brackets, e.g. `list[str]`.
+
+    :param annotated_type: A subclass of SuperType.
+    :returns: A list of json types.
+    """
+    types = []
+    if issubclass(annotated_type, UnionType):
+        types = [str(t.native_type.__name__) for t in annotated_type.types]
+    elif issubclass(annotated_type, Array):
+        # Include the type of items in the list if items is defined.
+        if annotated_type.items is not None:
+            if not isinstance(annotated_type.items, list):
+                # items are all of the same type.
+                types.append('list[{}]'.format(
+                    str(annotated_type.items.native_type.__name__)))
+            else:
+                # items are different at each index.
+                _types = [
+                    str(t.native_type.__name__) for t in annotated_type.items]
+                types.append('list[{}]'.format(','.join(_types)))
+        else:
+            types.append('list')
+    else:
+        types.append(str(annotated_type.native_type.__name__))
+
+    return types
+
+
 def get_json_object_lines(annotation: ResourceAnnotation,
                           properties: Dict[str, Any], field: str,
-                          url_params: Dict, request: bool=False,
-                          object_property: bool=False) -> List[str]:
+                          url_params: Dict, request: bool = False,
+                          object_property: bool = False) -> List[str]:
     """Generate documentation for the given object annotation.
 
     :param doctor.resource.ResourceAnnotation annotation:
@@ -149,33 +240,39 @@ def get_json_object_lines(annotation: ResourceAnnotation,
         if request and prop in url_params:
             field = 'param'
 
-        types = [str(annotated_type.native_type.__name__)]
+        types = get_json_types(annotated_type)
         description = annotated_type.description
         obj_ref = ''
         if issubclass(annotated_type, Object):
-            resource_name = annotated_type.title
-            if resource_name is None:
-                class_name = annotated_type.__name__
-                resource_name = class_name_to_resource_name(class_name)
-            ALL_RESOURCES[resource_name] = annotated_type
-            obj_ref = ' See :ref:`resource-{}`.'.format(
-                '-'.join(resource_name.split(' ')).lower().strip())
-        elif (hasattr(annotated_type, 'items') and
+            obj_ref = get_object_reference(annotated_type)
+        elif (issubclass(annotated_type, Array) and
+                annotated_type.items is not None and
+                not isinstance(annotated_type.items, list) and
                 issubclass(annotated_type.items, Object)):
             # This means the type is an array of objects, so we want to
             # collect the object as a resource we can document later.
-            resource_name = annotated_type.items.title
-            if resource_name is None:
-                class_name = annotated_type.items.__name__
-                resource_name = class_name_to_resource_name(class_name)
-            ALL_RESOURCES[resource_name] = annotated_type.items
-            obj_ref = ' See :ref:`resource-{}`.'.format(
-                '-'.join(resource_name.split(' ')).lower().strip())
+            obj_ref = get_object_reference(annotated_type.items)
+        elif (issubclass(annotated_type, Array) and
+                isinstance(annotated_type.items, list)):
+            # This means the type is array and items is a list of types. Iterate
+            # through each type to see if any are objects that we can document.
+            for item in annotated_type.items:
+                if issubclass(item, Object):
+                    # Note: we are just adding them to the global variable
+                    # ALL_RESOURCES when calling the function below and not
+                    # using the return value as this special case is handled
+                    # below in documenting items of an array.
+                    get_object_reference(item)
 
         # Document any enum.
         enum = ''
         if issubclass(annotated_type, Enum):
             enum = ' Must be one of: `{}`.'.format(annotated_type.enum)
+
+        # Document type(s) for an array's items.
+        if (issubclass(annotated_type, Array) and
+                annotated_type.items is not None):
+            description += get_array_items_description(annotated_type)
 
         field_prop = prop
         # If this is a request param and the property is required
@@ -198,7 +295,7 @@ def get_json_object_lines(annotation: ResourceAnnotation,
 
 
 def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
-                   request: bool=False) -> List:
+                   request: bool = False) -> List:
     """Generate documentation lines for the given annotation.
 
     This only documents schemas of type "object", or type "list" where each
@@ -264,7 +361,9 @@ def get_resource_object_doc_lines() -> List[str]:
                     class_name = prop_a_type.__name__
                     resource_name = class_name_to_resource_name(class_name)
                 ALL_RESOURCES[resource_name] = prop_a_type
-            elif (hasattr(prop_a_type, 'items') and
+            elif (issubclass(prop_a_type, Array) and
+                    prop_a_type.items is not None and
+                    not isinstance(prop_a_type.items, list) and
                     issubclass(prop_a_type.items, Object)):
                 # This means the type is an array of objects, so we want to
                 # collect the object as a resource we can document later.
@@ -300,22 +399,16 @@ def get_resource_object_doc_lines() -> List[str]:
                 # an array of objects.
                 obj_ref = ''
                 if issubclass(prop_a_type, Object):
-                    resource_name = prop_a_type.title
-                    if resource_name is None:
-                        class_name = prop_a_type.__name__
-                        resource_name = class_name_to_resource_name(class_name)
-                    obj_ref = ' See :ref:`resource-{}`.'.format(
-                        '-'.join(resource_name.split(' ')).lower().strip())
-                elif (hasattr(prop_a_type, 'items') and
+                    obj_ref = get_object_reference(prop_a_type)
+                elif (issubclass(prop_a_type, Array) and
+                        prop_a_type.items is not None and
+                        not isinstance(prop_a_type.items, list) and
                         issubclass(prop_a_type.items, Object)):
-                    # This means the type is an array of objects, so we want to
-                    # collect the object as a resource we can document later.
-                    resource_name = prop_a_type.items.title
-                    if resource_name is None:
-                        class_name = prop_a_type.items.__name__
-                        resource_name = class_name_to_resource_name(class_name)
-                    obj_ref = ' See :ref:`resource-{}`.'.format(
-                        '-'.join(resource_name.split(' ')).lower().strip())
+                    # This means the type is an array of objects.
+                    obj_ref = get_object_reference(prop_a_type.items)
+                elif (issubclass(prop_a_type, Array) and
+                        prop_a_type.items is not None):
+                    description += get_array_items_description(prop_a_type)
                 native_type = a_type.properties[prop].native_type.__name__
                 if prop in a_type.required:
                     description = '**Required**.  ' + description

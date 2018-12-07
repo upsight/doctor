@@ -57,6 +57,17 @@ class TestUnionType(object):
         with pytest.raises(TypeSystemError, match='Value is not one of'):
             SOrT('B')
 
+    def test_native_type(self):
+        B = boolean('A bool.')
+        S = string('A string.')
+
+        class Item(UnionType):
+            description = 'B or S.'
+            types = [B, S]
+
+        # Should be the first native_type in the types attribute.
+        assert Item.native_type == bool
+
 
 class TestString(object):
 
@@ -422,7 +433,8 @@ class TestArray(object):
 
     def test_items_multiple_types(self):
         A = array('a', items=[
-            string('string', max_length=1), integer('int', maximum=1234)])
+            string('string', max_length=1, example='foo'),
+            integer('int', maximum=1234, example=123)])
         # no exception
         A(['b', 1234])
         # Invalid type
@@ -477,6 +489,11 @@ class TestArray(object):
 
         A = array('No example, defined items', items=string('letter'))
         assert ['string'] == A.get_example()
+
+        A = array('a', items=[
+            string('string', max_length=1, example='foo'),
+            integer('int', maximum=1234, example=123)])
+        assert ['foo', 123] == A.get_example()
 
 
 class TestJsonSchema(object):

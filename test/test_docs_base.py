@@ -9,8 +9,9 @@ from doctor.response import Response
 
 from .base import TestCase
 from .types import (
-    Age, Auth, Color, ExampleArray, ExampleObject, ExampleObjects, FooInstance,
-    IsAlive, IsDeleted, Name)
+    Age, AgeOrColor, Auth, Color, Colors, ExampleArray, ExampleObject,
+    ExampleObjects, ExampleObjectsAndAge, FooInstance, IsAlive, IsDeleted, Name,
+    TwoItems)
 from .utils import add_doctor_attrs
 
 
@@ -398,3 +399,35 @@ class TestDocsBaseHarness(TestCase):
         below it.
         """
         assert [] == base.get_resource_object_doc_lines()
+
+    @mock.patch.dict('doctor.docs.base.ALL_RESOURCES', {})
+    def test_get_object_reference(self):
+        actual = base.get_object_reference(ExampleObject)
+        expected = ' See :ref:`resource-example-object`.'
+        assert expected == actual
+
+        # also verify it was added to `ALL_RESOURCES`.
+        assert {'Example Object': ExampleObject} == base.ALL_RESOURCES
+
+    def test_get_json_types(self):
+        assert ['int'] == base.get_json_types(Age)
+        assert ['list[str]'] == base.get_json_types(Colors)
+        assert ['list[int,str]'] == base.get_json_types(TwoItems)
+        assert ['int', 'str'] == base.get_json_types(AgeOrColor)
+
+    @mock.patch.dict('doctor.docs.base.ALL_RESOURCES', {})
+    def test_get_array_description(self):
+        actual = base.get_array_items_description(Colors)
+        expected = (
+            "  *Items must be*: Color Must be one of: `['blue', 'green']`.")
+        assert expected == actual
+
+        actual = base.get_array_items_description(TwoItems)
+        expected = (" *Item 0 must be*: age *Item 1 must be*: Color Must be "
+                    "one of: `['blue', 'green']`.")
+        assert expected == actual
+
+        actual = base.get_array_items_description(ExampleObjectsAndAge)
+        expected = (" *Item 0 must be*: age *Item 1 must be*: ex description "
+                    "f See :ref:`resource-example-object`.")
+        assert expected == actual

@@ -4,6 +4,13 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Fixed bug when using UnionType as it was missing a `native_type` attribute.
+* Fixed bug when using Array where items is a list of types for each index.
+  Documentation was generating exceptions when processing an annotation using
+  this type.
+* Added ability to document what type(s) an array's items are in the api
+  documentation.
+
 v3.10.0 (2018-11-28)
 --------------------
 

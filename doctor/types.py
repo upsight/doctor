@@ -44,6 +44,29 @@ from doctor.parsers import parse_value
 StrOrList = typing.Union[str, typing.List[str]]
 
 
+class classproperty(object):
+    """A decorator that allows a class to contain a class property.
+
+    This is a function that can be executed on a non-instance but accessed
+    via a property.
+
+    >>> class Foo(object):
+    ...   a = 1
+    ...   @classproperty
+    ...   def b(cls):
+    ...     return cls.a + 1
+    ...
+    >>> Foo.b
+    2
+    """
+
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __get__(self, owner_self, owner_cls):
+        return self.fget(owner_cls)
+
+
 class MissingDescriptionError(ValueError):
     """An exception raised when a type is missing a description."""
     pass
@@ -115,6 +138,15 @@ class UnionType(object):
                 klasses, errors))
 
         return value
+
+    @classproperty
+    def native_type(cls):
+        """Returns the native type.
+
+        Since UnionType can have multiple types, simply return the native type
+        of the first type defined in the types attribute.
+        """
+        return cls.types[0].native_type
 
 
 class String(SuperType, str):
@@ -534,7 +566,10 @@ class Array(SuperType, list):
         if cls.example is not None:
             return cls.example
         if cls.items is not None:
-            return [cls.items.get_example()]
+            if isinstance(cls.items, list):
+                return [item.get_example() for item in cls.items]
+            else:
+                return [cls.items.get_example()]
         return [1]
 
 

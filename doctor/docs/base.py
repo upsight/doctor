@@ -173,7 +173,7 @@ def get_array_items_description(item: Array) -> str:
             _enum = ' Must be one of: `{}`.'.format(
                 item.items.enum)
         elif issubclass(item.items, Object):
-            ref = get_object_reference(item)
+            ref = get_object_reference(item.items)
         desc = '  *Items must be*: {description}{enum}{ref}'.format(
             description=desc, enum=_enum, ref=ref)
     return desc

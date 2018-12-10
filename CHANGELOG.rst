@@ -4,6 +4,10 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Fixed bug introducded in v3.10.1 when doctor attempted to generate api
+  documentation when an endpoint had a request parameter that was an array of
+  objects.
+
 v3.10.1 (2018-12-07)
 --------------------
 

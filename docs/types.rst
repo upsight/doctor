@@ -290,7 +290,7 @@ Example
             'type': enum('The type of contact.', enum=['Friend', 'Family']),
         }
         required = ['name']
-        # If a an optional type is specified, then is_primary will be required.
+        # If the optional `type` is specified, then `is_primary` will be required.
         property_dependencies = {
             'type': ['is_primary'],
          }

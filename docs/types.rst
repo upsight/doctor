@@ -264,7 +264,7 @@ Attributes
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
 * :attr:`~doctor.types.Object.property_dependencies` - A dict containing a mapping
-  of proptery name to a list of properties it depends on.  This means if the
+  of property name to a list of properties it depends on.  This means if the
   property  name is present then any dependent properties must also be present,
   otherwise a :class:`~doctor.errors.TypeSystemError` will be raised. See
   `JSON Schema dependencies <https://json-schema.org/understanding-json-schema/reference/object.html#dependencies>`_

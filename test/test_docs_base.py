@@ -431,3 +431,8 @@ class TestDocsBaseHarness(TestCase):
         expected = (" *Item 0 must be*: age *Item 1 must be*: ex description "
                     "f See :ref:`resource-example-object`.")
         assert expected == actual
+
+        actual = base.get_array_items_description(ExampleObjects)
+        expected = ('  *Items must be*: ex description f See '
+                    ':ref:`resource-example-object`.')
+        assert expected == actual

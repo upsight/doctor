@@ -356,6 +356,19 @@ class RequiredPropsObject(Object):
     required = ['bar']
 
 
+class PropertyDependenciesObject(Object):
+    description = 'An item.'
+    properties = {
+        'type': string('Type of item'),
+        'name': string('Name of item'),
+        'category': string('Category of item'),
+    }
+    property_dependencies = {
+        'type': ['name'],
+        'name': ['category'],
+    }
+
+
 class TestObject(object):
 
     def test_valid_object(self):
@@ -413,6 +426,28 @@ class TestObject(object):
         # with a defined example
         setattr(RequiredPropsObject, 'example', {'foo': 'foo', 'bar': 33})
         assert {'foo': 'foo', 'bar': 33} == RequiredPropsObject.get_example()
+
+    def test_property_dependencies(self):
+        # These should not raise exceptions.
+        PropertyDependenciesObject({})
+        PropertyDependenciesObject({'category': 'category'})
+        PropertyDependenciesObject({
+            'category': 'category',
+            'name': 'name',
+            'type': 'type',
+        })
+
+        # name property requires category.
+        err = (r"Required properties \['category'\] for property `name` are "
+               "missing")
+        with pytest.raises(TypeSystemError, match=err):
+            PropertyDependenciesObject({'name': 'name'})
+
+        # type property requires name.
+        err = (r"Required properties \['name'\] for property `type` are "
+               "missing")
+        with pytest.raises(TypeSystemError, match=err):
+            PropertyDependenciesObject({'type': 'type'})
 
 
 class TestArray(object):

@@ -404,6 +404,9 @@ class Object(SuperType, dict):
     additional_properties = True  # type: bool
     #: A human readable title for the object.
     title = None
+    #: A mapping of property name to a list of other properties it requires
+    #: when the property name is present.
+    property_dependencies = {}  # type: typing.Dict[str, typing.List[str]]
 
     def __init__(self, *args, **kwargs):
         if self.nullable and args[0] is None:
@@ -459,13 +462,23 @@ class Object(SuperType, dict):
         # not allowed.
         if not self.additional_properties:
             properties = list(self.properties.keys())
-            for key in value.keys():
+            for key in self.keys():
                 if key not in properties:
                     detail = '{key} not in {properties}'.format(
                         key=key, properties=properties)
                     exc = TypeSystemError(detail, cls=self.__class__,
                                           code='additional_properties')
                     errors[key] = exc.detail
+
+        # Check for any property dependencies that are defined.
+        if self.property_dependencies:
+            err = 'Required properties {} for property `{}` are missing.'
+            for prop, dependencies in self.property_dependencies.items():
+                if prop in self:
+                    for dep in dependencies:
+                        if dep not in self:
+                            raise TypeSystemError(err.format(
+                                dependencies, prop))
 
         if errors:
             raise TypeSystemError(errors)

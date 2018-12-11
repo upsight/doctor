@@ -263,6 +263,12 @@ Attributes
   parameter before it's passed to the type. :ref:`See custom type parser<custom-type-parser>`.
 * :attr:`~doctor.types.Object.properties` - A dict containing a mapping of
   property name to expected type.
+* :attr:`~doctor.types.Object.property_dependencies` - A dict containing a mapping
+  of property name to a list of properties it depends on.  This means if the
+  property  name is present then any dependent properties must also be present,
+  otherwise a :class:`~doctor.errors.TypeSystemError` will be raised. See
+  `JSON Schema dependencies <https://json-schema.org/understanding-json-schema/reference/object.html#dependencies>`_
+  for further information.
 * :attr:`~doctor.types.Object.required` - A list of required properties.
 * :attr:`~doctor.types.Object.title` - An optional title for your object. This
   value will be used when generating documentation about objects in requests
@@ -273,7 +279,7 @@ Example
 
 .. code-block:: python
 
-    from doctor.types import Object, boolean, string
+    from doctor.types import Object, boolean, enum, string
 
     class Contact(Object):
         description = 'An address book contact.'
@@ -281,8 +287,13 @@ Example
         properties = {
             'name': string('The contact name', min_length=1, max_length=200),
             'is_primary', boolean('Indicates if this is a primary contact.'),
+            'type': enum('The type of contact.', enum=['Friend', 'Family']),
         }
         required = ['name']
+        # If the optional `type` is specified, then `is_primary` will be required.
+        property_dependencies = {
+            'type': ['is_primary'],
+         }
 
 Array
 -----

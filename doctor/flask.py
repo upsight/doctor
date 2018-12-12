@@ -152,7 +152,11 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
         if logic._doctor_req_obj_type:
             annotation = logic._doctor_req_obj_type
             try:
-                params = annotation.native_type(annotation(params))
+                # NOTE: We calculate the value before applying native type in
+                # order to support UnionType types which dynamically modifies
+                # the native_type property based on the initialized value.
+                value = annotation(params)
+                params = annotation.native_type(value)
             except TypeError:
                 logging.exception(
                     'Error casting and validating params with value `%s`.',
@@ -166,7 +170,12 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                 if annotation.nullable and value is None:
                     continue
                 try:
-                    params[name] = annotation.native_type(annotation(value))
+                    # NOTE: We calculate the value before applying native type
+                    # in order to support UnionType types which dynamically
+                    # modifies the native_type property based on the initialized
+                    # value.
+                    value = annotation(value)
+                    params[name] = annotation.native_type(value)
                 except TypeSystemError as e:
                     errors[name] = e.detail
         if errors:

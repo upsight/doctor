@@ -68,6 +68,13 @@ class TestUnionType(object):
         # Should be the first native_type in the types attribute.
         assert Item.native_type == bool
 
+        # After instantiating with a value, it should update the native_type
+        # to match the value.
+        assert 'S' == Item('S')
+        assert Item.native_type == str
+        assert Item(True)
+        assert Item.native_type == bool
+
 
 class TestString(object):
 

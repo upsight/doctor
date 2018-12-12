@@ -210,7 +210,7 @@ def map_param_names(
     return new_request_params
 
 
-def parse_form_and_query_params(req_params, sig_params):
+def parse_form_and_query_params(req_params: dict, sig_params: dict) -> dict:
     """Uses the parameter annotations to coerce string params.
 
     This is used for HTTP requests, in which the form parameters are all
@@ -223,7 +223,7 @@ def parse_form_and_query_params(req_params, sig_params):
     :raises TypeSystemError: If there are errors parsing values.
     """
     # Importing here to prevent circular dependencies.
-    from doctor.types import SuperType
+    from doctor.types import SuperType, UnionType
     errors = {}
     parsed_params = {}
     for param, value in req_params.items():
@@ -243,15 +243,21 @@ def parse_form_and_query_params(req_params, sig_params):
                         custom_parser))
                 custom_parser = None
 
-        native_type = sig_params[param].annotation.native_type
-        json_type = [_native_type_to_json[native_type]]
-        # If the type is nullable, also add null as an allowed type.
-        if sig_params[param].annotation.nullable:
-            json_type.append('null')
         try:
             if custom_parser is not None:
                 parsed_params[param] = custom_parser(value)
             else:
+                if issubclass(sig_params[param].annotation, UnionType):
+                    json_type = [
+                        _native_type_to_json[_type.native_type]
+                        for _type in sig_params[param].annotation.types
+                    ]
+                else:
+                    native_type = sig_params[param].annotation.native_type
+                    json_type = [_native_type_to_json[native_type]]
+                # If the type is nullable, also add null as an allowed type.
+                if sig_params[param].annotation.nullable:
+                    json_type.append('null')
                 _, parsed_params[param] = parse_value(value, json_type)
         except ParseError as e:
             errors[param] = str(e)

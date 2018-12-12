@@ -1,17 +1,20 @@
 # encoding: utf-8
 
 import inspect
+import json
 
 import pytest
 
 from doctor.errors import ParseError, TypeSystemError
 from doctor.parsers import (
-    map_param_names, parse_form_and_query_params, parse_json, parse_value)
+    map_param_names, parse_form_and_query_params, parse_json, parse_value,
+    _parse_string)
 from doctor.types import string
 
 from .base import TestCase
 from .types import (
-    Age, Auth, Color, FoosWithParser, IsDeleted, Latitude, Longitude, OptIn)
+    Age, Auth, Color, ColorsOrObject, FoosWithParser, IsDeleted, Latitude,
+    Longitude, OptIn)
 
 
 def logic(age: Age, color: Color, is_deleted: IsDeleted=False):
@@ -22,6 +25,10 @@ def logic2(foos: FoosWithParser):
     return foos
 
 
+def logic_with_union(colors_or_object: ColorsOrObject):
+    return colors_or_object
+
+
 class TestParsers(TestCase):
 
     def test_parse_json(self):
@@ -29,6 +36,23 @@ class TestParsers(TestCase):
         message = 'Error parsing JSON: \'bad json\' error: Expecting value'
         with pytest.raises(ParseError, match=message):
             parse_json('bad json')
+
+    def test_parse_json_with_sig_params(self):
+        """
+        Verifies if we pass a signature it maps parameters properly.
+        """
+        def func(lat: Latitude):
+            pass
+
+        sig = inspect.signature(func)
+        request_params = json.dumps({
+            'location.lat': 127.11,
+        })
+        actual = parse_json(request_params, sig.parameters)
+        assert {'lat': 127.11} == actual
+
+    def test_parse_value_allowed_types_is_str(self):
+        assert ('integer', 12) == parse_value('12', allowed_types='integer')
 
     def test_parse_value(self):
         """These cases should return a value when parsing."""
@@ -88,6 +112,32 @@ class TestParsers(TestCase):
         with pytest.raises(
                 ValueError, match=r"value for 'foo' must be a string"):
             parse_value(1337, [], 'foo')
+
+    def test_parse_string_not_str(self):
+        actual = _parse_string(b'foo')
+        assert 'foo' == actual
+
+    def test_parse_form_and_query_params_with_union_type(self):
+        """
+        This test verifies if one of the annotations is a UnionType, that we
+        correctly parse the value as it can be one of many types.
+        """
+        sig = inspect.signature(logic_with_union)
+        query_params = {'colors_or_object': '["blue"]'}
+        actual = parse_form_and_query_params(query_params, sig.parameters)
+        assert {'colors_or_object': ['blue']} == actual
+
+        query_params = {'colors_or_object': json.dumps({'str': 'auth'})}
+        actual = parse_form_and_query_params(query_params, sig.parameters)
+        expected = {
+            'colors_or_object': {'str': 'auth'},
+        }
+        assert expected == actual
+
+        # An invalid type that isn't one of the accepted types
+        query_params = {'colors_or_object': 45}
+        with pytest.raises(ValueError):
+            parse_form_and_query_params(query_params, sig.parameters)
 
     def test_parse_form_and_query_params_no_errors_with_custom_parser(self):
         sig = inspect.signature(logic2)

@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.10.3 (2018-12-12)
+--------------------
+
 * Fixed UnionType types from not getting passed to logic functions.
 * Fixed UnionType types from not getting documented in api docs.
 * Fixed bug with native_type for UnionType which could cause an error parsing

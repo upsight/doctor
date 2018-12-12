@@ -61,4 +61,10 @@ class FooInstance(Object):
 
 
 class AgeOrColor(UnionType):
+    description = 'age or color'
     types = [Age, Color]
+
+
+class ColorsOrObject(UnionType):
+    description = 'Colors or an example object.'
+    types = [Colors, ExampleObject]

@@ -18,7 +18,8 @@ from doctor.utils import (
     add_param_annotations, get_params_from_func, Params, RequestParamAnnotation)
 
 from .types import (
-    Auth, Colors, FooInstance, Item, ItemId, IncludeDeleted, Latitude)
+    Auth, Colors, ColorsOrObject, FooInstance, Item, ItemId, IncludeDeleted,
+    Latitude)
 from .utils import add_doctor_attrs
 
 
@@ -123,6 +124,27 @@ def test_handle_http_with_route_that_defines_req_obj_type(mock_request):
     expected = "__all__ - {'bar': 'Additional properties are not allowed.'}"
     with pytest.raises(HTTP400Exception, match=expected):
         handle_http(mock_handler, (), {}, logic)
+
+
+def test_handle_http_with_logic_containing_uniontype(mock_request):
+    """
+    This test verifies that if our logic function has a UnionType annotation
+    that we handle it properly with different inputs.
+    """
+    def logic(val: ColorsOrObject):
+        return val
+
+    logic = add_doctor_attrs(logic)
+    mock_request.method = 'POST'
+    mock_request.content_type = 'application/x-www-form-urlencoded'
+    mock_request.values = {'val': '["blue"]'}
+    mock_handler = mock.Mock()
+    actual = handle_http(mock_handler, (), {}, logic)
+    assert actual == (['blue'], 201)
+
+    mock_request.values = {'val': '{"str": "auth"}'}
+    actual = handle_http(mock_handler, (), {}, logic)
+    assert actual == ({'str': 'auth'}, 201)
 
 
 def test_handle_http_object_array_types(mock_request, mock_post_logic):

@@ -105,7 +105,7 @@ class SuperType(object):
                 '{} did not define a description attribute'.format(cls))
 
 
-class UnionType(object):
+class UnionType(SuperType):
     """A type that can be one of any of the defined `types`.
 
     The first type that does not raise a :class:`~doctor.errors.TypeSystemError`
@@ -113,6 +113,8 @@ class UnionType(object):
     """
     #: A list of allowed types.
     types = []
+
+    _native_type = None
 
     def __new__(cls, *args, **kwargs):
         if not cls.types:
@@ -127,6 +129,8 @@ class UnionType(object):
             try:
                 value = obj_class(*args, **kwargs)
                 valid = True
+                # Dynamically change the native_type based on that of the value.
+                cls._native_type = obj_class.native_type
                 break
             except TypeSystemError as e:
                 errors[obj_class.__name__] = str(e)
@@ -139,13 +143,40 @@ class UnionType(object):
 
         return value
 
+    @classmethod
+    def get_example(cls):
+        """Returns an example value for the UnionType."""
+        return cls.types[0].get_example()
+
     @classproperty
     def native_type(cls):
         """Returns the native type.
 
         Since UnionType can have multiple types, simply return the native type
         of the first type defined in the types attribute.
+
+        If _native_type is set based on initializing a value with the class,
+        then we return the dynamically modified type that matches that of the
+        value used during instantiation.  e.g.
+
+        >>> from doctor.types import UnionType, string, boolean
+        >>> class BoolOrStr(UnionType):
+        ...   description = 'bool or str'
+        ...   types = [boolean('a bool'), string('a string')]
+        ...
+        >>> BoolOrStr.native_type
+        <class 'bool'>
+        >>> BoolOrStr('str')
+        'str'
+        >>> BoolOrStr.native_type
+        <class 'str'>
+        >>> BoolOrStr(False)
+        False
+        >>> BoolOrStr.native_type
+        <class 'bool'>
         """
+        if cls._native_type is not None:
+            return cls._native_type
         return cls.types[0].native_type
 
 

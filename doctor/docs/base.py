@@ -6,7 +6,7 @@ import json
 import pipes
 import re
 from collections import defaultdict
-from inspect import Parameter
+from inspect import Parameter, Signature
 from typing import Any, Dict, List
 
 try:
@@ -229,6 +229,7 @@ def get_json_object_lines(annotation: ResourceAnnotation,
         order to document the properties of it.
     :returns: list of strings, one for each line.
     """
+    sig_params = annotation.logic._doctor_signature.parameters
     required_lines = []
     lines = []
     default_field = field
@@ -274,22 +275,30 @@ def get_json_object_lines(annotation: ResourceAnnotation,
                 annotated_type.items is not None):
             description += get_array_items_description(annotated_type)
 
+        # Document any default value.
+        default = ''
+        if (request and prop in sig_params and
+                sig_params[prop].default != Signature.empty):
+            default = ' (Defaults to `{}`) '.format(sig_params[prop].default)
+
         field_prop = prop
         # If this is a request param and the property is required
         # add required text and append lines to required_lines.  This
         # will make the required properties appear in alphabetical order
         # before the optional.
+        line_template = (
+            ':{field} {types} {prop}: {description}{enum}{default}{obj_ref}')
         if request and prop in annotation.params.required:
             description = '**Required**.  ' + description
-            required_lines.append(
-                ':{field} {types} {prop}: {description}{enum}{obj_ref}'.format(
-                    field=field, types=','.join(types), prop=field_prop,
-                    description=description, enum=enum, obj_ref=obj_ref))
+            required_lines.append(line_template.format(
+                field=field, types=','.join(types), prop=field_prop,
+                description=description, enum=enum, obj_ref=obj_ref,
+                default=default))
         else:
-            lines.append(
-                ':{field} {types} {prop}: {description}{enum}{obj_ref}'.format(
-                    field=field, types=','.join(types), prop=field_prop,
-                    description=description, enum=enum, obj_ref=obj_ref))
+            lines.append(line_template.format(
+                field=field, types=','.join(types), prop=field_prop,
+                description=description, enum=enum, obj_ref=obj_ref,
+                default=default))
 
     return required_lines + lines
 

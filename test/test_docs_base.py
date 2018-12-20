@@ -83,8 +83,9 @@ class TestDocsBase(TestCase):
         assert result == [
             ':>json str auth: **Required**.  auth token',
             ':>json bool is_alive: **Required**.  Is alive?',
-            ":>json str color: Color Must be one of: `['blue', 'green']`.",
-            ':>json str name: name']
+            (":>json str color: Color Must be one of: `['blue', 'green']`. "
+             "(Defaults to `blue`) "),
+            ':>json str name: name (Defaults to `None`) ']
 
     def test_get_json_object_lines_for_request(self):
         """
@@ -108,7 +109,7 @@ class TestDocsBase(TestCase):
             ':param int age: **Required**.  age',
             ':>json str auth: **Required**.  auth token',
             (':>json bool is_deleted: Indicates if the item should be marked '
-             'as deleted'),
+             'as deleted (Defaults to `True`) '),
         ]
 
     def test_get_json_object_lines_object_response(self):

@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.11.0 (2019-01-04)
+--------------------
+
 * Document default values for optional request params by inspecting
   the logic function signature.
 

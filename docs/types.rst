@@ -561,7 +561,7 @@ fails to parse the value.
       :returns: A list of values.
       """
       # If your logic is more complex and the value can't be parsed, raise
-      # a `TypeError` in your function.
+      # a `ParserError` in your function.
       return value.split(',')
 
    Item = string('An item.')
@@ -574,6 +574,37 @@ fails to parse the value.
       # The comma separated string becomes a list of items when passed to the
       # logic function.
       print(items)  # ['item1', 'item2']
+
+
+Custom Type Validation
+----------------------
+
+If you need to provide custom validation outside of that supported by the builtin
+doctor types you can provide your own `validate` method on your type class to
+perform custom validation.  To do this, simply override the
+:func:`~doctor.types.SuperType.validate` method.  This method should take a
+single argument that is the value and perform validation on it.  If it fails
+validation it should raise a :class:`~doctor.errors.TypeSystemError`.
+
+An example might be that we want to allow an object to be passed as a request
+parameter that doesn't have any schema.  We accept any arbitrary key/values.
+The only restriction is that the keys need to match a particular pattern.  To
+do this we can add our own validate method to ensure this happens.
+
+.. code-block:: python
+
+   from doctor.errors import TypeSystemError
+   from doctor.types import Object
+
+   class UserSettings(Object):
+      description = 'An object containing user settings.'
+      additional_properties = True
+
+      @classmethod
+      def validate(cls, value):
+         for key in value:
+            if not key.startswith('user_'):
+               raise TypeSystemError('Key {} does not begin with `user_`'.format(key))
 
 .. _types-module-documentation:
 

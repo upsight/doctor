@@ -4,6 +4,7 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Added ability to add custom validation to types.
 * Fixed bug where you could not specify a custom description when using
   the `new_type` type function when the type provided had it's own description
   attribute.

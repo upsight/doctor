@@ -80,22 +80,22 @@ class SuperType(object):
     if the subclass does not define a `description` attribute.
     """
     #: The description of what the type represents.
-    description = None  # type: str
+    description: str = None
 
     #: An example value for the type.
     example = None
 
     #: Indicates if the value of this type is allowed to be None.
-    nullable = False  # type: bool
+    nullable: bool = False
 
     #: An optional name of where to find the request parameter if it does not
     #: match the variable name in your logic function.
-    param_name = None
+    param_name: str = None
 
     #: An optional callable to parse a request paramter before it gets validated
     #: by a type.  It should accept a single value paramter and return the
     #: parsed value.
-    parser = None
+    parser: typing.Callable = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,6 +103,18 @@ class SuperType(object):
             cls = self.__class__
             raise MissingDescriptionError(
                 '{} did not define a description attribute'.format(cls))
+
+    @classmethod
+    def validate(cls, value: typing.Any):
+        """Additional validation for a type.
+
+        All types will have a validate method where custom validation logic
+        can be placed.  The implementor should return nothing if the value is
+        valid, otherwise a `TypeSystemError` should be raised.
+
+        :param value: The value to be validated.
+        """
+        pass
 
 
 class UnionType(SuperType):
@@ -141,6 +153,7 @@ class UnionType(SuperType):
             raise TypeSystemError('Value is not one of {}. {}'.format(
                 klasses, errors))
 
+        cls.validate(value)
         return value
 
     @classmethod
@@ -255,6 +268,8 @@ class String(SuperType, str):
         # a str already if `trim_whitespace` is True.
         if isinstance(value, cls):
             value = cls.native_type(value)
+
+        cls.validate(value)
         return value
 
     @classmethod
@@ -330,6 +345,8 @@ class _NumericType(SuperType):
         # is an instance of the class.
         if isinstance(value, cls):
             value = cls.native_type(value)
+
+        cls.validate(value)
         return value
 
 
@@ -365,12 +382,13 @@ class Boolean(SuperType):
     }
 
     def __new__(cls, *args, **kwargs) -> bool:
-        if cls.nullable and args[0] is None:
+        value = args[0]
+        if cls.nullable and value is None:
             return None
 
-        if args and isinstance(args[0], str):
+        if args and isinstance(value, str):
             try:
-                return {
+                value = {
                     'true': True,
                     'false': False,
                     'on': True,
@@ -378,9 +396,13 @@ class Boolean(SuperType):
                     '1': True,
                     '0': False,
                     '': False
-                }[args[0].lower()]
+                }[value.lower()]
             except KeyError:
                 raise TypeSystemError(cls=cls, code='type') from None
+            cls.validate(value)
+            return value
+
+        cls.validate(value)
         return bool(*args, **kwargs)
 
     @classmethod
@@ -408,6 +430,8 @@ class Enum(SuperType, str):
 
         if value not in cls.enum:
             raise TypeSystemError(cls=cls, code='invalid')
+
+        cls.validate(value)
         return value
 
     @classmethod
@@ -514,6 +538,8 @@ class Object(SuperType, dict):
         if errors:
             raise TypeSystemError(errors)
 
+        self.validate(self.copy())
+
     @classmethod
     def get_example(cls) -> dict:
         """Returns an example value for the Dict type.
@@ -598,6 +624,8 @@ class Array(SuperType, list):
 
         if errors:
             raise TypeSystemError(errors)
+
+        self.validate(value)
 
     @classmethod
     def get_example(cls) -> list:

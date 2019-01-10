@@ -4,6 +4,10 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Fixed bug where you could not specify a custom description when using
+  the `new_type` type function when the type provided had it's own description
+  attribute.
+
 v3.11.0 (2019-01-04)
 --------------------
 

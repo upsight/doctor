@@ -878,10 +878,9 @@ def array(description, **kwargs) -> typing.Type:
 def new_type(cls, **kwargs) -> typing.Type:
     """Create a user defined type.
 
-    :param description: A description of the type.
     :param kwargs: Can include any attribute defined in
         the provided user defined type.
     """
-    if getattr(cls, 'description', None):
+    if 'description' not in kwargs and getattr(cls, 'description', None):
         kwargs['description'] = cls.description
     return type(cls.__name__, (cls,), kwargs)

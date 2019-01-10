@@ -710,3 +710,9 @@ def test_new_type_uses_parent_description():
     assert 'A string' == N.description
     assert S.nullable is False
     assert N.nullable is True
+
+
+def test_new_type_allows_custom_description():
+    S = string('A string', example='Foo')
+    N = new_type(S, description='A different description')
+    assert 'A different description' == N.description

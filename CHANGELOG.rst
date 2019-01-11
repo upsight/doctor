@@ -4,6 +4,12 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.12.1 (2019-01-11)
+--------------------
+
+* Removed inline var type hints and switched back to mypy comment hints in
+  order to support older versions of python 3.
+
 v3.12.0 (2019-01-11)
 --------------------
 

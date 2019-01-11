@@ -80,22 +80,22 @@ class SuperType(object):
     if the subclass does not define a `description` attribute.
     """
     #: The description of what the type represents.
-    description: str = None
+    description = None  # type: str
 
     #: An example value for the type.
     example = None
 
     #: Indicates if the value of this type is allowed to be None.
-    nullable: bool = False
+    nullable = False  # type: bool
 
     #: An optional name of where to find the request parameter if it does not
     #: match the variable name in your logic function.
-    param_name: str = None
+    param_name = None  # type: str
 
     #: An optional callable to parse a request paramter before it gets validated
     #: by a type.  It should accept a single value paramter and return the
     #: parsed value.
-    parser: typing.Callable = None
+    parser = None  # type: typing.Callable
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -6,8 +6,9 @@ import pytest
 from doctor.errors import TypeSystemError
 from doctor.resource import ResourceSchema
 from doctor.types import (
-    array, boolean, enum, integer, json_schema_type, new_type, number, string,
-    Object, MissingDescriptionError, SuperType, UnionType)
+    array, Array, boolean, Boolean, enum, Enum, integer, json_schema_type,
+    Object, new_type, number, Number, string, String, MissingDescriptionError,
+    SuperType, UnionType)
 
 
 class TestSuperType(object):
@@ -48,6 +49,11 @@ class TestUnionType(object):
             description = 'S or T.'
             types = [S, T]
 
+            @classmethod
+            def validate(cls, value):
+                if not value.endswith('ring'):
+                    raise TypeSystemError('Value does not end with ring')
+
         # No exception, matches `S` type.
         SOrT('S string')
         # No exception, matches `T` type.
@@ -56,6 +62,10 @@ class TestUnionType(object):
         # Neither `S` or `T` type.
         with pytest.raises(TypeSystemError, match='Value is not one of'):
             SOrT('B')
+
+        # Custom validation
+        with pytest.raises(TypeSystemError, match='Value does not end with '):
+            SOrT('S foo')
 
     def test_native_type(self):
         B = boolean('A bool.')
@@ -81,6 +91,19 @@ class TestString(object):
     def test_type(self):
         S = string('string')
         assert type(S('string')) is str
+
+    def test_type_validate(self):
+        class S(String):
+            description = 'description'
+
+            @classmethod
+            def validate(cls, value):
+                if not value.startswith('foo'):
+                    raise TypeSystemError('Does not start with foo')
+
+        S('foobar')
+        with pytest.raises(TypeSystemError, match='Does not start with foo'):
+            S('barfoo')
 
     def test_type_nullable(self):
         S = string('string', nullable=True)
@@ -184,6 +207,20 @@ class TestString(object):
 
 class TestNumericType(object):
 
+    def test_type_validate(self):
+        class N(Number):
+            description = 'description'
+
+            @classmethod
+            def validate(cls, value):
+                if value < 2:
+                    raise TypeSystemError('Value is < 2')
+
+        N(3)
+        N(2)
+        with pytest.raises(TypeSystemError, match='Value is < 2'):
+            N(1)
+
     def test_nullable(self):
         N = number('int', nullable=True)
         assert N(None) is None
@@ -276,6 +313,21 @@ class TestBoolean(object):
         B = boolean('bool')
         assert type(B('true')) is bool
 
+    def test_type_validate(self):
+        class B(Boolean):
+            description = 'description'
+
+            @classmethod
+            def validate(cls, value):
+                if not value:
+                    raise TypeSystemError('Value must be truthy')
+
+        B(1)
+        B('true')
+        B('on')
+        with pytest.raises(TypeSystemError, match='Value must be truthy'):
+            B(0)
+
     def test_nullable(self):
         B = boolean('bool', nullable=True)
         assert B(None) is None
@@ -316,6 +368,20 @@ class TestEnum(object):
     def test_type(self):
         E = enum('choices', enum=['foo'])
         assert type(E('foo')) is str
+
+    def test_enum_validate(self):
+        class E(Enum):
+            description = 'description'
+            enum = ['one', 'two']
+
+            @classmethod
+            def validate(cls, value):
+                if value != 'one':
+                    raise TypeSystemError('Value must be one')
+
+        E('one')
+        with pytest.raises(TypeSystemError, match='Value must be one'):
+            E('two')
 
     def test_nullalbe(self):
         E = enum('choices', enum=['foo'], nullable=True)
@@ -376,7 +442,23 @@ class PropertyDependenciesObject(Object):
     }
 
 
+class ValidateObject(Object):
+    description = 'validate'
+    additional_properties = True
+
+    @classmethod
+    def validate(cls, value):
+        for key in value:
+            if not key.startswith('key'):
+                raise TypeSystemError('Keys must start with key')
+
+
 class TestObject(object):
+
+    def test_validate(self):
+        ValidateObject({'key1': 1, 'key2': 2})
+        with pytest.raises(TypeSystemError, match='Keys must start with key'):
+            ValidateObject({'key3': 3, 'foo': 'bar'})
 
     def test_valid_object(self):
         expected = {'foo': 'bar'}
@@ -458,6 +540,20 @@ class TestObject(object):
 
 
 class TestArray(object):
+
+    def test_validate(self):
+        class A(Array):
+            description = 'Array with 2 items'
+            items = string('string')
+
+            @classmethod
+            def validate(cls, value):
+                if len(value) != 2:
+                    raise TypeSystemError('Length must be 2')
+
+        A(['1', '2'])
+        with pytest.raises(TypeSystemError, match='Length must be 2'):
+            A(['1'])
 
     def test_nullable(self):
         A = array('array', items=string('string', max_length=1), nullable=True)

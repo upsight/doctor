@@ -81,7 +81,8 @@ class TypeSystemError(DoctorError):
     """An error that represents an invalid value for a type.
 
     This is borrowed from apistar:
-    https://github.com/encode/apistar/blob/master/apistar/exceptions.py#L1-L15
+    https://github.com/encode/apistar/blob/
+    50dd15f0878f0a7c50ce829a72adb276782bcb78/apistar/exceptions.py#L4-L15
 
     :param detail: Detail about the error.
     :param cls: The class type that was being instantiated.

@@ -808,6 +808,19 @@ def test_new_type_uses_parent_description():
     assert N.nullable is True
 
 
+def test_new_type_copies_all_attrs():
+    S1 = string('A string', pattern=r'^s')
+    S2 = new_type(S1)
+    assert S1.__dict__ == S2.__dict__
+
+
+def test_new_type_copies_and_overrides_attrs():
+    S1 = string('A string', pattern=r'^s')
+    S2 = new_type(S1, description='new', max_length=10)
+    expected = dict(S1.__dict__, description='new', max_length=10)
+    assert expected == dict(S2.__dict__)
+
+
 def test_new_type_allows_custom_description():
     S = string('A string', example='Foo')
     N = new_type(S, description='A different description')

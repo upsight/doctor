@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Fixed a bug when using `new_type` that did not copy all attributes of
+  the class being passed to it.  See issue #123 for more details.
+
 v3.12.1 (2019-01-11)
 --------------------
 

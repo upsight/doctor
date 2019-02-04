@@ -99,9 +99,8 @@ class TestSchema(TestCase):
         }
 
     def test_validate_json_error_invalid_json(self):
-            with pytest.raises(ParseError, match=r'Error parsing JSON'):
-                self.schema.validate_json(
-                    'bad json', self.schema.get_validator())
+        with pytest.raises(ParseError, match=r'Error parsing JSON'):
+            self.schema.validate_json('bad json', self.schema.get_validator())
 
 
 class TestSchemaRefResolver(TestCase):

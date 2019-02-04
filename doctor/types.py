@@ -906,9 +906,12 @@ def array(description, **kwargs) -> typing.Type:
 def new_type(cls, **kwargs) -> typing.Type:
     """Create a user defined type.
 
+    The new type will contain all attributes of the `cls` type passed in.
+    Any attribute's value can be overwritten using kwargs.
+
     :param kwargs: Can include any attribute defined in
         the provided user defined type.
     """
-    if 'description' not in kwargs and getattr(cls, 'description', None):
-        kwargs['description'] = cls.description
-    return type(cls.__name__, (cls,), kwargs)
+    props = dict(cls.__dict__)
+    props.update(kwargs)
+    return type(cls.__name__, (cls,), props)

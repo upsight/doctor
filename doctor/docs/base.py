@@ -273,7 +273,11 @@ def get_json_object_lines(annotation: ResourceAnnotation,
         # Document type(s) for an array's items.
         if (issubclass(annotated_type, Array) and
                 annotated_type.items is not None):
-            description += get_array_items_description(annotated_type)
+            array_description = get_array_items_description(annotated_type)
+            # Prevents creating a duplicate object reference link in the docs.
+            if obj_ref in array_description:
+                obj_ref = ''
+            description += array_description
 
         # Document any default value.
         default = ''

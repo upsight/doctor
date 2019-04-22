@@ -4,6 +4,9 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Fixed a bug that caused object reference links to be duplicated when documenting
+  a request param or response property that was a list of dicts.
+
 v3.12.2 (2019-02-04)
 --------------------
 

@@ -423,11 +423,16 @@ class Enum(SuperType, str):
     }
     #: A list of valid values.
     enum = []  # type: typing.List[str]
+    #: Indicates if the values of the enum are case insensitive or not.
+    case_insensitive = False
 
     def __new__(cls, value: typing.Union[None, str]):
         if cls.nullable and value is None:
             return None
 
+        if cls.case_insensitive:
+            cls.enum = [v.lower() for v in cls.enum]
+            value = value.lower()
         if value not in cls.enum:
             raise TypeSystemError(cls=cls, code='invalid')
 

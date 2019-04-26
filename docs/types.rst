@@ -212,6 +212,8 @@ Attributes
 * :attr:`~doctor.types.SuperType.description` - A human readable description
   of what the type represents.  This will be used when generating documentation.
 * :attr:`~doctor.types.Enum.enum` - A list of `str` containing valid values.
+* :attr:`~doctor.types.Enum.case_insensitive` - A boolean indicating if the
+  values of the enum attribute are case insensitive or not.
 * :attr:`~doctor.types.SuperType.example` - An example value to send to the
   endpoint when generating API documentation.  This is optional and a default
   example value will be generated for you.

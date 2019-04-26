@@ -214,6 +214,10 @@ Attributes
 * :attr:`~doctor.types.Enum.enum` - A list of `str` containing valid values.
 * :attr:`~doctor.types.Enum.case_insensitive` - A boolean indicating if the
   values of the enum attribute are case insensitive or not.
+* :attr:`~doctor.types.Enum.lowercase_value` - A boolean indicating if the input value
+  should be converted to lowercased or not.
+* :attr:`~doctor.types.Enum.uppercase_value` - A boolean indicating if the input value
+  should be converted to uppercased or not.
 * :attr:`~doctor.types.SuperType.example` - An example value to send to the
   endpoint when generating API documentation.  This is optional and a default
   example value will be generated for you.

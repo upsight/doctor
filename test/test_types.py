@@ -369,6 +369,14 @@ class TestEnum(object):
         E = enum('choices', enum=['foo'])
         assert type(E('foo')) is str
 
+    def test_lowercase_value(self):
+        E = enum('choices', enum=['foo'], lowercase_value=True)
+        assert 'foo' == E('FOO')
+
+    def test_uppercase_value(self):
+        E = enum('choices', enum=['foo'], uppercase_value=True)
+        assert 'FOO' == E('foo')
+
     def test_enum_validate(self):
         class E(Enum):
             description = 'description'

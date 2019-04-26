@@ -4,6 +4,8 @@ Release History
 Next release (in development)
 -----------------------------
 
+* Added case_insensitive option to Enum type.
+
 v3.12.3 (2019-04-22)
 --------------------
 

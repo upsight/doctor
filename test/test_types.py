@@ -383,6 +383,16 @@ class TestEnum(object):
         with pytest.raises(TypeSystemError, match='Value must be one'):
             E('two')
 
+    def test_case_insensitive(self):
+        E = enum('choices', enum=['foo'], case_insensitive=True)
+        E('foo')
+        E('FOO')
+        E('fOO')
+        E('foO')
+        expected_msg = r"Must be one of: \['foo'\]"
+        with pytest.raises(TypeSystemError, match=expected_msg):
+            E('dog')
+
     def test_nullalbe(self):
         E = enum('choices', enum=['foo'], nullable=True)
         assert E(None) is None

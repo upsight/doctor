@@ -374,7 +374,7 @@ class TestEnum(object):
         assert 'foo' == E('FOO')
 
     def test_uppercase_value(self):
-        E = enum('choices', enum=['foo'], uppercase_value=True)
+        E = enum('choices', enum=['FOO'], uppercase_value=True)
         assert 'FOO' == E('foo')
 
     def test_enum_validate(self):

@@ -156,7 +156,10 @@ def get_array_items_description(item: Array) -> str:
             _enum = ''
             ref = ''
             if issubclass(item, Enum):
-                _enum = ' Must be one of: `{}`.'.format(item.enum)
+                _enum = ' Must be one of: `{}`'.format(item.enum)
+                if item.case_insensitive:
+                    _enum += ' (case-insensitive)'
+                _enum += '.'
             elif issubclass(item, Object):
                 ref = get_object_reference(item)
 
@@ -170,8 +173,11 @@ def get_array_items_description(item: Array) -> str:
         _enum = ''
         ref = ''
         if issubclass(item.items, Enum):
-            _enum = ' Must be one of: `{}`.'.format(
+            _enum = ' Must be one of: `{}`'.format(
                 item.items.enum)
+            if item.items.case_insensitive:
+                _enum += ' (case-insensitive)'
+            _enum += '.'
         elif issubclass(item.items, Object):
             ref = get_object_reference(item.items)
         desc = '  *Items must be*: {description}{enum}{ref}'.format(
@@ -268,7 +274,10 @@ def get_json_object_lines(annotation: ResourceAnnotation,
         # Document any enum.
         enum = ''
         if issubclass(annotated_type, Enum):
-            enum = ' Must be one of: `{}`.'.format(annotated_type.enum)
+            enum = ' Must be one of: `{}`'.format(annotated_type.enum)
+            if annotated_type.case_insensitive:
+                enum += ' (case-insensitive)'
+            enum += '.'
 
         # Document type(s) for an array's items.
         if (issubclass(annotated_type, Array) and

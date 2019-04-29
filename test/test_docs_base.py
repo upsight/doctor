@@ -83,8 +83,8 @@ class TestDocsBase(TestCase):
         assert result == [
             ':>json str auth: **Required**.  auth token',
             ':>json bool is_alive: **Required**.  Is alive?',
-            (":>json str color: Color Must be one of: `['blue', 'green']`. "
-             "(Defaults to `blue`) "),
+            (":>json str color: Color Must be one of: `['blue', 'green']` "
+             "(case-insensitive). (Defaults to `blue`) "),
             ':>json str name: name (Defaults to `None`) ']
 
     def test_get_json_object_lines_for_request(self):
@@ -420,12 +420,13 @@ class TestDocsBaseHarness(TestCase):
     def test_get_array_description(self):
         actual = base.get_array_items_description(Colors)
         expected = (
-            "  *Items must be*: Color Must be one of: `['blue', 'green']`.")
+            "  *Items must be*: Color Must be one of: `['blue', 'green']` "
+            "(case-insensitive).")
         assert expected == actual
 
         actual = base.get_array_items_description(TwoItems)
         expected = (" *Item 0 must be*: age *Item 1 must be*: Color Must be "
-                    "one of: `['blue', 'green']`.")
+                    "one of: `['blue', 'green']` (case-insensitive).")
         assert expected == actual
 
         actual = base.get_array_items_description(ExampleObjectsAndAge)

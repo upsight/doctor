@@ -11,7 +11,8 @@ def parse_comma_separated_str(value):
 
 Age = integer('age', minimum=1, maximum=120, example=34)
 Auth = string('auth token', example='testtoken')
-Color = enum('Color', enum=['blue', 'green'], example='blue')
+Color = enum('Color', enum=['blue', 'green'], example='blue',
+             case_insensitive=True)
 Colors = array('colors', items=Color, example=['green'])
 ExampleArray = array('ex description e', items=Auth, example=['ex', 'array'])
 TwoItems = array('two items', items=[Age, Color])

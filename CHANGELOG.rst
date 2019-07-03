@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.13.1 (2019-07-03)
+--------------------
+
+* Implemented PEP-561 using inline type hints.
+
 v3.13.0 (2019-04-29)
 --------------------
 

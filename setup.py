@@ -33,6 +33,7 @@ setup(
               'documentation', 'sphinx'],
     author='Upsight',
     author_email='dev@upsight.com',
+    package_data={'doctor': ['py.typed']},
     packages=[
         'doctor',
         'doctor.docs',

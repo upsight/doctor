@@ -856,7 +856,7 @@ def json_schema_type(schema_file: str, **kwargs) -> typing.Type:
     return type('JsonSchema', (JsonSchema,), kwargs)
 
 
-def string(description: str, **kwargs) -> typing.Type:
+def string(description: str, **kwargs) -> Any:
     """Create a :class:`~doctor.types.String` type.
 
     :param description: A description of the type.
@@ -867,7 +867,7 @@ def string(description: str, **kwargs) -> typing.Type:
     return type('String', (String,), kwargs)
 
 
-def integer(description, **kwargs) -> typing.Type:
+def integer(description, **kwargs) -> Any:
     """Create a :class:`~doctor.types.Integer` type.
 
     :param description: A description of the type.
@@ -878,7 +878,7 @@ def integer(description, **kwargs) -> typing.Type:
     return type('Integer', (Integer,), kwargs)
 
 
-def number(description, **kwargs) -> typing.Type:
+def number(description, **kwargs) -> Any:
     """Create a :class:`~doctor.types.Number` type.
 
     :param description: A description of the type.
@@ -889,7 +889,7 @@ def number(description, **kwargs) -> typing.Type:
     return type('Number', (Number,), kwargs)
 
 
-def boolean(description, **kwargs) -> typing.Type:
+def boolean(description, **kwargs) -> Any:
     """Create a :class:`~doctor.types.Boolean` type.
 
     :param description: A description of the type.
@@ -900,7 +900,7 @@ def boolean(description, **kwargs) -> typing.Type:
     return type('Boolean', (Boolean,), kwargs)
 
 
-def enum(description, **kwargs) -> typing.Type:
+def enum(description, **kwargs) -> Any:
     """Create a :class:`~doctor.types.Enum` type.
 
     :param description: A description of the type.
@@ -911,7 +911,7 @@ def enum(description, **kwargs) -> typing.Type:
     return type('Enum', (Enum,), kwargs)
 
 
-def array(description, **kwargs) -> typing.Type:
+def array(description, **kwargs) -> Any:
     """Create a :class:`~doctor.types.Array` type.
 
     :param description: A description of the type.
@@ -922,7 +922,7 @@ def array(description, **kwargs) -> typing.Type:
     return type('Array', (Array,), kwargs)
 
 
-def new_type(cls, **kwargs) -> typing.Type:
+def new_type(cls, **kwargs) -> Any:
     """Create a user defined type.
 
     The new type will contain all attributes of the `cls` type passed in.

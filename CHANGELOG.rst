@@ -4,6 +4,14 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.13.2 (2019-07-12)
+--------------------
+
+* Fixed return types for quick type functions. mypy does not support more
+  strict typing when using the builtin `type` function to dynamically
+  generate a class.  The only way for it to not complain about these
+  functions it to omit the the return type or specify `typing.Any`.
+
 v3.13.1 (2019-07-03)
 --------------------
 

@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, List, Sequence, Tuple
 
 from doctor.utils import copy_func, get_params_from_func, get_valid_class_name
 
@@ -127,7 +127,7 @@ class Route(object):
     :param after: A function to be called after the logic function associated
         with the route.
     """
-    def __init__(self, route: str, methods: Tuple[HTTPMethod],
+    def __init__(self, route: str, methods: Sequence[HTTPMethod],
                  heading: str = 'API', base_handler_class = None,
                  handler_name: str = None, before: Callable = None,
                  after: Callable = None):
@@ -159,7 +159,7 @@ def get_handler_name(route: Route, logic: Callable) -> str:
     return '{}Handler'.format(get_valid_class_name(logic.__name__))
 
 
-def create_routes(routes: Tuple[HTTPMethod], handle_http: Callable,
+def create_routes(routes: Sequence[HTTPMethod], handle_http: Callable,
                   default_base_handler_class: Any) -> List[Tuple[str, Any]]:
     """Creates handler routes from the provided routes.
 

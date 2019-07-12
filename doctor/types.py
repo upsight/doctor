@@ -61,6 +61,7 @@ class classproperty(object):
     2
     """
 
+    H
     def __init__(self, fget):
         self.fget = fget
 
@@ -84,7 +85,7 @@ class SuperType(object):
     description = None  # type: str
 
     #: An example value for the type.
-    example = None
+    example: Any = None
 
     #: Indicates if the value of this type is allowed to be None.
     nullable = False  # type: bool

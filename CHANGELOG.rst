@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.13.5 (2019-07-12)
+--------------------
+
+* Fixed incorrect type hint.
+
 v3.13.4 (2019-07-12)
 --------------------
 

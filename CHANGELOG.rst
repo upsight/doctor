@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.13.3 (2019-07-12)
+--------------------
+
+* Fixed missing import.
+
 v3.13.2 (2019-07-12)
 --------------------
 

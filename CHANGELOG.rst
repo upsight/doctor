@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.13.6 (2019-07-14)
+--------------------
+
+* Fixed random inserted character.
+
 v3.13.5 (2019-07-12)
 --------------------
 

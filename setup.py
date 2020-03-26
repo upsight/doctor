@@ -46,6 +46,7 @@ setup(
         'rfc3987 >= 1.3.4, < 2.0.0',
         'simplejson >= 3.6.3, < 4.0.0',
         'strict-rfc3339 >= 0.5, < 1.0',
+        'typing_inspect >= 0.5.0',
     ],
     extras_require={
         'docs': [

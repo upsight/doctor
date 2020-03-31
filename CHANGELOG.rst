@@ -4,6 +4,11 @@ Release History
 Next release (in development)
 -----------------------------
 
+v3.13.7 (2020-03-31)
+--------------------
+
+* Fixed Python 3.7+ compatibility issue.
+
 v3.13.6 (2019-07-14)
 --------------------
 

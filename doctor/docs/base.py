@@ -8,6 +8,7 @@ import re
 from collections import defaultdict
 from inspect import Parameter, Signature
 from typing import Any, Dict, List
+from typing_inspect import get_origin
 
 try:
     from docutils import nodes
@@ -337,7 +338,7 @@ def get_json_lines(annotation: ResourceAnnotation, field: str, route: str,
         # Check if our return annotation is a Response that supplied a
         # type we can use to document.  If so, use that type for api docs.
         # e.g. def logic() -> Response[MyType]
-        if issubclass(return_type, Response):
+        if get_origin(return_type) == Response:
             if return_type.__args__ is not None:
                 return_type = return_type.__args__[0]
         if issubclass(return_type, Array):

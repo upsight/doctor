@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import logging
 import os
 from typing import Callable, Dict, List, Tuple, Union
+from typing_inspect import get_origin
 
 
 try:
@@ -200,7 +201,7 @@ def handle_http(handler: Resource, args: Tuple, kwargs: Dict, logic: Callable):
                 # Check if our return annotation is a Response that supplied a
                 # type to validate against.  If so, use that type for validation
                 # e.g. def logic() -> Response[MyType]
-                if (issubclass(return_annotation, Response) and
+                if ((get_origin(return_annotation) == Response) and
                         return_annotation.__args__ is not None):
                     return_annotation = return_annotation.__args__[0]
             try:

@@ -13,9 +13,9 @@ Install
 -------
 
 doctor can easily be installed using pip:
-
-    $ pip install doctor
-   
+    $ sudo pip install doctor
+    $ pip install doctor 
+    $ pip3 install doctor
 Quick Start
 -----------
 
